@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/components/AuthContext";
+import SignInForm from "@/components/auth/SignInForm";
+import SignUpForm from "@/components/auth/SignUpForm";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -10,21 +13,17 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) {
   const [tab, setTab] = useState<"login" | "register">(defaultTab);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [phone, setPhone] = useState("");
+  const { user } = useAuth();
+
+  if (user && isOpen) {
+    onClose();
+  }
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(tab === "login" ? "Sign in triggered (demo)" : "Registration triggered (demo)");
-    onClose();
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl relative">
         {/* Tabs */}
         <div className="flex border-b border-kenya-white/10">
           <button
@@ -49,59 +48,13 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
-            />
-          </div>
-
-          {tab === "register" && (
-            <div>
-              <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                required={tab === "register"}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="07XXXXXXXX or 01XXXXXXXX"
-                className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
-              />
-            </div>
+        <div className="p-6">
+          {tab === "login" ? (
+            <SignInForm onSuccess={onClose} />
+          ) : (
+            <SignUpForm onSuccess={onClose} />
           )}
-
-          <button
-            type="submit"
-            className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-3.5 rounded-xl hover:bg-kenya-green/90 transition-colors"
-          >
-            {tab === "login" ? "Sign In" : "Create Account"}
-          </button>
-
-          <p className="text-center text-xs text-kenya-white/40">
+          <p className="text-center text-xs text-kenya-white/40 mt-4">
             {tab === "login"
               ? "Don't have an account? "
               : "Already have an account? "}
@@ -113,7 +66,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
               {tab === "login" ? "Register" : "Sign In"}
             </button>
           </p>
-        </form>
+        </div>
 
         <button
           onClick={onClose}
