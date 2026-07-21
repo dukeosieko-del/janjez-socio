@@ -82,7 +82,7 @@ export default function NotificationBell() {
             </div>
             <div className="p-4 border-t border-kenya-white/10">
               <a
-                href="https://janjez.social/updates-and-announcements"
+                 href="https://janjez-sociol.vercel.app/updates-and-announcements"
                 className="block w-full text-center py-2.5 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors"
               >
                 View All Updates

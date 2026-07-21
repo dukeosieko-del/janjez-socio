@@ -6,10 +6,12 @@ export async function middleware(request: Request) {
   if (!supabase) {
     return NextResponse.next();
   }
-  const { data: { session } } = await supabase.auth.getSession();
 
-  const isAuthPage = request.url.includes("/auth/sign-in") || request.url.includes("/auth/sign-up") || request.url.includes("/auth/reset-password");
-  const isProtectedPage = request.url.includes("/dashboard");
+  const { data: { session } } = await supabase.auth.getSession();
+  const pathname = new URL(request.url).pathname;
+
+  const isAuthPage = pathname.startsWith("/auth/");
+  const isProtectedPage = pathname.startsWith("/dashboard");
 
   if (isProtectedPage && !session) {
     return NextResponse.redirect(new URL("/auth/sign-in", request.url));
@@ -23,5 +25,5 @@ export async function middleware(request: Request) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|og-image.png).*)"],
+  matcher: ["/dashboard/:path*", "/auth/:path*"],
 };
