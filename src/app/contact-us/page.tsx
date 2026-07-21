@@ -27,19 +27,25 @@ export default function ContactUsPage() {
             <div className="grid gap-6">
               <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
                 <h2 className="text-kenya-white font-bold text-lg mb-2">💬 WhatsApp Support</h2>
-                <p className="text-kenya-white/70 text-sm leading-relaxed mb-4">Chat with us directly on WhatsApp for instant support.</p>
-                <a href="https://wa.link/cvhal8" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-green/90 transition-colors">Open WhatsApp</a>
+                <p className="text-kenya-white/70 text-sm leading-relaxed">Chat with us directly on WhatsApp for instant support.</p>
+                <div className="flex flex-wrap gap-3">
+                  <a href="https://wa.me/254101574056" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-green/90 transition-colors">Open WhatsApp</a>
+                  <a href="https://wa.me/254101574056?text=Hi%20janjez.social%2C%20I%20need%20support" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/10">Send Message</a>
+                </div>
               </div>
               <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
                 <h2 className="text-kenya-white font-bold text-lg mb-2">📧 Email</h2>
                 <p className="text-kenya-white/70 text-sm leading-relaxed">Send us an email and we&apos;ll respond within 24 hours.</p>
                 <p className="text-kenya-green font-mono text-sm mt-2">support@janjez.social</p>
               </div>
-              <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
-                <h2 className="text-kenya-white font-bold text-lg mb-2">📱 Phone</h2>
-                <p className="text-kenya-white/70 text-sm leading-relaxed">Call or text us for urgent issues.</p>
-                <p className="text-kenya-green font-mono text-sm mt-2">+254 700 000 000</p>
-              </div>
+                <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
+                  <h2 className="text-kenya-white font-bold text-lg mb-2">📱 Phone / WhatsApp</h2>
+                  <p className="text-kenya-white/70 text-sm leading-relaxed">Call or WhatsApp us for urgent issues.</p>
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    <a href="tel:+254101574056" className="text-kenya-green font-mono text-sm hover:underline">+254 101 574 056</a>
+                    <a href="https://wa.me/254101574056" target="_blank" rel="noopener noreferrer" className="text-kenya-green font-mono text-sm hover:underline">WhatsApp</a>
+                  </div>
+                </div>
             </div>
           </div>
         </main>

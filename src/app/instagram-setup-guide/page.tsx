@@ -127,7 +127,7 @@ export default function InstagramSetupGuidePage() {
                 🛒 Place New Order
               </Link>
               <Link
-                href="https://wa.link/cvhal8"
+                href="https://wa.me/254101574056"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/10"

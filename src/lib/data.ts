@@ -1896,8 +1896,8 @@ export const FOOTER_LINKS = {
     { label: "📦 My Orders", href: "/orders/all" },
   ],
   support: [
-    { label: "💬 Join WhatsApp Channel", href: "https://whatsapp.com/channel/0029Vb5nZqF6hENwDaWEPG3u" },
-    { label: "🤝 Talk to Us (Direct WhatsApp)", href: "https://wa.link/cvhal8" },
+    { label: "💬 Join WhatsApp Channel", href: "https://wa.me/254101574056" },
+    { label: "🤝 Talk to Us (Direct WhatsApp)", href: "https://wa.me/254101574056" },
     { label: "📜 Terms of Service", href: "/terms-of-service" },
     { label: "🔒 Privacy Policy", href: "/privacy-policy" },
   ],

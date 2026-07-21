@@ -22,7 +22,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-4">
               <a
-                href="https://whatsapp.com/channel/0029Vb5nZqF6hENwDaWEPG3u"
+                href="https://wa.me/254101574056"
                 className="w-10 h-10 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-kenya-green hover:text-kenya-black transition-colors"
                 aria-label="WhatsApp Channel"
               >
@@ -31,7 +31,7 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="https://wa.link/cvhal8"
+                href="https://wa.me/254101574056"
                 className="w-10 h-10 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-kenya-green hover:text-kenya-black transition-colors"
                 aria-label="Talk to Us"
               >
