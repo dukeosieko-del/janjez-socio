@@ -20,7 +20,7 @@ export default function AnnouncementBanner() {
         <p className="text-sm font-medium text-center">
           <strong>Important:</strong> Instagram &quot;Flag for Review&quot; Notice —{" "}
           <Link
-            href="https://dukalalikes.co.ke/instagram-setup-guide"
+            href="/instagram-setup-guide"
             className="underline hover:text-kenya-white/80 font-semibold"
           >
             Learn how to avoid account flags
