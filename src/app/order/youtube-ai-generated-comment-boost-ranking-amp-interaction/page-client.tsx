@@ -68,7 +68,7 @@ export default function YouTubeAICommentsClient() {
     }
 
     if (isAnonymous) {
-      alert("Order placed anonymously! (demo)");
+      window.location.href = "/orders/all";
       return;
     }
     openAuth("login");

@@ -71,7 +71,7 @@ export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaul
   const handlePlaceOrder = useCallback(() => {
     if (!selectedService || !link || quantityNum <= 0 || quantityError) return;
     if (isAnonymous) {
-      alert("Order placed anonymously! (demo)");
+      window.location.href = "/orders/all";
       return;
     }
     onRequireAuth("login");

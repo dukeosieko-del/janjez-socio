@@ -67,7 +67,7 @@ export default function YouTubeSubscribersClient() {
     }
 
     if (isAnonymous) {
-      alert("Order placed anonymously! (demo)");
+      window.location.href = "/orders/all";
       return;
     }
     openAuth("login");

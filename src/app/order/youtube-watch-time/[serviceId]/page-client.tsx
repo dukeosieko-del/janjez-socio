@@ -65,7 +65,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
     }
 
     if (isAnonymous) {
-      alert("Order placed anonymously! (demo)");
+      window.location.href = "/orders/all";
       return;
     }
     openAuth("login");

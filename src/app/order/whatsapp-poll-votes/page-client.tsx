@@ -68,7 +68,7 @@ export default function WhatsAppPollVotesClient() {
     }
 
     if (isAnonymous) {
-      alert("Order placed anonymously! (demo)");
+      window.location.href = "/orders/all";
       return;
     }
     openAuth("login");
