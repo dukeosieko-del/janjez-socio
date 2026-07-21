@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
@@ -8,23 +9,20 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-import AuthModal from "@/components/AuthModal";
 import MpesaModal from "@/components/MpesaModal";
 
 const AI_COMMENTS_CATEGORY = "youtube-ai-generated-comment-boost-ranking-amp-interaction";
 const DEMO_WALLET_BALANCE = 5000; // KES
 
 export default function YouTubeAICommentsClient() {
+  const { openAuth } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
   const [niche, setNiche] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  const [authModal, setAuthModal] = useState<{ open: boolean; tab: "login" | "register" }>({
-    open: false,
-    tab: "login",
-  });
+
   const [mpesaOpen, setMpesaOpen] = useState(false);
   const [walletBalance] = useState(DEMO_WALLET_BALANCE);
 
@@ -73,7 +71,7 @@ export default function YouTubeAICommentsClient() {
       alert("Order placed anonymously! (demo)");
       return;
     }
-    setAuthModal({ open: true, tab: "login" });
+    openAuth("login");
   }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous]);
 
   const isValid =
@@ -325,14 +323,7 @@ export default function YouTubeAICommentsClient() {
         </main>
 
         <Footer />
-      </div>
-
-      <AuthModal
-        isOpen={authModal.open}
-        onClose={() => setAuthModal({ open: false, tab: "login" })}
-        defaultTab={authModal.tab}
-      />
-      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
+      </div><MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
     </div>
   );
 }

@@ -8,7 +8,7 @@ export const PLATFORMS = [
     description: "High-retention Views, Monetizable Subscribers, Instant Likes",
     services: [
       { name: "High-retention Views", href: "/order/youtube-views" },
-      { name: "Monetizable Subscribers", href: "/order/youtube-subscribers-2/26252" },
+      { name: "Monetizable Subscribers", href: "/order/youtube-subscribers-2/yt-subs" },
       { name: "Instant Likes", href: "/order/youtube-likes" },
       { name: "AI-Generated Comments", href: "/order/youtube-ai-generated-comment-boost-ranking-amp-interaction" },
       { name: "Watch Time", href: "/order/youtube-watch-time" },

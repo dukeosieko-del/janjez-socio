@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
@@ -8,21 +7,17 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import OrderForm from "@/components/OrderForm";
-import AuthModal from "@/components/AuthModal";
+import { useAuth } from "@/components/AuthContext";
 
 export default function OrderPageClient() {
   const searchParams = useSearchParams();
   const serviceId = searchParams.get("service");
   const categoryId = searchParams.get("category");
   const anonymous = searchParams.get("mode") === "anonymous";
-
-  const [authModal, setAuthModal] = useState<{ open: boolean; tab: "login" | "register" }>({
-    open: false,
-    tab: "login",
-  });
+  const { openAuth } = useAuth();
 
   const handleRequireAuth = (tab: "login" | "register" = "login") => {
-    setAuthModal({ open: true, tab });
+    openAuth(tab);
   };
 
   return (
@@ -52,12 +47,6 @@ export default function OrderPageClient() {
 
         <Footer />
       </div>
-
-      <AuthModal
-        isOpen={authModal.open}
-        onClose={() => setAuthModal({ open: false, tab: "login" })}
-        defaultTab={authModal.tab}
-      />
     </div>
   );
 }

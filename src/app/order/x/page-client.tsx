@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
@@ -8,7 +9,6 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-import AuthModal from "@/components/AuthModal";
 import MpesaModal from "@/components/MpesaModal";
 
 const X_TWITTER_CATEGORY = "x";
@@ -18,15 +18,13 @@ const HAPPY_HOUR_DISCOUNT = 0.95;
 const X_URL_PATTERN = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+/;
 
 export default function XTwitterPageClient() {
+  const { openAuth } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  const [authModal, setAuthModal] = useState<{ open: boolean; tab: "login" | "register" }>({
-    open: false,
-    tab: "login",
-  });
+
   const [mpesaOpen, setMpesaOpen] = useState(false);
   const [walletBalance] = useState(DEMO_WALLET_BALANCE);
 
@@ -79,7 +77,7 @@ export default function XTwitterPageClient() {
       alert("Order placed anonymously! (demo)");
       return;
     }
-    setAuthModal({ open: true, tab: "login" });
+    openAuth("login");
   }, [selectedService, link, quantityNum, quantityError, linkError, total, walletBalance, isAnonymous]);
 
   const isValid =
@@ -260,7 +258,7 @@ export default function XTwitterPageClient() {
         <Footer />
       </div>
 
-      <AuthModal isOpen={authModal.open} onClose={() => setAuthModal({ open: false, tab: "login" })} defaultTab={authModal.tab} />
+
       <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
     </div>
   );

@@ -52,7 +52,7 @@ export default function NotificationBell() {
               {NOTIFICATIONS.map((notif) => (
                 <a
                   key={notif.id}
-                  href="https://janjez.social/updates-and-announcements"
+                  href="https://janjez-sociol.vercel.app/updates-and-announcements"
                   className="block p-4 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
                 >
                   <div className="flex items-start gap-3">

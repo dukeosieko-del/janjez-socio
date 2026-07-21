@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useAuth } from "@/components/AuthContext";
 import { getServiceById } from "@/lib/data";
 import Link from "next/link";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
@@ -8,7 +9,6 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-import AuthModal from "@/components/AuthModal";
 import MpesaModal from "@/components/MpesaModal";
 
 const DEMO_WALLET_BALANCE = 5000; // KES
@@ -19,16 +19,14 @@ interface FulfillmentClientProps {
 }
 
 export default function FulfillmentClient({ serviceId }: FulfillmentClientProps) {
+  const { openAuth } = useAuth();
   const service = useMemo(() => getServiceById(serviceId), [serviceId]);
 
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-  const [authModal, setAuthModal] = useState<{ open: boolean; tab: "login" | "register" }>({
-    open: false,
-    tab: "login",
-  });
+
   const [mpesaOpen, setMpesaOpen] = useState(false);
   const [walletBalance] = useState(DEMO_WALLET_BALANCE);
 
@@ -70,7 +68,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
       alert("Order placed anonymously! (demo)");
       return;
     }
-    setAuthModal({ open: true, tab: "login" });
+    openAuth("login");
   }, [service, link, quantityNum, quantityError, total, walletBalance, isAnonymous]);
 
   const isValid =
@@ -289,14 +287,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
         </main>
 
         <Footer />
-      </div>
-
-      <AuthModal
-        isOpen={authModal.open}
-        onClose={() => setAuthModal({ open: false, tab: "login" })}
-        defaultTab={authModal.tab}
-      />
-      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
+      </div><MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
     </div>
   );
 }
