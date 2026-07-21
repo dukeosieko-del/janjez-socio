@@ -1,1 +1,1 @@
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://janjez-sociol.vercel.app";
