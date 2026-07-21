@@ -1,0 +1,121 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import NotificationBell from "./NotificationBell";
+import GlobalSearch from "./GlobalSearch";
+import CountdownTimer from "./CountdownTimer";
+import MpesaModal from "./MpesaModal";
+import AuthModal from "./AuthModal";
+import { useAuth } from "./AuthContext";
+
+export default function Header() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mpesaOpen, setMpesaOpen] = useState(false);
+  const { authModal, openAuth, closeAuth } = useAuth();
+
+  return (
+    <header className="sticky top-0 z-40 bg-kenya-black/95 backdrop-blur-md border-b border-kenya-white/10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-8 h-8 bg-kenya-green rounded-lg flex items-center justify-center">
+              <span className="text-kenya-black font-bold text-lg">J</span>
+            </div>
+            <span className="text-xl font-bold text-kenya-white">
+              janjez<span className="text-kenya-green">.social</span>
+            </span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1">
+            <Link
+              href="/order"
+              className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+            >
+              🛒 New Order
+            </Link>
+            <Link
+              href="/blog"
+              className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+            >
+              💬 Blog & News
+            </Link>
+          </nav>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-2">
+            <div className="hidden lg:block">
+              <GlobalSearch />
+            </div>
+            <NotificationBell />
+            <CountdownTimer />
+            <button
+              onClick={() => setMpesaOpen(true)}
+              className="hidden sm:flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-lg hover:bg-kenya-green/90 transition-colors animate-pulse-glow"
+            >
+              💳 Top Up
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-kenya-white/10 transition-colors"
+            >
+              <svg className="h-6 w-6 text-kenya-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-kenya-white/10">
+            <div className="lg:hidden mb-4">
+              <GlobalSearch />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Link
+                href="/order"
+                className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+              >
+                🛒 New Order
+              </Link>
+              <Link
+                href="/blog"
+                className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+              >
+                💬 Blog & News
+              </Link>
+              <button
+                onClick={() => openAuth("register")}
+                className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+              >
+                📑 Register
+              </button>
+              <button
+                onClick={() => openAuth("login")}
+                className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+              >
+                🔑 Sign In
+              </button>
+              <button
+                onClick={() => setMpesaOpen(true)}
+                className="sm:hidden flex items-center justify-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-3 rounded-lg"
+              >
+                💳 Top Up via M-Pesa
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
+      <AuthModal
+        isOpen={authModal.open}
+        onClose={closeAuth}
+        defaultTab={authModal.tab}
+      />
+    </header>
+  );
+}

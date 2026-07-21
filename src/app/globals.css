@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --kenya-black: #0D0D0D;
+  --kenya-green: #00A859;
+  --kenya-red: #BB133E;
+  --kenya-white: #FFFFFF;
+  --background: #0D0D0D;
+  --foreground: #FFFFFF;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-kenya-black: var(--kenya-black);
+  --color-kenya-green: var(--kenya-green);
+  --color-kenya-red: var(--kenya-red);
+  --color-kenya-white: var(--kenya-white);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 168, 89, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(0, 168, 89, 0.8); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-countdown {
+  animation: countdown-pulse 1s ease-in-out infinite;
+}
