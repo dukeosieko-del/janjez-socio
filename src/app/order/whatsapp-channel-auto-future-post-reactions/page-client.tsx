@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
+import Image from "next/image";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
@@ -89,7 +90,7 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-4xl">🟢</span>
+                <Image src="/whatsapp-icon.png" alt="WhatsApp" width={40} height={40} className="w-10 h-10 object-contain" />
                 <h1 className="text-4xl sm:text-5xl font-bold text-kenya-white">
                   WhatsApp Channel Auto Future Post Reactions
                 </h1>

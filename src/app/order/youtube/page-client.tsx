@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import Image from "next/image";
 import { useAuth } from "@/components/AuthContext";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
@@ -92,7 +93,7 @@ export default function YouTubeOrderClient() {
             {/* Page Header */}
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-4xl">📺</span>
+                <Image src="/youtube-icon.png" alt="YouTube" width={40} height={40} className="w-10 h-10 object-contain" />
                 <h1 className="text-4xl sm:text-5xl font-bold text-kenya-white">
                   YouTube Services
                 </h1>

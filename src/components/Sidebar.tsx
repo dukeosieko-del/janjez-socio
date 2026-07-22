@@ -2,8 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { SIDEBAR_ITEMS, type SidebarItem } from "@/lib/data";
 import { useAuth } from "./AuthContext";
+
+function SidebarIcon({ icon, label }: { icon: string; label: string }) {
+  if (icon.startsWith("/") || icon.startsWith("http")) {
+    return (
+      <Image src={icon} alt={label} width={20} height={20} className="w-5 h-5 object-contain" />
+    );
+  }
+  return <span className="text-lg">{icon}</span>;
+}
 
 function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -16,7 +26,7 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
         className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all text-kenya-white/70 hover:text-kenya-white hover:bg-kenya-white/5"
         style={{ paddingLeft: `${12 + depth * 12}px` }}
       >
-        {item.icon && <span className="text-lg">{item.icon}</span>}
+        {item.icon && <SidebarIcon icon={item.icon} label={item.label} />}
         <span>{item.label}</span>
       </button>
     );
@@ -33,7 +43,7 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
               : "text-kenya-white/70 hover:text-kenya-white hover:bg-kenya-white/5"
           }`}
         >
-          {item.icon && <span className="text-lg">{item.icon}</span>}
+          {item.icon && <SidebarIcon icon={item.icon} label={item.label} />}
           <span className="flex-1 text-left">{item.label}</span>
           <svg
             className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
@@ -65,7 +75,7 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
       }`}
       style={{ paddingLeft: `${12 + depth * 12}px` }}
     >
-      {item.icon && <span className="text-lg">{item.icon}</span>}
+      {item.icon && <SidebarIcon icon={item.icon} label={item.label} />}
       <span>{item.label}</span>
     </Link>
   );
@@ -94,9 +104,7 @@ export default function Sidebar() {
           {/* Logo area */}
           <div className="flex items-center justify-between p-4 border-b border-kenya-white/10">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-kenya-green rounded-lg flex items-center justify-center">
-                <span className="text-kenya-black font-bold text-lg">J</span>
-              </div>
+              <Image src="/janjez-logo.png" alt="janjez.social" width={32} height={32} className="w-8 h-8 object-contain" />
               <span className="text-lg font-bold text-kenya-white">
                 janjez<span className="text-kenya-green">.social</span>
               </span>

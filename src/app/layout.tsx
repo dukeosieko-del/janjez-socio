@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    apple: "/janjez-logo.png",
   },
 };
 

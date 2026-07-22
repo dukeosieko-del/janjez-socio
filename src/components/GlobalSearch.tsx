@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { PLATFORMS, ORDER_SERVICES } from "@/lib/data";
 
 interface SearchResult {
@@ -82,7 +83,7 @@ export default function GlobalSearch() {
               href={result.href}
               className="flex items-center gap-3 px-4 py-3 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
             >
-              <span className="text-2xl">{result.icon}</span>
+              <Image src={result.icon} alt={result.name} width={24} height={24} className="w-6 h-6 object-contain" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-kenya-white truncate">{result.name}</span>

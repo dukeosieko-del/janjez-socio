@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
+import Image from "next/image";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
@@ -98,7 +99,7 @@ export default function XTwitterPageClient() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <div className="mb-10">
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-4xl">🖤</span>
+                <Image src="/x-icon.png" alt="X" width={40} height={40} className="w-10 h-10 object-contain" />
                 <h1 className="text-4xl sm:text-5xl font-bold text-kenya-white">X (Twitter) Services</h1>
               </div>
               <p className="text-kenya-white/60 text-lg max-w-2xl">Grow your X (Twitter) presence with high-quality followers, instant likes, and active retweets.</p>
@@ -112,7 +113,7 @@ export default function XTwitterPageClient() {
                   className="group bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-5 hover:border-kenya-green/50 transition-all duration-300 hover:transform hover:-translate-y-1"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-2xl">🖤</span>
+                    <Image src="/x-icon.png" alt="X" width={24} height={24} className="w-6 h-6 object-contain" />
                     <h3 className="text-sm font-bold text-kenya-white group-hover:text-kenya-green transition-colors line-clamp-1">{service.name}</h3>
                   </div>
                   <p className="text-kenya-white/50 text-xs mb-3 line-clamp-2">{service.description}</p>

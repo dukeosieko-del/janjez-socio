@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import Image from "next/image";
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,10 @@ export default function ContactUsPage() {
             <p className="text-kenya-white/60 text-lg mb-8">Have a question or need help? We&apos;re here for you.</p>
             <div className="grid gap-6">
               <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
-                <h2 className="text-kenya-white font-bold text-lg mb-2">💬 WhatsApp Support</h2>
+                <div className="flex items-center gap-2 mb-2">
+    <Image src="/whatsapp-icon.png" alt="WhatsApp" width={24} height={24} className="w-6 h-6 object-contain" />
+    <h2 className="text-kenya-white font-bold text-lg">WhatsApp Support</h2>
+  </div>
                 <p className="text-kenya-white/70 text-sm leading-relaxed">Chat with us directly on WhatsApp for instant support.</p>
                 <div className="flex flex-wrap gap-3">
                   <a href="https://wa.me/254101574056" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-green/90 transition-colors">Open WhatsApp</a>
@@ -39,7 +43,10 @@ export default function ContactUsPage() {
                 <p className="text-kenya-green font-mono text-sm mt-2">support@janjez.social</p>
               </div>
                 <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
-                  <h2 className="text-kenya-white font-bold text-lg mb-2">📱 Phone / WhatsApp</h2>
+                  <div className="flex items-center gap-2 mb-2">
+    <Image src="/whatsapp-icon.png" alt="WhatsApp" width={24} height={24} className="w-6 h-6 object-contain" />
+    <h2 className="text-kenya-white font-bold text-lg">Phone / WhatsApp</h2>
+  </div>
                   <p className="text-kenya-white/70 text-sm leading-relaxed">Call or WhatsApp us for urgent issues.</p>
                   <div className="flex flex-wrap gap-3 mt-2">
                     <a href="tel:+254101574056" className="text-kenya-green font-mono text-sm hover:underline">+254 101 574 056</a>

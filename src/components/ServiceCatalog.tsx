@@ -2,6 +2,7 @@
 
 import { PLATFORMS } from "@/lib/data";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function ServiceCatalog() {
   return (
@@ -28,7 +29,7 @@ export default function ServiceCatalog() {
 
               <div className="relative">
                 <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{platform.icon}</span>
+                  <Image src={platform.icon} alt={platform.name} width={32} height={32} className="w-8 h-8 object-contain" />
                   <h3 className="text-lg font-bold text-kenya-white group-hover:text-kenya-green transition-colors">
                     {platform.name}
                   </h3>

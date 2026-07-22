@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import NotificationBell from "./NotificationBell";
 import GlobalSearch from "./GlobalSearch";
 import CountdownTimer from "./CountdownTimer";
@@ -20,9 +21,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-8 h-8 bg-kenya-green rounded-lg flex items-center justify-center">
-              <span className="text-kenya-black font-bold text-lg">J</span>
-            </div>
+            <Image src="/janjez-logo.png" alt="janjez.social" width={32} height={32} className="w-8 h-8 object-contain" />
             <span className="text-xl font-bold text-kenya-white">
               janjez<span className="text-kenya-green">.social</span>
             </span>
@@ -46,6 +45,15 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-2">
+            <a
+              href="https://www.facebook.com/profile.php?id=61592028091844"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-kenya-white/5 text-kenya-white/70 hover:bg-blue-600 hover:text-white transition-colors"
+              aria-label="Facebook"
+            >
+              <Image src="/facebook-icon.png" alt="Facebook" width={20} height={20} className="w-5 h-5 object-contain" />
+            </a>
             <div className="hidden lg:block">
               <GlobalSearch />
             </div>

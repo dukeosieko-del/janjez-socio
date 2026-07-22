@@ -2,7 +2,7 @@ export const PLATFORMS = [
   {
     id: "youtube",
     name: "YouTube",
-    icon: "📺",
+    icon: "/youtube-icon.png",
     color: "bg-red-600",
     href: "/order/youtube",
     description: "High-retention Views, Monetizable Subscribers, Instant Likes",
@@ -17,7 +17,7 @@ export const PLATFORMS = [
   {
     id: "whatsapp",
     name: "WhatsApp",
-    icon: "🟢",
+    icon: "/whatsapp-icon.png",
     color: "bg-green-500",
     href: "/order",
     description: "Channel Members, Status Views, Group Engagement Packs",
@@ -35,7 +35,7 @@ export const PLATFORMS = [
   {
     id: "instagram",
     name: "Instagram",
-    icon: "📸",
+    icon: "/instagram-icon.png",
     color: "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600",
     href: "/order?category=instagram",
     description: "Followers [Refill/Country Targeted], Likes, Comments, Reels Views",
@@ -50,7 +50,7 @@ export const PLATFORMS = [
   {
     id: "facebook",
     name: "Facebook",
-    icon: "💙",
+    icon: "/facebook-icon.png",
     color: "bg-blue-600",
     href: "/order?category=facebook",
     description: "Page Followers, Profile Likes, Post Reactions, Video Views",
@@ -64,7 +64,7 @@ export const PLATFORMS = [
   {
     id: "tiktok",
     name: "TikTok",
-    icon: "🎵",
+    icon: "/tiktok-icon.png",
     color: "bg-black border border-kenya-white",
     href: "/order?category=tiktok",
     description: "Views [KES 10 tu promo], Non-Drop Followers, Live Stream Viewers",
@@ -77,7 +77,7 @@ export const PLATFORMS = [
   {
     id: "telegram",
     name: "Telegram",
-    icon: "✈️",
+    icon: "/telegram-icon.png",
     color: "bg-sky-500",
     href: "/order?category=telegram",
     description: "Channel/Group Members, Post Views, Poll Votes",
@@ -91,7 +91,7 @@ export const PLATFORMS = [
   {
     id: "google-maps",
     name: "Google Maps Reviews",
-    icon: "📍",
+    icon: "/google-reviews-icon.png",
     color: "bg-green-600",
     href: "/order?category=google-maps",
     description: "5-Star Custom Reviews, Local Guide Feedback, Place Saves & Directions",
@@ -104,7 +104,7 @@ export const PLATFORMS = [
   {
     id: "x-twitter",
     name: "X (Twitter)",
-    icon: "🖤",
+    icon: "/x-icon.png",
     color: "bg-black border border-kenya-white",
     href: "/order/x",
     description: "Followers, likes, retweets and more",
@@ -1868,7 +1868,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
   { label: "Sign In", href: "/order#", icon: "🔑", trigger: "login" },
   {
     label: "WhatsApp",
-    icon: "🟢",
+    icon: "/whatsapp-icon.png",
     children: [
       { label: "WhatsApp - Channel Followers", href: "/order/whatsapp-channel-followers", icon: "👥" },
       { label: "WhatsApp - Poll Votes ᴺᴱᵂ", href: "/order/whatsapp-poll-votes", icon: "📊" },
@@ -1895,6 +1895,8 @@ export const FOOTER_LINKS = {
     { label: "📦 My Orders", href: "/orders/all" },
   ],
   support: [
+    { label: "👍 Google Reviews", href: "https://www.google.com/search?q=janjez.social" },
+    { label: "👍 Facebook Page", href: "https://www.facebook.com/profile.php?id=61592028091844" },
     { label: "💬 Join WhatsApp Channel", href: "https://wa.me/254101574056" },
     { label: "🤝 Talk to Us (Direct WhatsApp)", href: "https://wa.me/254101574056" },
     { label: "📜 Terms of Service", href: "/terms-of-service" },

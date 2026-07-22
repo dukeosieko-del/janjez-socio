@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { getServiceById } from "@/lib/data";
 import Link from "next/link";
+import Image from "next/image";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -110,7 +111,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
             <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 sm:p-8 mb-6">
               <div className="flex items-start gap-4 mb-6">
                 <div className="w-12 h-12 bg-kenya-green/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">⏱️</span>
+                  <Image src="/youtube-icon.png" alt="YouTube" width={24} height={24} className="w-6 h-6 object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">

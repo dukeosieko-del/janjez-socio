@@ -5,23 +5,23 @@ import Link from "next/link";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-kenya-black py-20 lg:py-32">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--kenya-green)_0%,_transparent_50%)] opacity-10"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--kenya-red)_0%,_transparent_50%)] opacity-10"></div>
+    <section className="bg-kenya-black">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+        <div className="relative w-full overflow-hidden rounded-2xl">
+          <Image
+            src="/janjez-social-burner.png"
+            alt="janjez.social"
+            width={1200}
+            height={600}
+            priority
+            className="w-full h-auto object-contain"
+          />
+        </div>
+      </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 pt-6">
         <div className="text-center max-w-4xl mx-auto">
-          <div className="mb-8">
-            <Image
-              src="/janjez-social-burner.png"
-              alt="janjez.social"
-              width={600}
-              height={300}
-              priority
-              className="mx-auto h-auto max-h-64 sm:max-h-80 w-auto object-contain drop-shadow-2xl"
-            />
-          </div>
+          <div className="inline-flex items-center gap-2 bg-kenya-green/10 border border-kenya-green/30 rounded-full px-4 py-2 mb-6">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kenya-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-kenya-green"></span>
@@ -31,25 +31,25 @@ export default function Hero() {
             </span>
           </div>
 
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4">
             <span className="text-kenya-white">janjez</span>
             <span className="text-kenya-green">.social</span>
           </h1>
 
-          <p className="text-xl sm:text-2xl text-kenya-white/70 mb-4 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-kenya-white/70 mb-3 max-w-3xl mx-auto leading-relaxed">
             Pata clout chapchap — Lipa na M-Pesa.
           </p>
 
-          <p className="text-base sm:text-lg text-kenya-white/50 mb-10 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-kenya-white/50 mb-8 max-w-2xl mx-auto">
             Automated SMM panel for YouTube, WhatsApp, Instagram, Facebook, TikTok,
             Telegram, Google Maps, and X (Twitter). Instant delivery, drop-free
             guarantee, 24/7 support.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/order"
-              className="group inline-flex items-center gap-3 bg-kenya-green text-kenya-black font-bold text-lg px-8 py-4 rounded-xl hover:bg-kenya-green/90 transition-all hover:scale-105 shadow-lg shadow-kenya-green/20"
+              className="group inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:bg-kenya-green/90 transition-all hover:scale-105 shadow-lg shadow-kenya-green/20"
             >
               🛒 Start New Order
               <svg
@@ -68,7 +68,7 @@ export default function Hero() {
             </Link>
             <Link
               href="/order?mode=anonymous"
-              className="inline-flex items-center gap-3 bg-transparent text-kenya-white font-bold text-lg px-8 py-4 rounded-xl border-2 border-kenya-white/30 hover:border-kenya-white hover:bg-kenya-white/5 transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 bg-transparent text-kenya-white font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl border-2 border-kenya-white/30 hover:border-kenya-white hover:bg-kenya-white/5 transition-all hover:scale-105"
             >
               <svg
                 className="h-5 w-5"
@@ -87,13 +87,13 @@ export default function Hero() {
             </Link>
             <Link
               href="/pay"
-              className="inline-flex items-center gap-3 bg-kenya-white/10 text-kenya-white font-bold text-lg px-8 py-4 rounded-xl border border-kenya-white/20 hover:bg-kenya-white/20 transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl border border-kenya-white/20 hover:bg-kenya-white/20 transition-all hover:scale-105"
             >
               💳 Top Up via M-Pesa
             </Link>
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-8 text-kenya-white/40 text-sm">
+          <div className="mt-10 flex items-center justify-center gap-6 sm:gap-8 text-kenya-white/40 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
               <svg className="h-5 w-5 text-kenya-green" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
