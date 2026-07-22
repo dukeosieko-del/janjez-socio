@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Hero() {
@@ -11,7 +12,16 @@ export default function Hero() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-kenya-green/10 border border-kenya-green/30 rounded-full px-4 py-2 mb-8">
+          <div className="mb-8">
+            <Image
+              src="/janjez-social-burner.png"
+              alt="janjez.social"
+              width={600}
+              height={300}
+              priority
+              className="mx-auto h-auto max-h-64 sm:max-h-80 w-auto object-contain drop-shadow-2xl"
+            />
+          </div>
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kenya-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-kenya-green"></span>

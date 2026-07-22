@@ -87,7 +87,7 @@ export default function RootLayout({
       <head>
         <link rel="canonical" href={SITE_URL} />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <div className="min-h-full flex flex-col bg-kenya-black text-kenya-white">
           <AuthProvider>
             {children}
