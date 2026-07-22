@@ -12,10 +12,9 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const WHATSAPP_CHANNEL_FOLLOWERS_CATEGORY = "whatsapp-channel-followers";
-const DEMO_WALLET_BALANCE = 5000; // KES
 
 export default function WhatsAppChannelFollowersClient() {
-  const { openAuth } = useAuth();
+  const { openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -23,8 +22,7 @@ export default function WhatsAppChannelFollowersClient() {
 
 
   const [mpesaOpen, setMpesaOpen] = useState(false);
-  const [walletBalance] = useState(DEMO_WALLET_BALANCE);
-
+  
   const channelFollowersServices = useMemo(() => getServicesByCategory(WHATSAPP_CHANNEL_FOLLOWERS_CATEGORY), []);
   const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
 
@@ -70,7 +68,7 @@ export default function WhatsAppChannelFollowersClient() {
       return;
     }
     openAuth("login");
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous]);
+  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous, openAuth]);
 
   const isValid =
     selectedService &&

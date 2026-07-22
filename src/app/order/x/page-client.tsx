@@ -12,13 +12,12 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const X_TWITTER_CATEGORY = "x";
-const DEMO_WALLET_BALANCE = 5000;
 const HAPPY_HOUR_DISCOUNT = 0.95;
 
 const X_URL_PATTERN = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+/;
 
 export default function XTwitterPageClient() {
-  const { openAuth } = useAuth();
+  const { openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -26,8 +25,7 @@ export default function XTwitterPageClient() {
 
 
   const [mpesaOpen, setMpesaOpen] = useState(false);
-  const [walletBalance] = useState(DEMO_WALLET_BALANCE);
-
+  
   const xServices = useMemo(() => getServicesByCategory(X_TWITTER_CATEGORY), []);
   const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
 
@@ -78,7 +76,7 @@ export default function XTwitterPageClient() {
       return;
     }
     openAuth("login");
-  }, [selectedService, link, quantityNum, quantityError, linkError, total, walletBalance, isAnonymous]);
+  }, [selectedService, link, quantityNum, quantityError, linkError, total, walletBalance, isAnonymous, openAuth]);
 
   const isValid =
     selectedService &&

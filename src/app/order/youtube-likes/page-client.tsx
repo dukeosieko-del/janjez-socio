@@ -12,10 +12,9 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const YOUTUBE_LIKES_CATEGORY = "youtube-likes";
-const DEMO_WALLET_BALANCE = 5000; // KES
 
 export default function YouTubeLikesClient() {
-  const { openAuth } = useAuth();
+  const { openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -23,8 +22,7 @@ export default function YouTubeLikesClient() {
 
 
   const [mpesaOpen, setMpesaOpen] = useState(false);
-  const [walletBalance] = useState(DEMO_WALLET_BALANCE);
-
+  
   const likesServices = useMemo(() => getServicesByCategory(YOUTUBE_LIKES_CATEGORY), []);
   const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
 
@@ -70,7 +68,7 @@ export default function YouTubeLikesClient() {
       return;
     }
     openAuth("login");
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous]);
+  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous, openAuth]);
 
   const isValid =
     selectedService &&

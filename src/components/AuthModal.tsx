@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/components/AuthContext";
 import SignInForm from "@/components/auth/SignInForm";
 import SignUpForm from "@/components/auth/SignUpForm";
@@ -15,14 +16,29 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   const [tab, setTab] = useState<"login" | "register">(defaultTab);
   const { user } = useAuth();
 
-  if (user && isOpen) {
-    onClose();
-  }
+  useEffect(() => {
+    if (user && isOpen) {
+      onClose();
+    }
+  }, [user, isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEsc);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl relative">
         {/* Tabs */}
         <div className="flex border-b border-kenya-white/10">
@@ -77,6 +93,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
           </svg>
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

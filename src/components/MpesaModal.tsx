@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { useAuth } from "./AuthContext";
 
 interface MpesaModalProps {
   isOpen: boolean;
@@ -12,28 +14,76 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"input" | "processing" | "success">("input");
   const [txId, setTxId] = useState("");
-
-  if (!isOpen) return null;
-
-  const handleTopUp = () => {
-    if (!phoneNumber || !amount) return;
-    setStep("processing");
-
-    setTimeout(() => {
-      setTxId("MP" + Date.now().toString().slice(-10));
-      setStep("success");
-    }, 3000);
-  };
+  const [error, setError] = useState<string | null>(null);
+  const { user, refreshProfile } = useAuth();
 
   const resetAndClose = () => {
     setStep("input");
     setPhoneNumber("");
     setAmount("");
+    setError(null);
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+  const handleTopUp = async () => {
+    if (!phoneNumber || !amount) return;
+    setError(null);
+    setStep("processing");
+
+    try {
+      const numAmount = Number(amount);
+      if (numAmount < 100) {
+        setError("Minimum top-up is KES 100");
+        setStep("input");
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      setTxId("MP" + Date.now().toString().slice(-10));
+
+      if (user) {
+        const supabase = (await import("@/lib/supabase/client")).createClient();
+        if (supabase) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("wallet_balance")
+            .eq("id", user.id)
+            .single();
+
+          const currentBalance = Number(profile?.wallet_balance) || 0;
+          await supabase
+            .from("profiles")
+            .update({ wallet_balance: currentBalance + numAmount })
+            .eq("id", user.id);
+        }
+      }
+
+      setStep("success");
+      await refreshProfile();
+    } catch {
+      setError("Payment processing failed. Please try again.");
+      setStep("input");
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleEsc);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl">
         {step === "input" && (
           <>
@@ -114,6 +164,12 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
                 </div>
               </div>
 
+              {error && (
+                <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
+                  <p className="text-kenya-red text-sm">{error}</p>
+                </div>
+              )}
+
               <button
                 onClick={handleTopUp}
                 disabled={!phoneNumber || !amount || Number(amount) < 100}
@@ -161,6 +217,7 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

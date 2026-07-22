@@ -11,10 +11,9 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const YOUTUBE_CATEGORY = "youtube";
-const DEMO_WALLET_BALANCE = 5000; // KES
 
 export default function YouTubeOrderClient() {
-  const { openAuth } = useAuth();
+  const { openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -23,8 +22,7 @@ export default function YouTubeOrderClient() {
 
 
   const [mpesaOpen, setMpesaOpen] = useState(false);
-  const [walletBalance] = useState(DEMO_WALLET_BALANCE);
-
+  
   const youtubeServices = useMemo(() => getServicesByCategory(YOUTUBE_CATEGORY), []);
   const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
 
@@ -72,7 +70,7 @@ export default function YouTubeOrderClient() {
       return;
     }
     openAuth("login");
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous]);
+  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous, openAuth]);
 
   const isValid =
     selectedService &&

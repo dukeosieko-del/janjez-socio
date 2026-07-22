@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     creator: "@janjez_social",
   },
   alternates: {
-    canonical: "/",
+    canonical: SITE_URL,
   },
   icons: {
     icon: "/favicon.ico",
@@ -82,14 +82,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head>
         <link rel="canonical" href={SITE_URL} />
       </head>
-      <body className="min-h-full flex flex-col bg-kenya-black text-kenya-white">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body>
+        <div className="min-h-full flex flex-col bg-kenya-black text-kenya-white">
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );

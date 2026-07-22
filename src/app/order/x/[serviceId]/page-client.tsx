@@ -11,7 +11,6 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
-const DEMO_WALLET_BALANCE = 5000; // KES
 const HAPPY_HOUR_DISCOUNT = 0.95; // -5%
 
 const X_URL_PATTERN = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+/;
@@ -21,7 +20,7 @@ interface FulfillmentClientProps {
 }
 
 export default function FulfillmentClient({ serviceId }: FulfillmentClientProps) {
-  const { openAuth } = useAuth();
+  const { openAuth, walletBalance } = useAuth();
   const service = useMemo(() => getServiceById(serviceId), [serviceId]);
 
   const [link, setLink] = useState("");
@@ -30,8 +29,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
 
 
   const [mpesaOpen, setMpesaOpen] = useState(false);
-  const [walletBalance] = useState(DEMO_WALLET_BALANCE);
-
+  
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
     return isNaN(num) ? 0 : num;
@@ -75,7 +73,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
       return;
     }
     openAuth("login");
-  }, [service, link, quantityNum, quantityError, linkError, total, walletBalance, isAnonymous]);
+  }, [service, link, quantityNum, quantityError, linkError, total, walletBalance, isAnonymous, openAuth]);
 
   const isValid =
     service &&

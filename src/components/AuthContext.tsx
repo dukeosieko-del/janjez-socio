@@ -1,33 +1,91 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  wallet_balance: number;
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profile: Profile | null;
+  walletBalance: number;
   authModal: { open: boolean; tab: "login" | "register" };
   openAuth: (tab?: "login" | "register") => void;
   closeAuth: () => void;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+async function fetchProfile(supabase: ReturnType<typeof createClient>, userId: string): Promise<Profile | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single();
+  if (error || !data) return null;
+  return data as Profile;
+}
+
+async function ensureProfile(supabase: ReturnType<typeof createClient>, user: User): Promise<Profile | null> {
+  if (!supabase) return null;
+  let profile = await fetchProfile(supabase, user.id);
+  if (!profile) {
+    const { data, error } = await supabase.from("profiles").insert({
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || null,
+      phone: user.user_metadata?.phone || null,
+      wallet_balance: 1000.00,
+    }).select("*").single();
+    if (error) return null;
+    profile = data as Profile;
+  }
+  if (profile && profile.wallet_balance === 0) {
+    await supabase.from("profiles").update({ wallet_balance: 1000.00 }).eq("id", user.id);
+    profile.wallet_balance = 1000.00;
+  }
+  return profile;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const [authModal, setAuthModal] = useState<{ open: boolean; tab: "login" | "register" }>({
     open: false,
     tab: "login",
   });
 
   const supabase = createClient();
+
+  const loadProfile = useCallback(async (userId: string) => {
+    const client = supabase;
+    if (!client) {
+      setProfile(null);
+      setWalletBalance(0);
+      return;
+    }
+    const prof = await ensureProfile(client, { id: userId, email: "", user_metadata: {} } as User);
+    if (prof) {
+      setProfile(prof);
+      setWalletBalance(Number(prof.wallet_balance) || 0);
+    } else {
+      setProfile(null);
+      setWalletBalance(0);
+    }
+  }, [supabase]);
 
   useEffect(() => {
     const getSession = async () => {
@@ -39,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { session } } = await client.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        await loadProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setWalletBalance(0);
+      }
       setLoading(false);
     };
 
@@ -50,9 +114,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const client = supabase;
       if (!client) return;
 
-      const { data: { subscription: sub } } = client.auth.onAuthStateChange((event, session) => {
+      const { data: { subscription: sub } } = client.auth.onAuthStateChange(async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) {
+          await loadProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setWalletBalance(0);
+        }
         setLoading(false);
       });
 
@@ -64,7 +134,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, loadProfile]);
+
+  const refreshProfile = async () => {
+    if (!user) return;
+    await loadProfile(user.id);
+  };
 
   const openAuth = (tab: "login" | "register" = "login") => {
     setAuthModal({ open: true, tab });
@@ -98,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, authModal, openAuth, closeAuth, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -12,11 +12,10 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const WHATSAPP_CHANNEL_POST_REACTIONS_CATEGORY = "whatsapp-channel-post-reactions-instant-server-complete-in-1-minute";
-const DEMO_WALLET_BALANCE = 5000; // KES
 const HAPPY_HOUR_DISCOUNT = 0.95;
 
 export default function WhatsAppChannelPostReactionsClient() {
-  const { openAuth } = useAuth();
+  const { openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -24,8 +23,7 @@ export default function WhatsAppChannelPostReactionsClient() {
 
 
   const [mpesaOpen, setMpesaOpen] = useState(false);
-  const [walletBalance] = useState(DEMO_WALLET_BALANCE);
-
+  
   const reactionsServices = useMemo(() => getServicesByCategory(WHATSAPP_CHANNEL_POST_REACTIONS_CATEGORY), []);
   const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
 
@@ -70,7 +68,7 @@ export default function WhatsAppChannelPostReactionsClient() {
       return;
     }
     openAuth("login");
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous]);
+  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, isAnonymous, openAuth]);
 
   const isValid =
     selectedService &&
