@@ -1891,7 +1891,7 @@ export const FOOTER_LINKS = {
   ],
   quickActions: [
     { label: "🛒 New Order", href: "/order" },
-    { label: "💳 Add Funds", href: "/pay" },
+    { label: "💳 Add Funds", href: "/pay", icon: "/mpesa-logo.png" },
     { label: "📦 My Orders", href: "/orders/all" },
   ],
   support: [

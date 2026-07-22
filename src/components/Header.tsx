@@ -63,7 +63,8 @@ export default function Header() {
               onClick={() => setMpesaOpen(true)}
               className="hidden sm:flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-lg hover:bg-kenya-green/90 transition-colors animate-pulse-glow"
             >
-              💳 Top Up
+              <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
+              Top Up
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -111,7 +112,8 @@ export default function Header() {
                 onClick={() => setMpesaOpen(true)}
                 className="sm:hidden flex items-center justify-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-3 rounded-lg"
               >
-                💳 Top Up via M-Pesa
+                <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
+                Top Up via M-Pesa
               </button>
             </div>
           </div>

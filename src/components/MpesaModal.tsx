@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { useAuth } from "./AuthContext";
 
 interface MpesaModalProps {
@@ -89,9 +90,7 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
           <>
             <div className="flex items-center justify-between p-6 border-b border-kenya-white/10">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">M</span>
-                </div>
+                <Image src="/mpesa-logo.png" alt="M-Pesa" width={40} height={40} className="w-10 h-10 object-contain" />
                 <div>
                   <h2 className="text-xl font-bold text-kenya-white">Lipa na M-Pesa</h2>
                   <p className="text-kenya-white/50 text-sm">Top up your wallet instantly</p>
@@ -175,9 +174,7 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
                 disabled={!phoneNumber || !amount || Number(amount) < 100}
                 className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 flex items-center justify-center gap-2"
               >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
-                </svg>
+                <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />
                 Pay with M-Pesa
               </button>
             </div>
@@ -197,9 +194,7 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
         {step === "success" && (
           <div className="p-8 text-center">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+              <Image src="/mpesa-logo.png" alt="M-Pesa" width={48} height={48} className="w-12 h-12 object-contain" />
             </div>
             <h3 className="text-xl font-bold text-kenya-white mb-2">Payment Successful!</h3>
             <p className="text-kenya-white/60 text-sm mb-2">
