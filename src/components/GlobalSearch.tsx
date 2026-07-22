@@ -83,7 +83,11 @@ export default function GlobalSearch() {
               href={result.href}
               className="flex items-center gap-3 px-4 py-3 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
             >
-              <Image src={result.icon} alt={result.name} width={24} height={24} className="w-6 h-6 object-contain" />
+              {(result.icon.startsWith("/") || result.icon.startsWith("http")) ? (
+                <Image src={result.icon} alt={result.name} width={24} height={24} className="w-6 h-6 object-contain" />
+              ) : (
+                <span className="text-2xl leading-none">{result.icon}</span>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-kenya-white truncate">{result.name}</span>
