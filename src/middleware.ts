@@ -14,17 +14,17 @@ export async function middleware(request: Request) {
     return NextResponse.next();
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
   const pathname = new URL(request.url).pathname;
 
   const isAuthPage = pathname.startsWith("/auth/");
   const isProtectedPage = pathname.startsWith("/dashboard");
 
-  if (isProtectedPage && !session) {
+  if (isProtectedPage && !user) {
     return NextResponse.redirect(new URL("/auth/sign-in", request.url));
   }
 
-  if (isAuthPage && session) {
+  if (isAuthPage && user) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
