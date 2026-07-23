@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import Image from "next/image";
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +37,20 @@ export default function InstagramSetupGuidePage() {
               </p>
             </div>
 
+            {/* Featured Blog Image */}
+            <div className="mb-8 rounded-2xl overflow-hidden border border-kenya-white/10">
+              <div className="relative w-full h-auto">
+                <Image
+                  src="/janjez.social insta blog feature.png"
+                  alt="Instagram Setup Guide Feature"
+                  width={1200}
+                  height={600}
+                  priority
+                  className="w-full h-auto object-cover"
+                />
+              </div>
+            </div>
+
             {/* Critical Warning & Compliance Banner */}
             <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-2xl p-6 mb-8 flex items-start gap-4">
               <div className="w-10 h-10 bg-kenya-red/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -46,7 +61,7 @@ export default function InstagramSetupGuidePage() {
               <div>
                 <h2 className="text-kenya-white font-bold text-lg mb-2">Critical Warning</h2>
                 <p className="text-kenya-white/80 text-sm leading-relaxed">
-                  Why is your Instagram account or link flagged for review? Learn how to properly configure your profile settings, switch to public mode, and clear restrictions before submitting SMM promotion orders.
+                  Why is your Instagram account or link flagged for review? Learn how to properly configure your profile settings, switch to public mode, and clear restrictions before submitting SMM orders to ensure smooth delivery and avoid service rejection.
                 </p>
               </div>
             </div>
@@ -65,7 +80,7 @@ export default function InstagramSetupGuidePage() {
                     <div>
                       <h3 className="text-kenya-white font-bold mb-2">Check Account Privacy Settings</h3>
                       <p className="text-kenya-white/70 text-sm leading-relaxed">
-                        Ensure your account is set to <strong className="text-kenya-white">Public</strong>. Private accounts block automated delivery of followers and likes. Go to Settings → Privacy → Account Privacy and toggle &quot;Private Account&quot; off.
+                        Ensure your account is set to <strong className="text-kenya-white">Public</strong>. Private accounts block automated delivery of followers and likes. Go to Settings → Privacy → Account privacy and toggle it to Public.
                       </p>
                     </div>
                   </div>
@@ -80,7 +95,7 @@ export default function InstagramSetupGuidePage() {
                     <div>
                       <h3 className="text-kenya-white font-bold mb-2">Clear Platform Restrictions</h3>
                       <p className="text-kenya-white/70 text-sm leading-relaxed">
-                        Check <strong className="text-kenya-white">Account Status</strong> in Instagram settings to ensure no active community guideline flags or shadowbans. If flagged, submit an appeal through Instagram&apos;s support form and wait for resolution before proceeding.
+                        Check <strong className="text-kenya-white">Account Status</strong> in Instagram settings to ensure no active community guideline flags or shadowbans. If flagged, submit an appeal immediately and wait for Instagram's resolution before placing orders.
                       </p>
                     </div>
                   </div>
@@ -95,7 +110,7 @@ export default function InstagramSetupGuidePage() {
                     <div>
                       <h3 className="text-kenya-white font-bold mb-2">Correct Link Formatting</h3>
                       <p className="text-kenya-white/70 text-sm leading-relaxed">
-                        Use clean profile URLs like <code className="bg-kenya-white/10 px-2 py-0.5 rounded text-kenya-green">https://instagram.com/username</code> or direct post links without tracking parameters. Avoid shortened URLs or links with extra query strings that may trigger review systems.
+                        Use clean profile URLs like <code className="bg-kenya-white/10 px-2 py-0.5 rounded text-kenya-green">https://instagram.com/username</code> or direct post links without tracking parameters or shortened URLs.
                       </p>
                     </div>
                   </div>
@@ -110,7 +125,7 @@ export default function InstagramSetupGuidePage() {
                     <div>
                       <h3 className="text-kenya-white font-bold mb-2">Avoid Simultaneous Orders</h3>
                       <p className="text-kenya-white/70 text-sm leading-relaxed">
-                        Do not stack multiple providers on the same link concurrently to prevent delivery conflicts and automated review flags. Wait for one order to complete before placing another on the same post or profile.
+                        Do not stack multiple providers on the same link concurrently to prevent delivery conflicts and automated review flags. Wait for one order to complete before placing another service order on the same account or post.
                       </p>
                     </div>
                   </div>
@@ -121,16 +136,16 @@ export default function InstagramSetupGuidePage() {
             {/* Quick Navigation Actions */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
-                href="/order"
+                href="/order?category=instagram"
                 className="inline-flex items-center justify-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
               >
-                🛒 Place New Order
+                🛒 Place Order Now - Instagram Services
               </Link>
               <Link
                 href="https://wa.me/254101574056"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/10"
+                className="inline-flex items-center justify-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/20"
               >
                 💬 Contact Support (Direct WhatsApp)
               </Link>
