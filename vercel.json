@@ -2,7 +2,6 @@
   "version": 2,
   "framework": "nextjs",
   "regions": ["iad1"],
-  "trailingSlash": true,
   "headers": [
     {
       "source": "/(.*)",
