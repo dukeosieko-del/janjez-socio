@@ -2,7 +2,6 @@
   "version": 2,
   "framework": "nextjs",
   "regions": ["iad1"],
-  "cleanUrls": true,
   "trailingSlash": true,
   "headers": [
     {
