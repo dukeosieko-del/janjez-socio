@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { PLATFORMS, ORDER_SERVICES } from "@/lib/data";
 
 interface SearchResult {
@@ -78,7 +79,7 @@ export default function GlobalSearch() {
       {results.length > 0 && (
         <div className="absolute z-50 w-full mt-2 bg-kenya-black border border-kenya-white/20 rounded-lg shadow-xl max-h-64 overflow-y-auto">
           {results.map((result) => (
-            <a
+            <Link
               key={result.id}
               href={result.href}
               className="flex items-center gap-3 px-4 py-3 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
@@ -99,7 +100,7 @@ export default function GlobalSearch() {
                   {result.description}
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       )}

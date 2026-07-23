@@ -116,9 +116,11 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-2xl sm:text-3xl font-bold text-kenya-white">{service.name}</h1>
-                    <span className="bg-kenya-green text-kenya-black text-xs font-bold px-2.5 py-1 rounded-lg flex-shrink-0">
-                      💰 Monetizable
-                    </span>
+                    {service.monetizable && (
+                      <span className="bg-kenya-green text-kenya-black text-xs font-bold px-2.5 py-1 rounded-lg flex-shrink-0">
+                        💰 Monetizable
+                      </span>
+                    )}
                   </div>
                   <p className="text-kenya-white/60 text-sm sm:text-base">{service.description}</p>
                 </div>

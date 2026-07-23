@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { NOTIFICATIONS } from "@/lib/data";
 
 export default function NotificationBell() {
@@ -50,7 +51,7 @@ export default function NotificationBell() {
             </div>
             <div className="max-h-96 overflow-y-auto">
               {NOTIFICATIONS.map((notif) => (
-                <a
+                <Link
                   key={notif.id}
                   href="/blog"
                   className="block p-4 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
@@ -77,16 +78,16 @@ export default function NotificationBell() {
                       <p className="text-sm text-kenya-white/60 mt-1">{notif.message}</p>
                     </div>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
             <div className="p-4 border-t border-kenya-white/10">
-              <a
+              <Link
                  href="/blog"
                 className="block w-full text-center py-2.5 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors"
               >
                 View All Updates
-              </a>
+              </Link>
             </div>
           </div>
         </div>

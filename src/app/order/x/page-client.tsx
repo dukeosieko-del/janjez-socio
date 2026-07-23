@@ -234,10 +234,7 @@ export default function XTwitterPageClient() {
                       </svg>
                       <div className="flex items-center gap-2">
                           <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
-                          <div className="flex items-center gap-2">
-                          <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
                           <p className="text-kenya-white/80 text-sm">Insufficient wallet balance. Click &quot;Place Order&quot; to top up via M-Pesa.</p>
-                        </div>
                         </div>
                     </div>
                   )}

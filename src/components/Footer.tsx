@@ -2,6 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { FOOTER_LINKS } from "@/lib/data";
 
+function isInternal(href: string) {
+  return href.startsWith("/");
+}
+
 export default function Footer() {
   const whatsappIcon = (
     <Image src="/whatsapp-icon.png" alt="WhatsApp" width={20} height={20} className="w-5 h-5 object-contain" />
@@ -73,12 +77,21 @@ export default function Footer() {
             <ul className="space-y-3">
               {FOOTER_LINKS.information.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
-                  >
-                    {link.label}
-                  </a>
+                  {isInternal(link.href) ? (
+                    <Link
+                      href={link.href}
+                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -92,15 +105,27 @@ export default function Footer() {
             <ul className="space-y-3">
               {FOOTER_LINKS.quickActions.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors flex items-center gap-2"
-                  >
-                    {(link as { icon?: string }).icon && (
-                      <Image src={(link as { icon?: string }).icon!} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
-                    )}
-                    {link.label}
-                  </a>
+                  {isInternal(link.href) ? (
+                    <Link
+                      href={link.href}
+                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors flex items-center gap-2"
+                    >
+                      {(link as { icon?: string }).icon && (
+                        <Image src={(link as { icon?: string }).icon!} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
+                      )}
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors flex items-center gap-2"
+                    >
+                      {(link as { icon?: string }).icon && (
+                        <Image src={(link as { icon?: string }).icon!} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
+                      )}
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -114,12 +139,21 @@ export default function Footer() {
             <ul className="space-y-3">
               {FOOTER_LINKS.support.map((link) => (
                 <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
-                  >
-                    {link.label}
-                  </a>
+                  {isInternal(link.href) ? (
+                    <Link
+                      href={link.href}
+                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      href={link.href}
+                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

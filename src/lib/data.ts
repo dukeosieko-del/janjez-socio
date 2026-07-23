@@ -8,7 +8,7 @@ export const PLATFORMS = [
     description: "High-retention Views, Monetizable Subscribers, Instant Likes",
     services: [
       { name: "High-retention Views", href: "/order/youtube-views" },
-      { name: "Monetizable Subscribers", href: "/order/youtube-subscribers-2/yt-subs" },
+       { name: "Monetizable Subscribers", href: "/order/youtube-subscribers-2/yts1" },
       { name: "Instant Likes", href: "/order/youtube-likes" },
       { name: "AI-Generated Comments", href: "/order/youtube-ai-generated-comment-boost-ranking-amp-interaction" },
       { name: "Watch Time", href: "/order/youtube-watch-time" },
@@ -19,7 +19,7 @@ export const PLATFORMS = [
     name: "WhatsApp",
     icon: "/whatsapp-icon.png",
     color: "bg-green-500",
-    href: "/order",
+    href: "/order?category=whatsapp",
     description: "Channel Members, Status Views, Group Engagement Packs",
     services: [
       { name: "Channel Members", href: "/order?category=whatsapp" },
@@ -349,7 +349,7 @@ export const ORDER_SERVICES = [
     notice: "Suitable for videos 10 minutes and above. Ensure video is public and unlisted/private mode is disabled during fulfillment of order.",
   },
   {
-    id: "yt-subs",
+    id: "yts1",
     categoryId: "youtube-subscribers-2",
     name: "YTS1 YouTube Subscribers [Non-Drop / Refill 30 Days]",
     serviceId: "26252",
@@ -1875,7 +1875,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
       { label: "WhatsApp - Channel Post Reactions [Instant Server | Complete In 1 Minute] ᴺᴱᵂ", href: "/order/whatsapp-channel-post-reactions-instant-server-complete-in-1-minute", icon: "⚡" },
       { label: "WhatsApp - Channel Post Reactions [Cheap Slow Server] ᴺᴱᵂ", href: "/order/whatsapp-channel-post-reactions-cheap-slow-server", icon: "🐢" },
       { label: "WhatsApp - Channel Auto Future Post Reactions ᴺᴱᵂ", href: "/order/whatsapp-channel-auto-future-post-reactions", icon: "🤖" },
-      { label: "Legacy Services", href: "/order/whatssapp", icon: "🛒" },
+      { label: "Legacy Services", href: "/order?category=whatsapp", icon: "🛒" },
     ],
   },
 ];
