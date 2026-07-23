@@ -41,10 +41,10 @@ export default function InstagramSetupGuidePage() {
             <div className="mb-8 rounded-2xl overflow-hidden border border-kenya-white/10">
               <div className="relative w-full h-auto">
                 <Image
-                  src="/janjez.social insta blog feature.png"
+                  src="/instagram-setup-guide-feature.jpg"
                   alt="Instagram Setup Guide Feature"
                   width={1200}
-                  height={600}
+                  height={800}
                   priority
                   className="w-full h-auto object-cover"
                 />
