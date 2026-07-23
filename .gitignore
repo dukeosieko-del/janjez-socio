@@ -30,10 +30,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files - keep examples tracked, ignore local secrets
-.env
-.env.local
-.env.*.local
+# env files - keep .env.example tracked, ignore local secrets
+.env*
+!.env.example
 
 # vercel
 .vercel
