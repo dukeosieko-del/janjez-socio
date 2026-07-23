@@ -1882,7 +1882,7 @@ export const SIDEBAR_ITEMS: SidebarItem[] = [
 
 export const FOOTER_LINKS = {
   information: [
-    { label: "Download App (.APK)", href: "https://dl.dropboxusercontent.com/scl/fi/uymbqkprrdua7k9ezoscs/app-debug.apk?rlkey=j32q53f061yla9sk665leihge&dl=1" },
+    { label: "Install App (PWA)", href: "/" },
     { label: "How It Works", href: "/how-it-works" },
     { label: "Why Choose Us", href: "/why-choose-us" },
     { label: "Reseller & API", href: "/reseller-and-api" },

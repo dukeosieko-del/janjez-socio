@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/AuthContext";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { SITE_URL } from "./lib/config";
 import "./globals.css";
 
@@ -91,6 +92,11 @@ export default function RootLayout({
     >
       <head>
         <link rel="canonical" href={SITE_URL} />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#00A859" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="janjez" />
       </head>
       <body suppressHydrationWarning>
         <div className="min-h-full flex flex-col bg-kenya-black text-kenya-white">
@@ -98,6 +104,7 @@ export default function RootLayout({
             {children}
           </AuthProvider>
         </div>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
