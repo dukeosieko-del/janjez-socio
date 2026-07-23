@@ -19,6 +19,7 @@ interface AuthContextType {
   profile: Profile | null;
   walletBalance: number;
   authModal: { open: boolean; tab: "login" | "register" };
+  supabaseError: string | null;
   openAuth: (tab?: "login" | "register") => void;
   closeAuth: () => void;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -67,6 +68,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     open: false,
     tab: "login",
   });
+
+  const supabaseError = !createClient()
+    ? "Authentication service is temporarily unavailable. Please contact support or try again later."
+    : null;
 
   const supabase = createClient();
 
@@ -150,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    if (!supabase) return { error: new Error("Supabase not configured") };
+    if (!supabase) return { error: new Error("Authentication service is temporarily unavailable.") };
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -159,7 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) return { error: new Error("Supabase not configured") };
+    if (!supabase) return { error: new Error("Authentication service is temporarily unavailable.") };
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -173,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, signIn, signOut, refreshProfile, supabaseError }}>
       {children}
     </AuthContext.Provider>
   );

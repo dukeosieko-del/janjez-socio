@@ -3,7 +3,14 @@ import { NextResponse } from "next/server";
 
 export async function middleware(request: Request) {
   const supabase = await createClient();
+
   if (!supabase) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Authentication service is temporarily unavailable. Please contact support." },
+        { status: 500 }
+      );
+    }
     return NextResponse.next();
   }
 

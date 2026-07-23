@@ -1,3 +1,5 @@
+import { SITE_URL } from "./lib/config";
+
 export default function robots() {
   return {
     rules: {
@@ -5,6 +7,6 @@ export default function robots() {
       allow: "/",
       disallow: ["/dashboard/", "/auth/", "/api/"],
     },
-    sitemap: "https://janjez.social/sitemap.xml",
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

@@ -8,12 +8,14 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import AuthModal from "@/components/AuthModal";
 import SignUpForm from "@/components/auth/SignUpForm";
+import { useAuth } from "@/components/AuthContext";
 
 export default function SignUpClient() {
   const [authModal, setAuthModal] = useState<{ open: boolean; tab: "login" | "register" }>({
     open: false,
     tab: "register",
   });
+  const { supabaseError } = useAuth();
 
   return (
     <div className="min-h-screen flex bg-kenya-black">
@@ -28,6 +30,11 @@ export default function SignUpClient() {
               <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">Create Account</h1>
               <p className="text-kenya-white/60">Join janjez.social and start growing</p>
             </div>
+            {supabaseError && (
+              <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-2xl p-6 sm:p-8 mb-6">
+                <p className="text-kenya-red text-sm">{supabaseError}</p>
+              </div>
+            )}
             <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 sm:p-8">
               <SignUpForm onSuccess={() => setAuthModal({ open: false, tab: "register" })} />
               <div className="mt-6 text-center text-sm text-kenya-white/60">

@@ -14,7 +14,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) {
   const [tab, setTab] = useState<"login" | "register">(defaultTab);
-  const { user } = useAuth();
+  const { user, supabaseError } = useAuth();
 
   useEffect(() => {
     if (user && isOpen) {
@@ -38,8 +38,15 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop:blur-sm p-4">
       <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl relative">
+        {supabaseError && (
+          <div className="p-4 border-b border-kenya-white/10">
+            <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
+              <p className="text-kenya-red text-sm">{supabaseError}</p>
+            </div>
+          </div>
+        )}
         {/* Tabs */}
         <div className="flex border-b border-kenya-white/10">
           <button
