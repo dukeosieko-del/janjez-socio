@@ -24,10 +24,10 @@ export function getMailClient(options: MailTransportOptions = {}) {
 
 export interface SendMailInput {
   from: { address: string; name: string };
-  to: Array<{ email_address: { address: string; name?: string } }>;
-  replyTo?: Array<{ address: string; name?: string }>;
-  cc?: Array<{ email_address: { address: string; name?: string } }>;
-  bcc?: Array<{ email_address: { address: string; name?: string } }>;
+  to: Array<{ email_address: { address: string; name: string } }>;
+  replyTo?: Array<{ address: string; name: string }>;
+  cc?: Array<{ email_address: { address: string; name: string } }>;
+  bcc?: Array<{ email_address: { address: string; name: string } }>;
   subject: string;
   htmlbody?: string;
   textbody?: string;

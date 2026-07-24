@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     await sendMail({
       from: {
-        address: SITE_NAME === "janjez.social" ? "noreply@janjez.social" : `noreply@${SITE_NAME.toLowerCase()}`,
+        address: SITE_NAME === "janjez.social" ? "noreply@janjez.social" : `noreply@${String(SITE_NAME).toLowerCase()}`,
         name: SITE_NAME,
       },
       to: [
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     await sendMail({
       from: {
-        address: SITE_NAME === "janjez.social" ? "noreply@janjez.social" : `noreply@${SITE_NAME.toLowerCase()}`,
+        address: SITE_NAME === "janjez.social" ? "noreply@janjez.social" : `noreply@${String(SITE_NAME).toLowerCase()}`,
         name: SITE_NAME,
       },
       to: [
