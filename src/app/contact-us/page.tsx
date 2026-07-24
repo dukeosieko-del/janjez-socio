@@ -14,11 +14,13 @@ export default function ContactUsPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "", department: SUPPORT_ADDRESS });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [fallbackEmail, setFallbackEmail] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     setError(null);
+    setFallbackEmail(null);
 
     try {
       const res = await fetch("/api/contact", {
@@ -30,6 +32,12 @@ export default function ContactUsPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to send message");
+      }
+
+      const result = await res.json().catch(() => ({ ok: true, mailSent: true }));
+
+      if (!result.mailSent && result.departmentEmail) {
+        setFallbackEmail(result.departmentEmail);
       }
 
       setStatus("success");
@@ -126,7 +134,11 @@ export default function ContactUsPage() {
 
                   {status === "success" && (
                     <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-xl p-4">
-                      <p className="text-kenya-green text-sm">Message sent successfully. We&apos;ll get back to you within 24 hours.</p>
+                      <p className="text-kenya-green text-sm">
+                        {fallbackEmail
+                          ? `Message received. Since automated email delivery is not configured yet, please also send this directly to ${fallbackEmail}.`
+                          : "Message sent successfully. We'll get back to you within 24 hours."}
+                      </p>
                     </div>
                   )}
 
