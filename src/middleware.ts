@@ -7,7 +7,7 @@ export async function middleware(request: Request) {
   if (!supabase) {
     if (process.env.NODE_ENV === "production") {
       return NextResponse.json(
-        { error: "Authentication service is temporarily unavailable. Please contact support." },
+        { error: "Authentication service is temporarily unavailable. Please contact us at support@janjez.social or try again later." },
         { status: 500 }
       );
     }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FOOTER_LINKS } from "@/lib/data";
+import { EMAIL_DEPARTMENTS, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_WHATSAPP } from "@/lib/email/config";
 
 function isInternal(href: string) {
   return href.startsWith("/");
@@ -53,16 +54,9 @@ export default function Footer() {
                 {facebookIcon}
               </a>
               <a
-                href="https://wa.me/254101574056"
+                href={SUPPORT_WHATSAPP}
                 className="w-10 h-10 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-kenya-green hover:text-kenya-black transition-colors"
-                aria-label="WhatsApp Channel"
-              >
-                {whatsappIcon}
-              </a>
-              <a
-                href="https://wa.me/254101574056"
-                className="w-10 h-10 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-kenya-green hover:text-kenya-black transition-colors"
-                aria-label="Talk to Us"
+                aria-label="WhatsApp"
               >
                 {whatsappIcon}
               </a>
@@ -131,32 +125,30 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Support & Legal */}
+          {/* Support & Email */}
           <div>
             <h3 className="text-kenya-white font-semibold text-sm uppercase tracking-wider mb-4">
-              Support & Legal
+              Contact Us
             </h3>
-            <ul className="space-y-3">
-              {FOOTER_LINKS.support.map((link) => (
-                <li key={link.label}>
-                  {isInternal(link.href) ? (
-                    <Link
-                      href={link.href}
-                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  ) : (
-                    <a
-                      href={link.href}
-                      className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors"
-                    >
-                      {link.label}
-                    </a>
-                  )}
+            <ul className="space-y-3 text-sm">
+              {EMAIL_DEPARTMENTS.map((dept) => (
+                <li key={dept.address}>
+                  <span className="text-kenya-white/70 block">{dept.label}</span>
+                  <a href={`mailto:${dept.address}`} className="text-kenya-green hover:underline">{dept.address}</a>
+                  <span className="text-kenya-white/40 text-xs block">{dept.description}</span>
                 </li>
               ))}
             </ul>
+            <div className="mt-4 space-y-1 text-sm">
+              <p>
+                <span className="text-kenya-white/70">Phone:</span>{" "}
+                <a href={`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`} className="text-kenya-green hover:underline">{SUPPORT_PHONE}</a>
+              </p>
+              <p>
+                <span className="text-kenya-white/70">WhatsApp:</span>{" "}
+                <a href={SUPPORT_WHATSAPP} target="_blank" rel="noopener noreferrer" className="text-kenya-green hover:underline">Chat now</a>
+              </p>
+            </div>
           </div>
         </div>
 
