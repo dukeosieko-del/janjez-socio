@@ -62,7 +62,7 @@ export const SERVICES = [
   {
     id: 'google-maps-reviews',
     name: 'Google Maps Reviews',
-    icon: '/icons/services/google-maps-2020-icon.svg',
+    icon: '/icons/services/google-reviews-icon.png',
     category: 'reviews',
     description: 'Get 5-star custom reviews, local guide feedback, and place saves on Google Maps.',
     href: '/services/google-maps-reviews',
