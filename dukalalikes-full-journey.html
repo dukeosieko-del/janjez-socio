@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Duka la Likes — Complete Order Journey</title>
+<style>
+  :root{
+    --bg:#141414;
+    --panel:#1b1b1b;
+    --panel2:#202020;
+    --line:#3a3a38;
+    --text:#ECEAE3;
+    --text-dim:#9a9890;
+    --accent:#F2A623;
+    --accent-text:#412402;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    padding:40px 24px 96px;
+    max-width:920px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  h1{ font-size:20px; font-weight:600; margin:0 0 4px; }
+  .sub{ color:var(--text-dim); font-size:13px; margin:0 0 32px; }
+  .root-banner{
+    background:var(--accent);
+    color:var(--accent-text);
+    font-weight:700;
+    font-size:13px;
+    padding:12px 16px;
+    border-radius:8px;
+    display:inline-block;
+    margin-bottom:24px;
+  }
+  .root-banner span{ display:block; font-weight:500; font-size:11px; opacity:.75; margin-top:2px; }
+
+  details.platform{
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-bottom:10px;
+    background:var(--panel);
+    overflow:hidden;
+  }
+  details.platform > summary{
+    list-style:none;
+    cursor:pointer;
+    padding:14px 16px;
+    font-weight:700;
+    font-size:14px;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  details.platform > summary::-webkit-details-marker{ display:none; }
+  details.platform > summary::after{
+    content:"+";
+    font-size:16px;
+    color:var(--text-dim);
+    font-weight:400;
+  }
+  details.platform[open] > summary::after{ content:"–"; }
+  .count-badge{ font-size:11px; font-weight:500; opacity:.75; margin-left:8px; }
+
+  .fb summary{ background:#3a5a9c; }
+  .tt summary{ background:#2b2b2b; }
+  .ig summary{ background:#b1428e; }
+  .yt summary{ background:#c4302b; }
+  .tg summary{ background:#2b7fb0; }
+  .x summary{ background:#1b1b1b; }
+  .wa summary{ background:#3f8b4c; }
+
+  .platform-body{ padding:10px 12px 14px; }
+
+  details.subcat{
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin:8px 0;
+    background:var(--panel2);
+  }
+  details.subcat > summary{
+    list-style:none;
+    cursor:pointer;
+    padding:10px 12px;
+    font-size:13px;
+    font-weight:500;
+    color:var(--text);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  details.subcat > summary::-webkit-details-marker{ display:none; }
+  details.subcat > summary::after{ content:"›"; color:var(--text-dim); transform:rotate(90deg); display:inline-block; transition:transform .15s; }
+  details.subcat[open] > summary::after{ transform:rotate(-90deg); }
+  .sub-count{ font-size:11px; color:var(--text-dim); margin-left:8px; font-weight:400; }
+
+  .deliverables{ padding:2px 12px 10px; }
+  .deliv-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    padding:6px 0;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+  }
+  .deliv-row:first-child{ border-top:none; }
+  .deliv-name{ color:var(--text); flex:1; }
+  .deliv-price{ color:var(--accent); font-weight:600; white-space:nowrap; }
+  .flag{
+    font-size:9px;
+    font-weight:700;
+    color:var(--accent);
+    border:1px solid var(--accent);
+    border-radius:3px;
+    padding:1px 4px;
+    margin-left:6px;
+    letter-spacing:.3px;
+  }
+  .note{
+    font-size:11px;
+    color:var(--text-dim);
+    font-style:italic;
+    padding:4px 0 0;
+  }
+
+  .journey{
+    margin-top:40px;
+    padding-top:24px;
+    border-top:1px solid var(--line);
+  }
+  .journey h2{ font-size:16px; font-weight:600; margin:0 0 16px; }
+  .step{
+    display:flex;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .step-num{
+    width:26px; height:26px; border-radius:50%;
+    background:var(--accent); color:var(--accent-text);
+    font-weight:700; font-size:12px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .step-body{ font-size:13px; line-height:1.5; }
+  .step-body b{ color:#fff; }
+
+  .legend{
+    margin-top:36px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    font-size:11.5px;
+    color:var(--text-dim);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Duka la Likes — full order journey</h1>
+<p class="sub">Every tier, expanded: platform → subcategory → individual deliverable → what happens after you pick one.</p>
+
+<div class="root-banner">/order<span>Choose platform</span></div>
+
+<!-- FACEBOOK -->
+<details class="platform fb">
+<summary>Facebook <span class="count-badge">12 subcategories · 25 deliverables</span></summary>
+<div class="platform-body">
+
+  <details class="subcat"><summary>Followers <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Fast Speed (no refill)</span><span class="deliv-price">0.0999 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐ (Most Popular)</span><span class="deliv-price">0.1496 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🌍 Global [Real Active] Non-Drop</span><span class="deliv-price">0.5002 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Post Likes <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">No Warranty 🚀</span><span class="deliv-price">0.099 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Recommended — 30-Day Warranty</span><span class="deliv-price">0.5002 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🇰🇪🌍 Lifetime Warranty</span><span class="deliv-price">1 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Comments <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Custom — write your own</span><span class="deliv-price">0.5332 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Post Reactions <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Like 👍</span><span class="deliv-price">0.0695 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Love ❤️</span><span class="deliv-price">0.1698 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Haha 😂</span><span class="deliv-price">0.1499 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Video Views <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Standard ⭐ (Most Popular)</span><span class="deliv-price">0.0135 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium (High Retention)</span><span class="deliv-price">0.0518 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Story Views <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Story views 👀</span><span class="deliv-price">0.209 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Page Likes + Followers <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended (Most Popular)</span><span class="deliv-price">0.2014 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Quick Boost</span><span class="deliv-price">0.3544 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.405 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Live Stream Viewers <span class="sub-count">4</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">15 minutes</span><span class="deliv-price">0.143 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">30 minutes</span><span class="deliv-price">0.2859 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">45 minutes</span><span class="deliv-price">0.4288 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">210 minutes</span><span class="deliv-price">2 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Optimization & Audit <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Page/Profile audit + growth guidance</span><span class="deliv-price">1 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Group Join <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Standard ⭐ (Most Popular)<span class="flag">NEW</span></span><span class="deliv-price">0.4002 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Post Shares <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Power Reach (Lifetime Warranty)</span><span class="deliv-price">0.0603 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Facebook Reports <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Account Report</span><span class="deliv-price">1.3 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Page Report</span><span class="deliv-price">1.3 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Post Report</span><span class="deliv-price">1.3 Ksh</span></div>
+    <div class="note">All three run 500–1K/day, max 1M.</div>
+  </div></details>
+
+</div>
+</details>
+
+<!-- TIKTOK -->
+<details class="platform tt">
+<summary>TikTok <span class="count-badge">11 subcategories · 22 deliverables</span></summary>
+<div class="platform-body">
+
+  <details class="subcat"><summary>Followers <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐</span><span class="deliv-price">0.6513 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Starter ⚡</span><span class="deliv-price">0.3839 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.8855 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Real & Permanent Likes ⭐ Recommended <span class="sub-count">4</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">🚀 Growth — 1,000 likes</span><span class="deliv-price">700 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🔥 Creator — 2,500 likes</span><span class="deliv-price">1,650 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">👑 Viral — 5,000 likes</span><span class="deliv-price">3,200 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">💎 Ultimate — 10,000 likes</span><span class="deliv-price">6,000 Ksh</span></div>
+    <div class="note">Fixed bundles, not per-unit. Order note says to put a WhatsApp number in the link field — not a TikTok URL.</div>
+  </div></details>
+
+  <details class="subcat"><summary>Likes ❤️ <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended (Most Popular)</span><span class="deliv-price">0.087 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Views 👀 <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended (Most Popular)</span><span class="deliv-price">0.1046 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Quick Boost</span><span class="deliv-price">0.0395 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🇰🇪 Kenyan — Premium Shield</span><span class="deliv-price">0.0377 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Comments <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">💎 Custom — you write them</span><span class="deliv-price">1.3 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🏆 Random positive text (English)</span><span class="deliv-price">1.8 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Video Shares <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Instant start</span><span class="deliv-price">0.0484 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Livestream Comments <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Random, superfast</span><span class="deliv-price">0.1479 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Custom — write your own</span><span class="deliv-price">0.1994 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Video Favorites <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Save</span><span class="deliv-price">0.093 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Lifetime save (unlimited max)</span><span class="deliv-price">0.2441 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Live Boost 🔴 <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">15 minutes (Starter)</span><span class="deliv-price">0.398 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">60 minutes (Recommended ⭐)</span><span class="deliv-price">1.6 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">120 minutes (Premium 👑)</span><span class="deliv-price">2.3 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Livestream Likes <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐</span><span class="deliv-price">0.0152 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.0125 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>PK Battle Points <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">🔥 PK Battle Boost</span><span class="deliv-price">0.0363 Ksh</span></div>
+  </div></details>
+
+</div>
+</details>
+
+<!-- INSTAGRAM -->
+<details class="platform ig">
+<summary>Instagram <span class="count-badge">9 subcategories · 15 deliverables</span></summary>
+<div class="platform-body">
+
+  <details class="subcat"><summary>Followers <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐ (Most Popular)</span><span class="deliv-price">0.1549 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Quick Boost ⚡</span><span class="deliv-price">0.1681 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.299 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Likes <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐ (Most Popular)</span><span class="deliv-price">0.08 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Quick Boost ⚡</span><span class="deliv-price">0.05 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.1553 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Video Views <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐ (Most Popular)<span class="flag">NEW</span></span><span class="deliv-price">0.038 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Quick Boost ⚡</span><span class="deliv-price">0.028 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Comments <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended (Random)<span class="flag">NEW</span></span><span class="deliv-price">0.1323 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Custom — Premium Shield 👑</span><span class="deliv-price">0.2641 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Comment Likes <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">With username — max 20K</span><span class="deliv-price">0.1992 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Shares <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Unlimited, 100k/day, instant</span><span class="deliv-price">0.02 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Unlimited, 100k/day, instant (duplicate SKU)</span><span class="deliv-price">0.0028 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Story | Save | Shares | Impression <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Reach + impressions, 50k/day, 30-day refill</span><span class="deliv-price">0.0416 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Repost <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Starter pack 🚀 (cheap)</span><span class="deliv-price">0.1011 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Repost + Reach — Most popular ⭐ (best value)</span><span class="deliv-price">0.2014 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Impression Services <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Reach + Impression [1M] ⛔<span class="flag">NEW</span></span><span class="deliv-price">0.0452 Ksh</span></div>
+  </div></details>
+
+</div>
+</details>
+
+<!-- YOUTUBE -->
+<details class="platform yt">
+<summary>YouTube <span class="count-badge">5 subcategories · 8 deliverables</span></summary>
+<div class="platform-body">
+
+  <details class="subcat"><summary>Subscribers <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐ (Most Popular)</span><span class="deliv-price">4.9 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Views 👀 <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Quick Boost ⚡</span><span class="deliv-price">0.2965 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Monetizable — Recommended ⭐</span><span class="deliv-price">0.3987 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.8488 Ksh</span></div>
+    <div class="note">The site-wide popup advertises "views from SH 99" — actual catalog price is per-unit, not a flat SH99 tier.</div>
+  </div></details>
+
+  <details class="subcat"><summary>Likes <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐<span class="flag">NEW</span></span><span class="deliv-price">0.0982 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>AI-Generated Comment <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Custom — refill 30D, 2k/day</span><span class="deliv-price">0.3495 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">AI auto-generated from video content, 30 days, 2K/day</span><span class="deliv-price">0.8564 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Watch Time <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Video 60min+, 500hr/day<span class="flag">NEW</span></span><span class="deliv-price">6.5 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Video 10–20min, 200–500hr/day</span><span class="deliv-price">6.2 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Video 30min, 1k=250hrs, 200–500hr/day</span><span class="deliv-price">5 Ksh</span></div>
+    <div class="note">All three include 30-day refill.</div>
+  </div></details>
+
+</div>
+</details>
+
+<!-- TELEGRAM -->
+<details class="platform tg">
+<summary>Telegram <span class="count-badge">7 subcategories · 12 deliverables</span></summary>
+<div class="platform-body">
+
+  <details class="subcat"><summary>Comments <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">🇩🇪 Germany random comments + view</span><span class="deliv-price">0.727 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🇷🇺 Russia random comments + view</span><span class="deliv-price">0.7573 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Post Views <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐</span><span class="deliv-price">0.0368 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.2945 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>"Twitter Crypto & NFT Retweets" <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">NFT Retweet (100/50k), 50k/day</span><span class="deliv-price">1.6 Ksh</span></div>
+    <div class="note">Mislabeled: nested under Telegram, icon is literally the Twitter/X logo — a copy-paste catalog error.</div>
+  </div></details>
+
+  <details class="subcat"><summary>Post Shares (Search Optimize) <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">🇩🇪 Germany, share + views</span><span class="deliv-price">0.0178 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🇮🇱 Israel, share + views</span><span class="deliv-price">0.0178 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Channel Members <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Recommended ⭐</span><span class="deliv-price">0.412 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Premium Shield 👑</span><span class="deliv-price">0.5184 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Quick Boost ⚡</span><span class="deliv-price">0.6631 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Premium Members <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">+Views (10/20K)</span><span class="deliv-price">2.2 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">English names (10/100K)</span><span class="deliv-price">1.4 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">20–30 days premium, instant</span><span class="deliv-price">2.4 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Reactions <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Heart ❤️ (10/1M)</span><span class="deliv-price">0.0202 Ksh</span></div>
+  </div></details>
+
+</div>
+</details>
+
+<!-- X -->
+<details class="platform x">
+<summary>X (Twitter) <span class="count-badge">13 subcategories · 20 deliverables</span></summary>
+<div class="platform-body">
+
+  <details class="subcat"><summary>Comments <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Random, 50–100/day</span><span class="deliv-price">10.1 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Comments — Crypto Packages <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Custom, crypto bot, 1K/day</span><span class="deliv-price">10.1 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Crypto & NFT Followers <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">NFT (100/5k), 300/day</span><span class="deliv-price">3.2 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Favorites / Likes <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">20/4K</span><span class="deliv-price">1.2 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">20/10K</span><span class="deliv-price">1.3 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">10/5K</span><span class="deliv-price">1 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Followers [Refill] <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">500/500k, "less drop"</span><span class="deliv-price">4.2 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Live Viewers <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">30 minutes, non-drop</span><span class="deliv-price">3.8 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">15 minutes, non-drop</span><span class="deliv-price">1.9 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Mentions <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">User followers (500/5k), 1–2k/day</span><span class="deliv-price">1.3 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>🇳🇬 Nigeria bundle <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Followers Nigeria (100/5k), 5k/day</span><span class="deliv-price">12.6 Ksh</span></div>
+    <div class="note">Category name promises Followers/Likes/Comments/Retweets — only Followers is actually sold.</div>
+  </div></details>
+
+  <details class="subcat"><summary>Poll Votes <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">100/1M, 200k/day</span><span class="deliv-price">0.1767 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Retweets <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">5/5K</span><span class="deliv-price">1.8 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Space Listeners <span class="sub-count">3</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">120 minutes, non-drop</span><span class="deliv-price">15.1 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">5 minutes (10/100K)</span><span class="deliv-price">0.0505 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">30 minutes (10/100K)</span><span class="deliv-price">0.3433 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Stats <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Link click (100/100M), 10M/day</span><span class="deliv-price">0.0084 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Views — Country Targeted <span class="sub-count">2</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">🇺🇸 US (100/50M), 400k/day</span><span class="deliv-price">0.0081 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🇩🇰 Denmark (100/50M), 400k/day</span><span class="deliv-price">0.0081 Ksh</span></div>
+  </div></details>
+
+</div>
+</details>
+
+<!-- WHATSAPP -->
+<details class="platform wa">
+<summary>WhatsApp <span class="count-badge">4 subcategories · 31 deliverables</span></summary>
+<div class="platform-body">
+
+  <details class="subcat"><summary>Channel Followers <span class="sub-count">1</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">👑 Premium Shield</span><span class="deliv-price">0.7324 Ksh</span></div>
+  </div></details>
+
+  <details class="subcat"><summary>Poll Votes <span class="sub-count">5</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">Pool [A] — max 100k, 50k/day, instant</span><span class="deliv-price">1.7 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Pool [B] — max 100k, 50k/day, instant</span><span class="deliv-price">1.7 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Pool [C] — max 100k, 50k/day, instant</span><span class="deliv-price">1.7 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Pool [D] — max 100k, 50k/day, instant</span><span class="deliv-price">1.7 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Pool [E] — max 100k, 50k/day, instant</span><span class="deliv-price">1.7 Ksh</span></div>
+    <div class="note">5 identically-priced, identically-specced SKUs — likely load-balanced server pools, not real variants.</div>
+  </div></details>
+
+  <details class="subcat"><summary>Channel Post Reactions (instant, 1 min) <span class="sub-count">22</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">👍 Thumbs up</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">❤️ Heart</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">😂 Laughing</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">😲 Surprised</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">😥 Sad</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🙏 Praying hands</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🔥 Fire</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🏆 Trophy</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🎉 Party</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">👏 Clap</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">😎 Cool</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">😡 Angry</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">😮 Wow</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">💩 Poop</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🖕 Middle finger</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">👎 Thumbs down</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">💔 Broken heart</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">💪 Muscle</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">🤮 Vomiting</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">💸 Money flying</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">💀 Skull</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Random mix [👍❤️😂😲😥🙏]</span><span class="deliv-price">0.3004 Ksh</span></div>
+    <div class="note">All 22 emoji SKUs priced identically — max 100K, instant start, completes in 1 minute.</div>
+  </div></details>
+
+  <details class="subcat"><summary>Channel Auto Future Post Reactions <span class="sub-count">4</span></summary><div class="deliverables">
+    <div class="deliv-row"><span class="deliv-name">😂 Auto-react next 500 posts</span><span class="deliv-price">20.5 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">❤️ Auto-react next 500 posts</span><span class="deliv-price">20.5 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">👍 Auto-react next 500 posts</span><span class="deliv-price">20.5 Ksh</span></div>
+    <div class="deliv-row"><span class="deliv-name">Mix [🙏👍😂👏🎉🔥🏆❤️😮] — next 25 posts</span><span class="deliv-price">2.9 Ksh</span></div>
+    <div class="note">A recurring subscription-style service: reacts automatically to future channel posts, HQ profiles, 10K/day.</div>
+  </div></details>
+
+</div>
+</details>
+
+<div class="journey">
+<h2>What happens after you pick a deliverable</h2>
+
+<div class="step"><div class="step-num">1</div><div class="step-body"><b>Enter quantity</b> — preset buttons (100 / 500 / 1,000 / 2,500 / 5,000) or a custom field (min 10, max 10,000 for most services).</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body"><b>Paste the link</b> — profile, channel, or post URL. For a couple of TikTok/WhatsApp-fulfilled services, this field is repurposed to ask for a WhatsApp number instead.</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body"><b>Live price</b> calculates as you type, plus a disclosure block: start time (often 0–10 min, up to 1hr), speed, quality claim ("Real Worldwide"), drop risk ("can be"), and refill guarantee status — which varies per SKU and is sometimes explicitly "No!" even while the homepage markets a blanket 30-day guarantee.</div></div>
+<div class="step"><div class="step-num">4</div><div class="step-body"><b>Select payment system</b> — M-Pesa (Safaricom) shown first, with card/PayPal/crypto also available depending on the flow variant. Contact fields (phone, email, sometimes name/CPF) appear based on the method chosen.</div></div>
+<div class="step"><div class="step-num">5</div><div class="step-body"><b>Pay</b> — for M-Pesa, payment opens in a new tab; the page shows a "waiting for payment" polling screen.</div></div>
+<div class="step"><div class="step-num">6</div><div class="step-body"><b>Redirect to dashboard</b> — once payment completes, a link to the personal order-tracking dashboard appears.</div></div>
+
+</div>
+
+<div class="legend">
+<span>Prices shown are the site's displayed discounted rate (per unit, unless noted as a fixed bundle).</span>
+<span>"NEW" flags and site-native labels (Recommended, Premium Shield, etc.) are carried over verbatim from the catalog.</span>
+<span>Notes in italics flag catalog inconsistencies found while mapping — not editorial commentary on pricing.</span>
+</div>
+
+</body>
+</html>
