@@ -13,7 +13,7 @@ import { useAuth } from "./AuthContext";
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mpesaOpen, setMpesaOpen] = useState(false);
-  const { authModal, openAuth, closeAuth } = useAuth();
+  const { authModal, openAuth, closeAuth, user, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 bg-kenya-black/95 backdrop-blur-md border-b border-kenya-white/10">
@@ -35,6 +35,22 @@ export default function Header() {
             >
               🛒 New Order
             </Link>
+            {user && (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+                >
+                  📊 Dashboard
+                </Link>
+                <Link
+                  href="/orders/all"
+                  className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+                >
+                  📦 My Orders
+                </Link>
+              </>
+            )}
             <Link
               href="/blog"
               className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
@@ -96,18 +112,43 @@ export default function Header() {
               >
                 💬 Blog & News
               </Link>
-              <button
-                onClick={() => openAuth("register")}
-                className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
-              >
-                📑 Register
-              </button>
-              <button
-                onClick={() => openAuth("login")}
-                className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
-              >
-                🔑 Sign In
-              </button>
+              {user ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+                  >
+                    📊 Dashboard
+                  </Link>
+                  <Link
+                    href="/orders/all"
+                    className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+                  >
+                    📦 My Orders
+                  </Link>
+                  <button
+                    onClick={signOut}
+                    className="text-left px-4 py-3 text-sm font-medium text-kenya-red hover:text-kenya-red transition-colors rounded-lg hover:bg-kenya-white/5"
+                  >
+                    🚪 Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => openAuth("register")}
+                    className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+                  >
+                    📑 Register
+                  </button>
+                  <button
+                    onClick={() => openAuth("login")}
+                    className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+                  >
+                    🔑 Sign In
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => setMpesaOpen(true)}
                 className="sm:hidden flex items-center justify-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-3 rounded-lg"

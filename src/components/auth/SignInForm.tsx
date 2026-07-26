@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 
 export default function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
@@ -9,6 +10,7 @@ export default function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { signIn } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -21,6 +23,7 @@ export default function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
       setLoading(false);
     } else {
       onSuccess?.();
+      router.push("/dashboard");
     }
   };
 

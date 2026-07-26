@@ -10,6 +10,7 @@ interface Profile {
   full_name: string | null;
   phone: string | null;
   wallet_balance: number;
+  email_verified: boolean;
 }
 
 interface AuthContextType {
@@ -23,6 +24,7 @@ interface AuthContextType {
   openAuth: (tab?: "login" | "register") => void;
   closeAuth: () => void;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  customSignUp: (email: string, password: string, full_name?: string, phone?: string) => Promise<{ error: Error | null; message?: string }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -47,6 +49,7 @@ async function ensureProfile(supabase: ReturnType<typeof createClient>, user: Us
       full_name: user.user_metadata?.full_name || null,
       phone: user.user_metadata?.phone || null,
       wallet_balance: 1000.00,
+      email_verified: false,
     }).select("*").single();
     if (error) return null;
     profile = data as Profile;
@@ -177,8 +180,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const customSignUp = async (email: string, password: string, full_name?: string, phone?: string) => {
+    try {
+      const res = await fetch("/api/auth/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, full_name, phone }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        return { error: new Error(data?.error || "Failed to create account") };
+      }
+      return { error: null, message: data?.message };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error("Unexpected error") };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, signIn, signOut, refreshProfile, supabaseError }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, customSignUp, signIn, signOut, refreshProfile, supabaseError }}>
       {children}
     </AuthContext.Provider>
   );

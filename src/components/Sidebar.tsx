@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SIDEBAR_ITEMS, type SidebarItem } from "@/lib/data";
@@ -83,6 +83,30 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
+  const navItems = useMemo(() => {
+    const baseItems = [
+      { label: "New Order", href: "/order", icon: "🛒", active: true },
+      { label: "Blog & News", href: "/blog", icon: "💬" },
+    ];
+    const expandableItems = SIDEBAR_ITEMS.filter((item) => item.children && item.children.length > 0);
+
+    if (user) {
+      return [
+        { label: "Dashboard", href: "/dashboard", icon: "📊" },
+        ...baseItems,
+        { label: "My Orders", href: "/orders/all", icon: "📦" },
+        ...expandableItems,
+      ];
+    }
+    return [
+      ...baseItems,
+      { label: "Sign Up", href: "/auth/sign-in#", icon: "📑", trigger: "register" as const },
+      { label: "Sign In", href: "/auth/sign-in#", icon: "🔑", trigger: "login" as const },
+      ...expandableItems,
+    ];
+  }, [user]);
 
   return (
     <>
@@ -121,20 +145,29 @@ export default function Sidebar() {
 
           {/* Navigation */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {SIDEBAR_ITEMS.map((item, idx) => (
+            {navItems.map((item, idx) => (
               <SidebarNavItem key={item.label + idx} item={item} />
             ))}
           </nav>
 
           {/* Bottom CTA */}
           <div className="p-4 border-t border-kenya-white/10">
-            <a
-              href="/order"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center justify-center gap-2 w-full bg-kenya-green text-kenya-black font-bold text-sm py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
-            >
-              🛒 Start Order
-            </a>
+            {user ? (
+              <button
+                onClick={() => signOut()}
+                className="flex items-center justify-center gap-2 w-full bg-kenya-red/10 text-kenya-red font-bold text-sm py-3 rounded-xl hover:bg-kenya-red/20 transition-colors border border-kenya-red/20"
+              >
+                🚪 Sign Out
+              </button>
+            ) : (
+              <a
+                href="/order"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-center gap-2 w-full bg-kenya-green text-kenya-black font-bold text-sm py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
+              >
+                🛒 Start Order
+              </a>
+            )}
           </div>
         </div>
       </aside>

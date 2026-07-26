@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function ResetPasswordForm() {
@@ -8,6 +9,7 @@ export default function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -30,6 +32,7 @@ export default function ResetPasswordForm() {
       setError(error.message);
     } else {
       setSuccess(true);
+      setTimeout(() => router.push("/auth/sign-in"), 2000);
     }
     setLoading(false);
   };

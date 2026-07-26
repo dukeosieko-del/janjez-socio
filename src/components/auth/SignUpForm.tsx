@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 
 export default function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
@@ -9,12 +10,15 @@ export default function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { signUp } = useAuth();
+  const [success, setSuccess] = useState<string | null>(null);
+  const { customSignUp } = useAuth();
+  const router = useRouter();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -28,12 +32,14 @@ export default function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
       return;
     }
 
-    const { error } = await signUp(email, password);
+    const { error, message } = await customSignUp(email, password);
     if (error) {
       setError(error.message);
       setLoading(false);
     } else {
-      onSuccess?.();
+      setSuccess(message || "Account created! Check your email to verify.");
+      setLoading(false);
+      setTimeout(() => router.push("/auth/sign-in"), 2500);
     }
   };
 
@@ -42,6 +48,11 @@ export default function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
       {error && (
         <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
           <p className="text-kenya-red text-sm">{error}</p>
+        </div>
+      )}
+      {success && (
+        <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-xl p-4">
+          <p className="text-kenya-green text-sm">{success}</p>
         </div>
       )}
       <div>
