@@ -6,7 +6,8 @@ export const SERVICES = [
     category: 'social',
     description: 'Boost your Facebook presence with followers, likes, and post reactions.',
     href: '/services/facebook',
-    status: 'active'
+    status: 'active',
+    modalSize: 'small'
   },
   {
     id: 'tiktok',
@@ -15,7 +16,8 @@ export const SERVICES = [
     category: 'social',
     description: 'Grow your TikTok audience with views, followers, and live stream viewers.',
     href: '/services/tiktok',
-    status: 'active'
+    status: 'active',
+    modalSize: 'small'
   },
   {
     id: 'instagram',
@@ -24,7 +26,8 @@ export const SERVICES = [
     category: 'social',
     description: 'Increase Instagram followers, likes, comments, and Reels views.',
     href: '/services/instagram',
-    status: 'active'
+    status: 'active',
+    modalSize: 'small'
   },
   {
     id: 'youtube',
@@ -33,7 +36,8 @@ export const SERVICES = [
     category: 'social',
     description: 'Get more YouTube views, subscribers, likes, and watch time.',
     href: '/services/youtube',
-    status: 'active'
+    status: 'active',
+    modalSize: 'large'
   },
   {
     id: 'whatsapp',
@@ -42,7 +46,8 @@ export const SERVICES = [
     category: 'messaging',
     description: 'Grow WhatsApp channel members, status views, and poll votes.',
     href: '/services/whatsapp',
-    status: 'active'
+    status: 'active',
+    modalSize: 'large'
   },
   {
     id: 'telegram',
@@ -51,7 +56,8 @@ export const SERVICES = [
     category: 'messaging',
     description: 'Expand Telegram channels and groups with members, views, and poll votes.',
     href: '/services/telegram',
-    status: 'active'
+    status: 'active',
+    modalSize: 'large'
   },
   {
     id: 'google-maps-reviews',
@@ -60,7 +66,8 @@ export const SERVICES = [
     category: 'reviews',
     description: 'Get 5-star custom reviews, local guide feedback, and place saves on Google Maps.',
     href: '/services/google-maps-reviews',
-    status: 'active'
+    status: 'active',
+    modalSize: 'large'
   },
   {
     id: 'x',
@@ -69,7 +76,8 @@ export const SERVICES = [
     category: 'social',
     description: 'Increase X followers, post likes, and retweets.',
     href: '/services/x',
-    status: 'active'
+    status: 'active',
+    modalSize: 'small'
   }
 ];
 
