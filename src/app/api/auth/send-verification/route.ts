@@ -26,6 +26,7 @@ export async function POST(request: Request) {
     }
 
     const { data: existing } = await supabase.auth.admin.listUsers();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const alreadyExists = existing?.users?.find((u: any) => u.email === email);
     if (alreadyExists) {
       return NextResponse.json({ error: "User already exists" }, { status: 409 });

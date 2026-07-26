@@ -11,6 +11,7 @@ interface Profile {
   phone: string | null;
   wallet_balance: number;
   email_verified: boolean;
+  role: string;
 }
 
 interface AuthContextType {
@@ -28,6 +29,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     open: false,
     tab: "login",
   });
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const supabaseError = !createClient()
     ? "Authentication service is temporarily unavailable. Please contact support or try again later."
@@ -83,15 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!client) {
       setProfile(null);
       setWalletBalance(0);
+      setIsAdmin(false);
       return;
     }
     const prof = await ensureProfile(client, { id: userId, email: "", user_metadata: {} } as User);
     if (prof) {
       setProfile(prof);
       setWalletBalance(Number(prof.wallet_balance) || 0);
+      setIsAdmin(prof.role === "admin");
     } else {
       setProfile(null);
       setWalletBalance(0);
+      setIsAdmin(false);
     }
   }, [supabase]);
 
@@ -130,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setProfile(null);
           setWalletBalance(0);
+          setIsAdmin(false);
         }
         setLoading(false);
       });
@@ -199,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, customSignUp, signIn, signOut, refreshProfile, supabaseError }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, customSignUp, signIn, signOut, refreshProfile, supabaseError, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

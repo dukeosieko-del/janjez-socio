@@ -40,7 +40,103 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen flex bg-kenya-black">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+          <AnnouncementBanner />
+          <LiveTicker />
+          <Header />
+          <main className="flex-1">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+              <div className="mb-8">
+                <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">Dashboard Preview</h1>
+                <p className="text-kenya-white/60">This is a preview of the dashboard layout.</p>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-kenya-green/20 rounded-xl flex items-center justify-center">
+                      <span className="text-xl">💰</span>
+                    </div>
+                    <div>
+                      <p className="text-kenya-white/70 text-sm">Wallet Balance</p>
+                      <p className="text-2xl font-bold text-kenya-green">KES 1,000.00</p>
+                    </div>
+                  </div>
+                  <Link href="/pay" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-kenya-green/90 transition-colors">
+                    <Image src="/mpesa-logo.png" alt="M-Pesa" width={18} height={18} className="w-5 h-5 object-contain" />
+                    Top Up via M-Pesa
+                  </Link>
+                </div>
+
+                <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-kenya-white/10 rounded-xl flex items-center justify-center">
+                      <span className="text-xl">📦</span>
+                    </div>
+                    <div>
+                      <p className="text-kenya-white/70 text-sm">Orders</p>
+                      <p className="text-2xl font-bold text-kenya-white">—</p>
+                    </div>
+                  </div>
+                  <Link href="/orders/all" className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/10">
+                    View Orders
+                  </Link>
+                </div>
+
+                <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-kenya-white/10 rounded-xl flex items-center justify-center">
+                      <span className="text-xl">🎯</span>
+                    </div>
+                    <div>
+                      <p className="text-kenya-white/70 text-sm">Status</p>
+                      <p className="text-lg font-bold text-kenya-white">Preview Mode</p>
+                    </div>
+                  </div>
+                  <p className="text-kenya-white/50 text-xs">Sign in to see your actual account status and verification state.</p>
+                </div>
+              </div>
+
+              <div className="mt-8 grid gap-6 md:grid-cols-2">
+                <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
+                  <h2 className="text-kenya-white font-bold text-lg mb-4">Quick Actions</h2>
+                  <div className="flex flex-wrap gap-3">
+                    <Link href="/order" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-green/90 transition-colors">
+                      🛒 New Order
+                    </Link>
+                    <Link href="/orders/all" className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/10">
+                      📦 My Orders
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
+                  <h2 className="text-kenya-white font-bold text-lg mb-4">Account Information</h2>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-kenya-white/60">Email</span>
+                      <span className="text-kenya-white font-medium">preview@example.com</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-kenya-white/60">Email Verified</span>
+                      <span className="text-kenya-white font-medium">—</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-kenya-white/60">Account Created</span>
+                      <span className="text-kenya-white font-medium">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </div>
+    );
   }
 
   return (

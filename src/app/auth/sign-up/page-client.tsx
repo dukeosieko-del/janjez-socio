@@ -36,7 +36,7 @@ export default function SignUpClient() {
               </div>
             )}
             <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 sm:p-8">
-              <SignUpForm onSuccess={() => setAuthModal({ open: false, tab: "register" })} />
+              <SignUpForm />
               <div className="mt-6 text-center text-sm text-kenya-white/60">
                 <p>
                   Already have an account?{" "}

@@ -73,9 +73,9 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
 
         <div className="p-6">
           {tab === "login" ? (
-            <SignInForm onSuccess={onClose} />
+            <SignInForm />
           ) : (
-            <SignUpForm onSuccess={onClose} />
+            <SignUpForm />
           )}
           <p className="text-center text-xs text-kenya-white/40 mt-4">
             {tab === "login"
