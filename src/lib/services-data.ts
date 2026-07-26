@@ -54,16 +54,16 @@ export const SERVICES = [
     status: 'active'
   },
   {
-    id: 'google-maps',
+    id: 'google-maps-reviews',
     name: 'Google Maps Reviews',
-    icon: '/icons/services/google-maps.svg',
+    icon: '/icons/services/googlemaps.svg',
     category: 'reviews',
     description: 'Get 5-star custom reviews, local guide feedback, and place saves on Google Maps.',
     href: '/services/google-maps-reviews',
     status: 'active'
   },
   {
-    id: 'x-twitter',
+    id: 'x',
     name: 'X',
     icon: '/icons/services/x.svg',
     category: 'social',
@@ -75,7 +75,7 @@ export const SERVICES = [
 
 export const SERVICES_CATEGORIES = [
   { id: 'all', label: 'All Platforms', value: 'all' },
-  { id: 'social', label: 'Social Media', value: 'social', children: ['facebook', 'tiktok', 'instagram', 'youtube', 'x-twitter'] },
+  { id: 'social', label: 'Social Media', value: 'social', children: ['facebook', 'tiktok', 'instagram', 'youtube', 'x'] },
   { id: 'messaging', label: 'Messaging', value: 'messaging', children: ['whatsapp', 'telegram'] },
-  { id: 'reviews', label: 'Reviews', value: 'reviews', children: ['google-maps'] }
+  { id: 'reviews', label: 'Reviews', value: 'reviews', children: ['google-maps-reviews'] }
 ];
