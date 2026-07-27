@@ -1,20 +1,49 @@
-"use client";
-
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import SearchBar from "@/components/services/SearchBar";
 import PlatformDropdown from "@/components/services/PlatformDropdown";
 import ServiceCard from "@/components/services/ServiceCard";
 import { SERVICES } from "@/lib/services-data";
-import { SERVICE_CATALOG, SERVICE_JOURNEY, type ServiceCatalogItem } from "@/lib/service-catalog";
+import { SERVICE_CATALOG, type ServiceCatalogItem } from "@/lib/service-catalog";
 
-type ExpandedServices = Record<string, boolean>;
-type ExpandedSubcategories = Record<string, Set<string>>;
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function getServiceSlug(id: string) {
+  return id.toLowerCase();
+}
+
+export function getPlatformSlug(id: string) {
+  if (id === "google-maps-reviews") return "google-maps-reviews";
+  if (id === "x") return "x";
+  return id.toLowerCase();
+}
+
+export function getSubcategorySlug(
+  platformId: string,
+  subcategoryName: string,
+  index: number
+) {
+  const catalogItem = SERVICE_CATALOG.find((c) => c.id === platformId);
+  const sub = catalogItem?.subcategories.find((s) => s.name === subcategoryName);
+  if (sub && sub.deliverables.length <= 1) {
+    return sub.deliverables[0] ? `deliverable-${index}-${slugify(sub.deliverables[0].name)}` : `sub-${slugify(subcategoryName)}`;
+  }
+  return `sub-${slugify(subcategoryName)}`;
+}
 
 export default function ServicesGrid() {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState("all");
-  const [expandedServices, setExpandedServices] = useState<ExpandedServices>({});
-  const [expandedSubcategories, setExpandedSubcategories] = useState<ExpandedSubcategories>({});
+  const [selectedService, setSelectedService] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -25,27 +54,19 @@ export default function ServicesGrid() {
     });
   }, [search, platform]);
 
-  const toggleService = (id: string) => {
-    setExpandedServices((prev) => ({ ...prev, [id]: !prev[id] }));
+  const handleServiceClick = (id: string) => {
+    setSelectedService(id);
+    const slug = getPlatformSlug(id);
+    router.push(`/services/${slug}`);
   };
 
-  const toggleSubcategory = (serviceId: string, subName: string) => {
-    setExpandedSubcategories((prev) => {
-      const current = prev[serviceId] || new Set<string>();
-      const next = new Set(current);
-      if (next.has(subName)) {
-        next.delete(subName);
-      } else {
-        next.add(subName);
-      }
-      return { ...prev, [serviceId]: next };
-    });
+  const handleSubcategoryClick = (platformId: string, subcategoryName: string, idx: number) => {
+    const platformSlug = getPlatformSlug(platformId);
+    const subSlug = getSubcategorySlug(platformId, subcategoryName, idx);
+    router.push(`/services/${platformSlug}/${subSlug}`);
   };
 
-  const getSubcategories = (id: string): ServiceCatalogItem["subcategories"] => {
-    const catalogItem = SERVICE_CATALOG.find((c) => c.id === id);
-    return catalogItem?.subcategories ?? [];
-  };
+  const selectedCatalogItem = selectedService ? (SERVICE_CATALOG.find((c) => c.id === selectedService) as ServiceCatalogItem | undefined) : undefined;
 
   return (
     <div className="w-full">
@@ -55,82 +76,14 @@ export default function ServicesGrid() {
       </div>
 
       <div className="flex flex-col gap-4">
-        {filtered.map((service) => {
-          const isExpanded = !!expandedServices[service.id];
-          const subcategories = getSubcategories(service.id);
-
-          return (
-            <div key={service.id} className="w-full">
-              <ServiceCard
-                service={service}
-                isSelected={isExpanded}
-                onClick={() => toggleService(service.id)}
-              />
-
-              {isExpanded && (
-                <div className="mt-4 ml-0 md:ml-16 space-y-4">
-                  {subcategories.length === 0 && (
-                    <div className="text-kenya-white/50 text-sm py-4">Service catalog is being updated. Please check back later.</div>
-                  )}
-
-                  {subcategories.map((sub, idx) => {
-                    const isSubOpen = (expandedSubcategories[service.id] || new Set<string>()).has(sub.name);
-
-                    return (
-                      <div key={sub.name + idx} className="border border-kenya-white/10 rounded-xl bg-kenya-white/5">
-                        <button
-                          type="button"
-                          onClick={() => toggleSubcategory(service.id, sub.name)}
-                          className="w-full flex items-center justify-between p-4 text-left hover:bg-kenya-white/10 transition-colors"
-                        >
-                          <span className="flex items-center gap-3">
-                            <span className="text-kenya-white font-medium">{sub.name}</span>
-                            <span className="text-kenya-white/40 text-xs">{sub.count}</span>
-                          </span>
-                          <span className="text-kenya-white/40 text-xs transition-transform duration-200">{isSubOpen ? "▾" : "▸"}</span>
-                        </button>
-
-                        {isSubOpen && (
-                          <div className="px-4 pb-4 space-y-2">
-                            <div className="border-t border-kenya-white/10 pt-3 space-y-2">
-                              {sub.deliverables.map((del, i) => (
-                                <div key={del.name + i} className="flex items-center justify-between text-sm">
-                                  <span className="text-kenya-white/80">{del.name}</span>
-                                  <span className="text-kenya-green font-semibold">{del.price}</span>
-                                </div>
-                              ))}
-                            </div>
-
-                            {sub.note && (
-                              <p className="text-kenya-white/40 text-xs mt-2 italic">{sub.note}</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
-                  <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-4">
-                    <h3 className="text-kenya-white font-bold text-sm mb-3">Order Journey</h3>
-                    <div className="space-y-2">
-                      {SERVICE_JOURNEY.map((item) => (
-                        <div key={item.step} className="flex gap-3 text-sm">
-                          <div className="w-6 h-6 rounded-full bg-kenya-green/20 text-kenya-green flex items-center justify-center flex-shrink-0 text-xs font-bold">
-                            {item.step}
-                          </div>
-                          <div>
-                            <p className="text-kenya-white font-medium">{item.title}</p>
-                            <p className="text-kenya-white/50 text-xs">{item.body}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {filtered.map((service) => (
+          <ServiceCard
+            key={service.id}
+            service={service}
+            isSelected={selectedService === service.id}
+            onClick={() => handleServiceClick(service.id)}
+          />
+        ))}
       </div>
 
       {filtered.length === 0 && (
@@ -138,6 +91,68 @@ export default function ServicesGrid() {
           No services found matching your criteria.
         </div>
       )}
+
+      {selectedCatalogItem && (
+        <ServiceModal catalog={selectedCatalogItem} onClose={() => setSelectedService(null)} onSubcategoryClick={handleSubcategoryClick} />
+      )}
+    </div>
+  );
+}
+
+function ServiceModal({
+  catalog,
+  onClose,
+  onSubcategoryClick,
+}: {
+  catalog: ServiceCatalogItem;
+  onClose: () => void;
+  onSubcategoryClick: (platformId: string, subcategoryName: string, idx: number) => void;
+}) {
+  const isLarge = catalog.modalSize === 'large';
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div
+        className={`
+          bg-kenya-black border border-kenya-white/10 rounded-2xl shadow-2xl relative
+          w-full overflow-hidden
+          ${isLarge ? 'max-w-5xl ml-[-10vw]' : 'max-w-2xl'}
+        `}
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 flex items-center justify-center">
+              <img src={catalog.icon} alt={catalog.name} className="w-10 h-10 object-contain" />
+            </div>
+            <div>
+              <h2 className="text-kenya-white font-bold text-xl">{catalog.name}</h2>
+              <p className="text-kenya-white/50 text-sm">{catalog.subcategories.length} subcategories</p>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-6">
+            {catalog.subcategories.map((sub, idx) => (
+              <div key={sub.name + idx} className="border border-kenya-white/10 rounded-xl bg-kenya-white/5">
+                <button
+                  type="button"
+                  onClick={() => onSubcategoryClick(catalog.id, sub.name, idx)}
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-kenya-white/10 transition-colors"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="text-kenya-white font-medium">{sub.name}</span>
+                    <span className="text-kenya-white/40 text-xs">{sub.count}</span>
+                  </span>
+                  <span className="text-kenya-white/40 text-xs transition-transform duration-200">→</span>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <button onClick={onClose} className="px-4 py-2 rounded-xl bg-kenya-white/10 text-kenya-white text-sm hover:bg-kenya-white/20 transition-colors">Close</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
