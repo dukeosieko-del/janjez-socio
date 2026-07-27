@@ -39,7 +39,12 @@ export default function ServiceCard({ service, isSelected, onClick }: ServiceCar
       </div>
 
       <div className="flex-shrink-0 text-kenya-white/60">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className={`w-5 h-5 transition-transform duration-200 ${isSelected ? "rotate-90" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </div>

@@ -1,0 +1,107 @@
+import { SERVICE_CATALOG, type ServiceCatalogItem } from "./service-catalog";
+
+export interface OrderLogPayload {
+  categoryId: string;
+  serviceId: string;
+  quantity: number;
+  link: string;
+  amountPaid: number;
+  paymentReference?: string;
+  quantitySource: "preset" | "custom";
+  selectedSkuId?: string;
+}
+
+function getCatalogItem(categoryId: string): ServiceCatalogItem | undefined {
+  return SERVICE_CATALOG.find((c) => c.id === categoryId);
+}
+
+export function resolveCategoryName(categoryId: string): string {
+  const item = getCatalogItem(categoryId);
+  return item?.name ?? categoryId;
+}
+
+export function resolveSubcategoryName(categoryId: string, serviceId: string): string {
+  const item = getCatalogItem(categoryId);
+  if (!item) return serviceId;
+  for (const sub of item.subcategories) {
+    const match = sub.deliverables.find((d) => d.name === serviceId);
+    if (match) return sub.name;
+  }
+  return serviceId;
+}
+
+export function resolveSkuId(categoryId: string, serviceId: string): string {
+  return serviceId;
+}
+
+export function resolveRefillGuarantee(categoryId: string, serviceId: string): string | null {
+  const item = getCatalogItem(categoryId);
+  if (!item) return null;
+  for (const sub of item.subcategories) {
+    const match = sub.deliverables.find((d) => d.name === serviceId);
+    if (match) {
+      if (match.name.toLowerCase().includes("no warranty") || match.name.toLowerCase().includes("no refill")) {
+        return "none";
+      }
+      if (match.name.toLowerCase().includes("lifetime")) {
+        return "lifetime";
+      }
+      if (match.name.toLowerCase().includes("30-day") || match.name.toLowerCase().includes("30 day")) {
+        return "30-day";
+      }
+      return "standard";
+    }
+  }
+  return null;
+}
+
+export function requiresSkuSelection(categoryId: string): boolean {
+  const item = getCatalogItem(categoryId);
+  if (!item) return false;
+  for (const sub of item.subcategories) {
+    if (sub.deliverables.length > 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export async function submitOrder(payload: OrderLogPayload) {
+  const categoryName = resolveCategoryName(payload.categoryId);
+  const subcategoryName = resolveSubcategoryName(payload.categoryId, payload.serviceId);
+  const skuId = resolveSkuId(payload.categoryId, payload.serviceId);
+  const refillGuarantee = resolveRefillGuarantee(payload.categoryId, payload.serviceId);
+
+  if (requiresSkuSelection(payload.categoryId) && !payload.selectedSkuId) {
+    return { ok: false as const, error: "Please select a service package before continuing." };
+  }
+
+  const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+  const timestamp = new Date().toISOString();
+
+  const res = await fetch("/api/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      order_id: orderId,
+      category: categoryName,
+      subcategory: subcategoryName,
+      sku_id: payload.selectedSkuId ?? skuId ?? null,
+      quantity: payload.quantity,
+      link_submitted: payload.link,
+      amount_paid: payload.amountPaid,
+      payment_reference: payload.paymentReference || null,
+      timestamp,
+      refill_guarantee: refillGuarantee,
+      quantity_source: payload.quantitySource,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    return { ok: false as const, error: data?.error || "Failed to record order." };
+  }
+
+  const data = await res.json();
+  return { ok: true as const, order: data.order };
+}
