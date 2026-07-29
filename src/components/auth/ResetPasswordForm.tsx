@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function ResetPasswordForm() {
+export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?: () => void }) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +47,15 @@ export default function ResetPasswordForm() {
       {success && (
         <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-xl p-4">
           <p className="text-kenya-green text-sm">Check your email for a password reset link.</p>
+          {onBackToSignIn && (
+            <button
+              type="button"
+              onClick={onBackToSignIn}
+              className="mt-2 text-xs text-kenya-green hover:underline"
+            >
+              Back to sign in
+            </button>
+          )}
         </div>
       )}
       <div>
