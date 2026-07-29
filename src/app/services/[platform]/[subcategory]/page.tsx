@@ -41,6 +41,11 @@ export default function SubcategoryPage({ params }: SubcategoryPageProps) {
             <div className="mb-8">
               <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">{subcategory.name}</h1>
               <p className="text-kenya-white/60">{subcategory.deliverables.length} deliverable{subcategory.deliverables.length !== 1 ? "s" : ""} available</p>
+              {subcategory.note && (
+                <div className="mt-3 bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3">
+                  <p className="text-kenya-white/50 text-xs italic">{subcategory.note}</p>
+                </div>
+              )}
             </div>
 
             {singleDeliverable ? (
@@ -56,7 +61,7 @@ export default function SubcategoryPage({ params }: SubcategoryPageProps) {
                 {subcategory.deliverables.map((del, idx) => (
                   <Link
                     key={del.name + idx}
-                    href={`/services/${params.platform}/${params.subcategory}/deliverable-${slugify(del.name)}`}
+                    href={`/services/${params.platform}/${params.subcategory}/microcategory-${slugify(del.name)}`}
                     className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
                   >
                     <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">

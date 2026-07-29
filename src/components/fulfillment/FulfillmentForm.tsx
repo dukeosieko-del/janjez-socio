@@ -13,7 +13,7 @@ export interface FulfillmentProps {
   platformName: string;
   platformIcon: string;
   subcategoryName: string;
-  deliverable: { name: string; price: string; note?: string };
+  deliverable: { name: string; price: string; note?: string; flag?: string; minQty?: number; maxQty?: number };
 }
 
 export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable }: FulfillmentProps) {
@@ -41,12 +41,15 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     return subtotal * 0.95;
   }, [subtotal]);
 
+  const qtyMin = deliverable.minQty ?? 10;
+  const qtyMax = deliverable.maxQty ?? 10000;
+
   const quantityError = useMemo(() => {
     if (quantityNum <= 0) return "";
-    if (quantityNum < 100) return "Minimum quantity is 100";
-    if (quantityNum > 10000) return "Maximum quantity is 10,000";
+    if (quantityNum < qtyMin) return `Minimum quantity is ${qtyMin.toLocaleString()}`;
+    if (quantityNum > qtyMax) return `Maximum quantity is ${qtyMax.toLocaleString()}`;
     return "";
-  }, [quantityNum]);
+  }, [quantityNum, qtyMin, qtyMax]);
 
   const handlePlaceOrder = useCallback(async () => {
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
@@ -89,7 +92,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     }
   }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable.name]);
 
-  const isValid = link.trim().length > 0 && quantityNum >= 100 && quantityNum <= 10000;
+  const isValid = link.trim().length > 0 && quantityNum >= qtyMin && quantityNum <= qtyMax;
 
   return (
     <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
@@ -103,7 +106,17 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         </div>
       </div>
 
-      <div className="space-y-5">
+      {deliverable.flag && (
+          <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-3">
+            <p className="text-kenya-red text-xs">{deliverable.flag}</p>
+          </div>
+        )}
+        {deliverable.note && (
+          <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3">
+            <p className="text-kenya-white/50 text-xs italic">{deliverable.note}</p>
+          </div>
+        )}
+        <div className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-kenya-white/70 mb-2">🔗 Link</label>
           <input
@@ -121,11 +134,11 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
           <input
             type="number"
             required
-            min={100}
-            max={10000}
+            min={qtyMin}
+            max={qtyMax}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            placeholder="Enter quantity (100 - 10,000)"
+            placeholder={`Enter quantity (${qtyMin.toLocaleString()} - ${qtyMax.toLocaleString()})`}
             className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:ring-1 transition-all ${
               quantityError ? "border-kenya-red focus:border-kenya-red focus:ring-kenya-red" : "border-kenya-white/20 focus:border-kenya-green focus:ring-kenya-green"
             }`}

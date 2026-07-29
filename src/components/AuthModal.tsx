@@ -81,7 +81,7 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
           ) : tab === "login" ? (
             <SignInForm onSuccess={onClose} onForgotPassword={() => setTab("forgot-password")} />
           ) : (
-            <SignUpForm onSuccess={onClose} />
+            <SignUpForm />
           )}
           {tab === "forgot-password" ? (
             <p className="text-center text-xs text-kenya-white/40 mt-4">
