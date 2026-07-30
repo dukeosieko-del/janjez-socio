@@ -2,6 +2,9 @@ export interface Deliverable {
   name: string;
   price: string;
   note?: string;
+  flag?: string;
+  minQty?: number;
+  maxQty?: number;
 }
 
 export interface Subcategory {
@@ -9,6 +12,9 @@ export interface Subcategory {
   count: number;
   deliverables: Deliverable[];
   note?: string;
+  flag?: string;
+  minQty?: number;
+  maxQty?: number;
 }
 
 export interface ServiceCatalogItem {

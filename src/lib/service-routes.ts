@@ -4,6 +4,9 @@ export interface DeliverableLike {
   name: string;
   price: string;
   note?: string;
+  flag?: string;
+  minQty?: number;
+  maxQty?: number;
 }
 
 export function getPlatformSlug(id: string) {
@@ -25,7 +28,7 @@ export function getSubcategorySlug(platformId: string, subcategoryName: string) 
   const sub = catalogItem?.subcategories.find((s) => s.name === subcategoryName);
   if (sub && sub.deliverables.length === 1) {
     const deliverable = sub.deliverables[0];
-    return `deliverable-${slugify(deliverable.name)}`;
+    return `microcategory-${slugify(deliverable.name)}`;
   }
   return `sub-${slugify(subcategoryName)}`;
 }
@@ -43,6 +46,6 @@ export function findSubcategoryBySlug(catalog: ServiceCatalogItem, subSlug: stri
   });
 }
 
-export function findDeliverableBySlug(sub: { name: string; deliverables: DeliverableLike[] }, deliverableSlug: string): DeliverableLike | undefined {
-  return sub.deliverables.find((del) => `deliverable-${slugify(del.name)}` === deliverableSlug);
+export function findMicrocategoryBySlug(sub: { name: string; deliverables: DeliverableLike[] }, microcategorySlug: string): DeliverableLike | undefined {
+  return sub.deliverables.find((del) => `microcategory-${slugify(del.name)}` === microcategorySlug);
 }

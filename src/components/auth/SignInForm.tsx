@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 
-export default function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function SignInForm({ onSuccess, onForgotPassword }: { onSuccess?: () => void; onForgotPassword?: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,6 +55,15 @@ export default function SignInForm({ onSuccess }: { onSuccess?: () => void }) {
           className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
           placeholder="••••••••"
         />
+      </div>
+      <div className="text-right">
+        <button
+          type="button"
+          onClick={onForgotPassword}
+          className="text-xs text-kenya-green hover:underline"
+        >
+          Forgot password?
+        </button>
       </div>
       <button
         type="submit"

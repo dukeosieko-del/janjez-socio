@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useAuth } from "@/components/AuthContext";
 import SignInForm from "@/components/auth/SignInForm";
 import SignUpForm from "@/components/auth/SignUpForm";
+import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -12,8 +13,10 @@ interface AuthModalProps {
   defaultTab?: "login" | "register";
 }
 
+type ModalTab = "login" | "register" | "forgot-password";
+
 export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) {
-  const [tab, setTab] = useState<"login" | "register">(defaultTab);
+  const [tab, setTab] = useState<ModalTab>(defaultTab);
   const { user, supabaseError } = useAuth();
 
   useEffect(() => {
@@ -47,48 +50,63 @@ export default function AuthModal({ isOpen, onClose, defaultTab = "login" }: Aut
             </div>
           </div>
         )}
-        {/* Tabs */}
-        <div className="flex border-b border-kenya-white/10">
-          <button
-            onClick={() => setTab("login")}
-            className={`flex-1 py-4 text-sm font-semibold transition-colors ${
-              tab === "login"
-                ? "text-kenya-green border-b-2 border-kenya-green"
-                : "text-kenya-white/50 hover:text-kenya-white"
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => setTab("register")}
-            className={`flex-1 py-4 text-sm font-semibold transition-colors ${
-              tab === "register"
-                ? "text-kenya-green border-b-2 border-kenya-green"
-                : "text-kenya-white/50 hover:text-kenya-white"
-            }`}
-          >
-            Register
-          </button>
-        </div>
+        {tab !== "forgot-password" && (
+          <div className="flex border-b border-kenya-white/10">
+            <button
+              onClick={() => setTab("login")}
+              className={`flex-1 py-4 text-sm font-semibold transition-colors ${
+                tab === "login"
+                  ? "text-kenya-green border-b-2 border-kenya-green"
+                  : "text-kenya-white/50 hover:text-kenya-white"
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setTab("register")}
+              className={`flex-1 py-4 text-sm font-semibold transition-colors ${
+                tab === "register"
+                  ? "text-kenya-green border-b-2 border-kenya-green"
+                  : "text-kenya-white/50 hover:text-kenya-white"
+              }`}
+            >
+              Register
+            </button>
+          </div>
+        )}
 
         <div className="p-6">
-          {tab === "login" ? (
-            <SignInForm />
+          {tab === "forgot-password" ? (
+            <ResetPasswordForm onBackToSignIn={() => setTab("login")} />
+          ) : tab === "login" ? (
+            <SignInForm onSuccess={onClose} onForgotPassword={() => setTab("forgot-password")} />
           ) : (
             <SignUpForm />
           )}
-          <p className="text-center text-xs text-kenya-white/40 mt-4">
-            {tab === "login"
-              ? "Don't have an account? "
-              : "Already have an account? "}
-            <button
-              type="button"
-              onClick={() => setTab(tab === "login" ? "register" : "login")}
-              className="text-kenya-green hover:underline"
-            >
-              {tab === "login" ? "Register" : "Sign In"}
-            </button>
-          </p>
+          {tab === "forgot-password" ? (
+            <p className="text-center text-xs text-kenya-white/40 mt-4">
+              <button
+                type="button"
+                onClick={() => setTab("login")}
+                className="text-kenya-green hover:underline"
+              >
+                Back to sign in
+              </button>
+            </p>
+          ) : (
+            <p className="text-center text-xs text-kenya-white/40 mt-4">
+              {tab === "login"
+                ? "Don't have an account? "
+                : "Already have an account? "}
+              <button
+                type="button"
+                onClick={() => setTab(tab === "login" ? "register" : "login")}
+                className="text-kenya-green hover:underline"
+              >
+                {tab === "login" ? "Register" : "Sign In"}
+              </button>
+            </p>
+          )}
         </div>
 
         <button
