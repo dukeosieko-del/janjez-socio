@@ -102,7 +102,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
             <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
               <Link href="/order" className="hover:text-kenya-green transition-colors">New Order</Link>
               <span>/</span>
-              <Link href="/order/whatssapp" className="hover:text-kenya-green transition-colors">WhatsApp</Link>
+              <Link href="/order/whatsapp" className="hover:text-kenya-green transition-colors">WhatsApp</Link>
               <span>/</span>
               <span className="text-kenya-green font-medium">#{service.serviceId}</span>
             </nav>

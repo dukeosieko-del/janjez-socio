@@ -458,7 +458,7 @@ export const SERVICE_CATALOG: ServiceCatalogItem[] = [
         ],
       },
       {
-        name: '"Twitter Crypto & NFT Retweets"',
+        name: 'Twitter Crypto & NFT Retweets',
         count: 1,
         deliverables: [
           { name: 'NFT Retweet (100/50k), 50k/day', price: '1.6 Ksh' },
@@ -613,7 +613,29 @@ export const SERVICE_CATALOG: ServiceCatalogItem[] = [
     icon: '/icons/services/google-reviews-icon.png',
     href: '/services/google-maps-reviews',
     modalSize: 'large',
-    subcategories: [],
+    subcategories: [
+      {
+        name: '5-Star Custom Reviews',
+        count: 1,
+        deliverables: [
+          { name: 'Custom 5-star reviews from local guides', price: '25 Ksh' },
+        ],
+      },
+      {
+        name: 'Local Guide Feedback',
+        count: 1,
+        deliverables: [
+          { name: 'Reviews from verified Local Guides', price: '35 Ksh' },
+        ],
+      },
+      {
+        name: 'Place Saves & Directions',
+        count: 1,
+        deliverables: [
+          { name: 'Place saves and direction requests', price: '0.9 Ksh' },
+        ],
+      },
+    ],
   },
 ];
 

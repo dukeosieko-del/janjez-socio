@@ -106,7 +106,7 @@ export default function WhatsAppClient() {
               {whatsappServices.map((service) => (
                 <Link
                   key={service.id}
-                  href={`/order/whatssapp/${service.id}`}
+                  href={`/order/whatsapp/${service.id}`}
                   className="group bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-5 hover:border-kenya-green/50 transition-all duration-300 hover:transform hover:-translate-y-1"
                 >
                   <div className="flex items-center gap-2 mb-2">
