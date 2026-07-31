@@ -51,7 +51,7 @@ npm ci --production=false
 
 # 6. Build
 echo "🔨 Building application..."
-npm run build
+NEXT_DISABLE_TURBOPACK=1 npm run build
 
 # 7. Environment file
 echo "🔐 Setting up environment..."
