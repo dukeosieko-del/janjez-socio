@@ -1,3 +1,6 @@
+import { SERVICE_CATALOG } from "@/lib/service-catalog";
+import { getPlatformSlug, getSubcategorySlug } from "@/lib/service-routes";
+
 export const PLATFORMS = [
   {
     id: "youtube",
@@ -1862,22 +1865,15 @@ export interface SidebarItem {
 }
 
 export const SIDEBAR_ITEMS: SidebarItem[] = [
-  { label: "New Order", href: "/order", icon: "🛒", active: true },
-  { label: "Blog & News", href: "/blog", icon: "💬" },
-  { label: "Sign Up", href: "/order#", icon: "📑", trigger: "register" },
-  { label: "Sign In", href: "/order#", icon: "🔑", trigger: "login" },
-  {
-    label: "WhatsApp",
-    icon: "/whatsapp-icon.png",
-    children: [
-      { label: "WhatsApp - Channel Followers", href: "/order/whatsapp-channel-followers", icon: "👥" },
-      { label: "WhatsApp - Poll Votes ᴺᴱᵂ", href: "/order/whatsapp-poll-votes", icon: "📊" },
-      { label: "WhatsApp - Channel Post Reactions [Instant Server | Complete In 1 Minute] ᴺᴱᵂ", href: "/order/whatsapp-channel-post-reactions-instant-server-complete-in-1-minute", icon: "⚡" },
-      { label: "WhatsApp - Channel Post Reactions [Cheap Slow Server] ᴺᴱᵂ", href: "/order/whatsapp-channel-post-reactions-cheap-slow-server", icon: "🐢" },
-      { label: "WhatsApp - Channel Auto Future Post Reactions ᴺᴱᵂ", href: "/order/whatsapp-channel-auto-future-post-reactions", icon: "🤖" },
-      { label: "Legacy Services", href: "/order?category=whatsapp", icon: "🛒" },
-    ],
-  },
+  ...SERVICE_CATALOG.map((platform) => ({
+    label: platform.name,
+    icon: platform.icon,
+    href: `/services/${getPlatformSlug(platform.id)}`,
+    children: platform.subcategories.map((sub) => ({
+      label: sub.name,
+      href: `/services/${getPlatformSlug(platform.id)}/${getSubcategorySlug(platform.id, sub.name)}`,
+    })) as SidebarItem[],
+  })),
 ];
 
 export const FOOTER_LINKS = {
