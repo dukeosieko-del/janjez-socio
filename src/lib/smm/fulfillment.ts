@@ -3,6 +3,7 @@ import {
   fetchProviderServices,
   placeProviderOrder,
   getProviderStatus,
+  getProviderMultipleStatus,
   createProviderRefill,
   createProviderCancel,
   getProviderBalance,
