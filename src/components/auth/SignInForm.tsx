@@ -23,7 +23,7 @@ export default function SignInForm({ onSuccess, onForgotPassword }: { onSuccess?
       setLoading(false);
     } else {
       onSuccess?.();
-      router.push("/dashboard");
+      router.push("/services");
     }
   };
 
