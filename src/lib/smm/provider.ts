@@ -14,6 +14,7 @@ export interface ProviderService {
 }
 
 export interface ProviderOrderResponse {
+  cancel?: number | { error?: string };
   order?: number;
   refill?: number | { error?: string };
   error?: string;
