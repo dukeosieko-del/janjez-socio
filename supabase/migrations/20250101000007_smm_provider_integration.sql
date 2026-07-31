@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS public.provider_services (
 
 ALTER TABLE public.provider_services ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can manage provider services" ON public.provider_services;
 CREATE POLICY "Admins can manage provider services" ON public.provider_services
   FOR ALL USING (
     EXISTS (
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS public.service_mappings (
 
 ALTER TABLE public.service_mappings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can manage service mappings" ON public.service_mappings;
 CREATE POLICY "Admins can manage service mappings" ON public.service_mappings
   FOR ALL USING (
     EXISTS (
@@ -90,6 +92,7 @@ CREATE TABLE IF NOT EXISTS public.fulfillment_logs (
 
 ALTER TABLE public.fulfillment_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins can view fulfillment logs" ON public.fulfillment_logs;
 CREATE POLICY "Admins can view fulfillment logs" ON public.fulfillment_logs
   FOR SELECT USING (
     EXISTS (
@@ -98,6 +101,7 @@ CREATE POLICY "Admins can view fulfillment logs" ON public.fulfillment_logs
     )
   );
 
+DROP POLICY IF EXISTS "System can insert fulfillment logs" ON public.fulfillment_logs;
 CREATE POLICY "System can insert fulfillment logs" ON public.fulfillment_logs
   FOR INSERT WITH CHECK (true);
 
@@ -105,6 +109,7 @@ CREATE INDEX IF NOT EXISTS idx_fulfillment_logs_order_id ON public.fulfillment_l
 CREATE INDEX IF NOT EXISTS idx_fulfillment_logs_created_at ON public.fulfillment_logs(created_at DESC);
 
 -- Trigger for updated_at
+DROP FUNCTION IF EXISTS public.update_service_mapping_timestamp();
 CREATE OR REPLACE FUNCTION public.update_service_mapping_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -113,6 +118,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_service_mapping_updated ON public.service_mappings;
 CREATE OR REPLACE TRIGGER on_service_mapping_updated
   BEFORE UPDATE ON public.service_mappings
   FOR EACH ROW EXECUTE FUNCTION public.update_service_mapping_timestamp();
