@@ -21,6 +21,7 @@ export function getServiceSlug(id: string) {
 }
 
 export function getPlatformSlug(id: string) {
+  if (id === "google-maps-reviews") return "google-maps-reviews";
   if (id === "x") return "x";
   return id.toLowerCase();
 }

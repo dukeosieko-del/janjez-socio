@@ -18,19 +18,19 @@ export async function middleware(request: Request) {
   const pathname = new URL(request.url).pathname;
 
   const isAuthPage = pathname.startsWith("/auth/");
-  const isProtectedPage = pathname.startsWith("/dashboard");
+  const isProtectedPage = pathname.startsWith("/dashboard") || pathname.startsWith("/services");
 
   if (isProtectedPage && !user) {
     return NextResponse.redirect(new URL("/auth/sign-in", request.url));
   }
 
   if (isAuthPage && user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/services", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*"],
+  matcher: ["/dashboard/:path*", "/services/:path*", "/auth/:path*"],
 };

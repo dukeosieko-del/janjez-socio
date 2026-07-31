@@ -10,6 +10,7 @@ export interface DeliverableLike {
 }
 
 export function getPlatformSlug(id: string) {
+  if (id === "google-maps-reviews") return "google-maps-reviews";
   if (id === "x") return "x";
   return id.toLowerCase();
 }
@@ -33,6 +34,7 @@ export function getSubcategorySlug(platformId: string, subcategoryName: string) 
 }
 
 export function findCatalogItemBySlug(platformSlug: string): ServiceCatalogItem | undefined {
+  if (platformSlug === "google-maps-reviews") return SERVICE_CATALOG.find((c) => c.id === "google-maps-reviews");
   if (platformSlug === "x") return SERVICE_CATALOG.find((c) => c.id === "x");
   return SERVICE_CATALOG.find((c) => c.id === platformSlug || getPlatformSlug(c.id) === platformSlug);
 }
