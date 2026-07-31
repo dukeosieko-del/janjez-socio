@@ -284,7 +284,7 @@ export async function requestCancel(orderId: string) {
 }
 
 async function logFulfillment(
-  supabase: ReturnType<typeof createAdminClient>,
+  supabase: NonNullable<ReturnType<typeof createAdminClient>>,
   orderId: string,
   action: string,
   status: string,
