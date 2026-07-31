@@ -6,8 +6,8 @@ import {
   createProviderRefill,
   createProviderCancel,
   getProviderBalance,
-  type ProviderService,
 } from "./provider";
+import type { ProviderService } from "./provider";
 
 export interface ServiceMatch {
   providerService: ProviderService;
