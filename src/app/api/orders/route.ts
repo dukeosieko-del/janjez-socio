@@ -1,47 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fulfillOrder } from "@/lib/smm/fulfillment";
 
 export const runtime = "nodejs";
-
-function authUser(request: Request) {
-  const header = request.headers.get("authorization") || "";
-  const match = header.match(/^Bearer\s+(.*)$/i);
-  if (!match) return null;
-  const token = match[1].trim();
-  const supabase = createAdminClient();
-  if (!supabase) return null;
-  return { supabase, token };
-}
-
-export async function GET(request: Request) {
-  try {
-    const userHeader = authUser(request);
-    if (!userHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { supabase, token } = userHeader;
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const userId = userData.user.id;
-
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ orders: data || [] });
-  } catch {
-    return NextResponse.json({ error: "Failed to load orders" }, { status: 500 });
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -104,9 +65,51 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Trigger automatic fulfillment asynchronously
+    if (data?.id) {
+      Promise.resolve(fulfillOrder(data.id)).catch((err) => {
+        console.error("Auto-fulfillment failed for order", data.id, err);
+      });
+    }
+
     return NextResponse.json({ order: data }, { status: 201 });
   } catch (error) {
     console.error("Order creation error:", error);
     return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const header = request.headers.get("authorization") || "";
+    const match = header.match(/^Bearer\s+(.*)$/i);
+    if (!match) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = match[1].trim();
+    const supabase = createAdminClient();
+    if (!supabase) {
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    }
+
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("user_id", userData.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ orders: data || [] });
+  } catch {
+    return NextResponse.json({ error: "Failed to load orders" }, { status: 500 });
   }
 }
