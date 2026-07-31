@@ -3,6 +3,46 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
+function authUser(request: Request) {
+  const header = request.headers.get("authorization") || "";
+  const match = header.match(/^Bearer\s+(.*)$/i);
+  if (!match) return null;
+  const token = match[1].trim();
+  const supabase = createAdminClient();
+  if (!supabase) return null;
+  return { supabase, token };
+}
+
+export async function GET(request: Request) {
+  try {
+    const userHeader = authUser(request);
+    if (!userHeader) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { supabase, token } = userHeader;
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userId = userData.user.id;
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ orders: data || [] });
+  } catch {
+    return NextResponse.json({ error: "Failed to load orders" }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
