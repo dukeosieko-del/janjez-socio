@@ -94,25 +94,56 @@ export async function POST(request: NextRequest) {
     }
 
     if (data?.id) {
-      Promise.resolve(fulfillOrder(data.id)).catch((err) => {
-        console.error("Auto-fulfillment failed for order", data.id, err);
-      });
+      try {
+        const fulfillmentResult = await fulfillOrder(data.id);
 
-      Promise.resolve(
-        (async () => {
-          try {
-            await supabase.from("notifications").insert({
-              user_id: user.id,
-              type: "order_created",
-              title: "Order Placed",
-              message: `Your order ${data.order_id || data.id.slice(0, 8)} for ${subcategory} has been recorded.`,
-              link: "/orders/all",
-            });
-          } catch (err) {
-            console.error("Failed to create notification for order", data.id, err);
-          }
-        })()
-      ).catch(() => {});
+        if (fulfillmentResult.status === "failed" || fulfillmentResult.status === "error") {
+          await supabase.from("notifications").insert({
+            user_id: user.id,
+            type: "order_failed",
+            title: "Order Fulfillment Failed",
+            message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be fulfilled: ${fulfillmentResult.error || "Unknown error"}. Our team has been notified.`,
+            link: "/orders/all",
+          });
+        } else {
+          await supabase.from("notifications").insert({
+            user_id: user.id,
+            type: "order_fulfilled",
+            title: "Order Accepted",
+            message: `Your order ${data.order_id || data.id.slice(0, 8)} has been sent to the provider. Status: ${fulfillmentResult.status}.`,
+            link: "/orders/all",
+          });
+        }
+      } catch (fulfillError) {
+        console.error("Auto-fulfillment failed for order", data.id, fulfillError);
+        const errorMessage = fulfillError instanceof Error ? fulfillError.message : "Auto-fulfillment error";
+        await supabase
+          .from("orders")
+          .update({
+            fulfillment_status: "failed",
+            fulfillment_error: errorMessage,
+          })
+          .eq("id", data.id);
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          type: "order_failed",
+          title: "Order Fulfillment Failed",
+          message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be processed: ${errorMessage}.`,
+          link: "/orders/all",
+        });
+      }
+
+      try {
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          type: "order_created",
+          title: "Order Placed",
+          message: `Your order ${data.order_id || data.id.slice(0, 8)} for ${subcategory} has been recorded.`,
+          link: "/orders/all",
+        });
+      } catch (notifErr) {
+        console.error("Failed to create notification for order", data.id, notifErr);
+      }
     }
 
     return NextResponse.json({ order: data }, { status: 201 });

@@ -48,8 +48,13 @@ export async function smmPost<T>(body: Record<string, unknown>): Promise<T> {
     throw new Error(`Provider HTTP ${res.status}: ${res.statusText}`);
   }
 
-  const data = (await res.json()) as T;
-  return data;
+  const data = (await res.json()) as T & { error?: string };
+
+  if (data.error) {
+    throw new Error(`Provider API error: ${data.error}`);
+  }
+
+  return data as T;
 }
 
 export async function fetchProviderServices(): Promise<ProviderService[]> {

@@ -149,7 +149,7 @@ export async function fulfillOrder(orderId: string) {
         provider_service_id: String(providerService.service),
         provider_order_id: String(response.order),
         provider_status: "pending",
-        provider_charge: parseFloat(providerService.rate) * quantity,
+         provider_charge: (parseFloat(providerService.rate) * quantity) / 1000,
         provider_currency: "USD",
         fulfillment_status: "processing",
         fulfilled_at: new Date().toISOString(),
@@ -174,9 +174,9 @@ export async function syncOrderStatuses(orderIds?: string[]) {
   const supabase = createAdminClient();
   if (!supabase) return;
 
-  let query = supabase
-    .from("orders")
-    .select("id, provider_order_id, fulfillment_status")
+   let query = supabase
+     .from("orders")
+     .select("id, order_id, user_id, provider_order_id, fulfillment_status, provider_status")
     .not("provider_order_id", "is", null);
 
   if (orderIds && orderIds.length > 0) {
@@ -204,15 +204,29 @@ export async function syncOrderStatuses(orderIds?: string[]) {
       provider_currency: status.currency || "USD",
     };
 
-    if (status.status === "Completed") {
-      updates.fulfillment_status = "fulfilled";
-    } else if (status.status === "Cancelled" || status.status === "Refunded") {
-      updates.fulfillment_status = "cancelled";
-    } else if (status.status === "Partial") {
-      updates.fulfillment_status = "processing";
-    }
+     if (status.status === "Completed") {
+       updates.fulfillment_status = "fulfilled";
+     } else if (status.status === "Cancelled" || status.status === "Refunded") {
+       updates.fulfillment_status = "cancelled";
+     } else if (status.status === "Partial") {
+       updates.fulfillment_status = "processing";
+     } else {
+       updates.fulfillment_status = "processing";
+     }
 
-    await supabase.from("orders").update(updates).eq("id", order.id);
+     const prevStatus = order.fulfillment_status;
+     const newStatus = updates.fulfillment_status as string;
+     if (prevStatus !== newStatus || status.status !== order.provider_status) {
+       await supabase.from("notifications").insert({
+         user_id: order.user_id,
+         type: "order_update",
+         title: `Order ${order.order_id || order.id.slice(0, 8)} status updated`,
+         message: `Status changed from ${prevStatus || "pending"} to ${newStatus}. Provider: ${status.status || "unknown"}.`,
+         link: "/orders/all",
+       });
+     }
+
+     await supabase.from("orders").update(updates).eq("id", order.id);
     await logFulfillment(supabase, order.id, "status", "synced", null, status);
   }
 }
@@ -235,6 +249,14 @@ export async function requestRefill(orderId: string) {
   const refillResult = result[0];
 
   if (refillResult && typeof refillResult.refill === "number") {
+    await supabase
+      .from("orders")
+      .update({
+        fulfillment_status: "processing",
+        provider_status: "refilled",
+        fulfilled_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
     await logFulfillment(supabase, orderId, "refill", "requested", { order: order.provider_order_id }, refillResult);
     return { refillId: refillResult.refill };
   }
@@ -268,7 +290,10 @@ export async function requestCancel(orderId: string) {
   if (cancelResult && typeof cancelResult.cancel === "number") {
     await supabase
       .from("orders")
-      .update({ fulfillment_status: "cancelled" })
+      .update({
+        fulfillment_status: "cancelled",
+        provider_status: "cancelled",
+      })
       .eq("id", orderId);
     await logFulfillment(supabase, orderId, "cancel", "cancelled", { order: order.provider_order_id }, cancelResult);
     return { cancelId: cancelResult.cancel };
