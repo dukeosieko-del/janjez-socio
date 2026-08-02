@@ -1,36 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getUserFromRequest } from "@/lib/server/auth-helpers";
+import { rateLimit } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
-function authUser(request: Request) {
-  const header = request.headers.get("authorization") || "";
-  const match = header.match(/^Bearer\s+(.*)$/i);
-  if (!match) return null;
-  const token = match[1].trim();
-  const supabase = createAdminClient();
-  if (!supabase) return null;
-  return { supabase, token };
-}
-
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const userHeader = authUser(request);
-    if (!userHeader) {
+    const rl = rateLimit(request, 60);
+    if (!rl.ok && rl.response) return rl.response;
+
+    const user = await getUserFromRequest(request);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { supabase, token } = userHeader;
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const supabase = createAdminClient();
+    if (!supabase) {
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
-    const userId = userData.user.id;
 
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
 
@@ -46,24 +39,25 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(request: NextRequest) {
   try {
-    const userHeader = authUser(request);
-    if (!userHeader) {
+    const rl = rateLimit(request, 30);
+    if (!rl.ok && rl.response) return rl.response;
+
+    const user = await getUserFromRequest(request);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { supabase, token } = userHeader;
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const supabase = createAdminClient();
+    if (!supabase) {
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
-    const userId = userData.user.id;
 
     const body = await request.json();
     const { ids, read } = body as { ids?: string[]; read?: boolean };
 
-    let query = supabase.from("notifications").update({ read: read ?? true }).eq("user_id", userId);
+    let query = supabase.from("notifications").update({ read: read ?? true }).eq("user_id", user.id);
 
     if (ids && Array.isArray(ids) && ids.length > 0) {
       query = query.in("id", ids);

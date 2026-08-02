@@ -1,30 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/server/auth-helpers";
+import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
-async function getAdminUser() {
-  const supabase = createAdminClient();
-  if (!supabase) return null;
+export async function GET(request: NextRequest) {
+  const rl = rateLimitAdmin(request);
+  if (!rl.ok && rl.response) return rl.response;
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, email, role, created_at")
-    .eq("role", "admin")
-    .limit(1)
-    .single();
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
 
-  if (error || !data) return null;
-  return data;
-}
-
-export async function GET() {
   try {
-    const admin = await getAdminUser();
-    if (!admin) {
-      return NextResponse.json({ error: "No admin found" }, { status: 403 });
-    }
-
     const supabase = createAdminClient();
     if (!supabase) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });

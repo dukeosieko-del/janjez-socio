@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/server/auth-helpers";
+import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const rl = rateLimitAdmin(request);
+  if (!rl.ok && rl.response) return rl.response;
+
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -45,7 +53,13 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const rl = rateLimitAdmin(request);
+  if (!rl.ok && rl.response) return rl.response;
+
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const { action, target_type, target_id, details, ip_address, user_agent } = body;
@@ -55,9 +69,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
-    const { data, error } = await supabase
+    const { error: insertError } = await supabase
       .from("admin_activity_logs")
       .insert({
+        actor_id: auth.id,
+        actor_email: auth.email,
         action,
         target_type,
         target_id,
@@ -68,11 +84,11 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (insertError) {
+      return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
-    return NextResponse.json({ log: data });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Admin log create error:", error);
     return NextResponse.json({ error: "Failed to create log" }, { status: 500 });

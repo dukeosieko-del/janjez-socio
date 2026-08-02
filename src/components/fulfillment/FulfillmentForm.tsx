@@ -14,9 +14,10 @@ export interface FulfillmentProps {
   platformIcon: string;
   subcategoryName: string;
   deliverable: { name: string; price: string; note?: string; flag?: string; minQty?: number; maxQty?: number };
+  onRequireAuth?: (tab?: "login" | "register") => void;
 }
 
-export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable }: FulfillmentProps) {
+export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable, onRequireAuth }: FulfillmentProps) {
   const { user, walletBalance } = useAuth();
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -53,6 +54,14 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
   const handlePlaceOrder = useCallback(async () => {
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
+    if (!user) {
+      if (onRequireAuth) {
+        onRequireAuth("login");
+      } else {
+        window.location.href = "/auth/sign-in";
+      }
+      return;
+    }
 
     if (total > walletBalance) {
       setMpesaOpen(true);
@@ -76,7 +85,11 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       });
 
       if (!result.ok) {
-        setOrderError(result.error || "Failed to place order.");
+        if (result.error?.includes("401") || result.error?.includes("Unauthorized")) {
+          onRequireAuth?.("login");
+        } else {
+          setOrderError(result.error || "Failed to place order.");
+        }
         setPlacing(false);
         return;
       }

@@ -1,13 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendMail } from "@/lib/email/transport";
 import { SITE_NAME, SITE_URL } from "@/lib/email/config";
+import { rateLimit } from "@/lib/server/rate-limiter";
+import { sanitizeString } from "@/lib/server/validation";
 import crypto from "crypto";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const rl = rateLimit(request, 10);
+    if (!rl.ok && rl.response) return rl.response;
+
     const body = await request.json();
     const { email, password, full_name, phone } = body as {
       email: string;
@@ -20,6 +27,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
 
+    if (!EMAIL_RE.test(email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    }
+
+    const sanitizedEmail = sanitizeString(email, 254) || email;
+    const sanitizedFullName = sanitizeString(full_name, 100);
+    const sanitizedPhone = sanitizeString(phone, 30);
+
     const supabase = createAdminClient();
     if (!supabase) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
@@ -27,18 +46,18 @@ export async function POST(request: Request) {
 
     const { data: existing } = await supabase.auth.admin.listUsers();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const alreadyExists = existing?.users?.find((u: any) => u.email === email);
+    const alreadyExists = existing?.users?.find((u: any) => u.email === sanitizedEmail);
     if (alreadyExists) {
       return NextResponse.json({ error: "User already exists" }, { status: 409 });
     }
 
     const { data: user, error: createError } = await supabase.auth.admin.createUser({
-      email,
+      email: sanitizedEmail,
       password,
       email_confirm: false,
       user_metadata: {
-        full_name: full_name || null,
-        phone: phone || null,
+        full_name: sanitizedFullName || null,
+        phone: sanitizedPhone || null,
       },
     });
 
@@ -91,7 +110,7 @@ export async function POST(request: Request) {
           address: process.env.ZEPTOMAIL_FROM_EMAIL || `noreply@${SITE_URL.replace(/https?:\/\//, "")}`,
           name: "JANJEZ SOCIO",
         },
-        to: [{ email_address: { address: email, name: "" } }],
+        to: [{ email_address: { address: sanitizedEmail, name: sanitizedFullName || "" } }],
         subject: `Verify your email — ${SITE_NAME}`,
         htmlbody: html,
         textbody: text,

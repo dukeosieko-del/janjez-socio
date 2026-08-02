@@ -66,6 +66,18 @@ export function requiresSkuSelection(categoryId: string): boolean {
   return false;
 }
 
+async function getSessionToken(): Promise<string | null> {
+  try {
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    if (!supabase) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function submitOrder(payload: OrderLogPayload) {
   const categoryName = resolveCategoryName(payload.categoryId);
   const subcategoryName = resolveSubcategoryName(payload.categoryId, payload.serviceId);
@@ -78,10 +90,16 @@ export async function submitOrder(payload: OrderLogPayload) {
 
   const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
   const timestamp = new Date().toISOString();
+  const token = await getSessionToken();
+
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
 
   const res = await fetch("/api/orders", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       order_id: orderId,
       category: categoryName,

@@ -1,11 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fulfillOrder } from "@/lib/smm/fulfillment";
+import { getUserFromRequest } from "@/lib/server/auth-helpers";
+import { rateLimit } from "@/lib/server/rate-limiter";
+import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const rl = rateLimit(request, 30);
+    if (!rl.ok && rl.response) return rl.response;
+
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       order_id,
@@ -33,8 +44,24 @@ export async function POST(request: Request) {
       quantity_source?: "preset" | "custom";
     };
 
-    if (!category || !subcategory || !quantity || !link_submitted || amount_paid === undefined || !quantity_source) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const errors: string[] = [];
+
+    if (!category) errors.push("category is required");
+    if (!subcategory) errors.push("subcategory is required");
+    if (!quantity_source) errors.push("quantity_source is required");
+
+    const quantityErr = validateNumber(quantity, "quantity", { min: 1 });
+    if (quantityErr) errors.push(quantityErr);
+
+    const linkErr = validateLink(link_submitted);
+    if (linkErr) errors.push(linkErr);
+
+    if (amount_paid === undefined || isNaN(Number(amount_paid)) || Number(amount_paid) < 0) {
+      errors.push("amount_paid must be a non-negative number");
+    }
+
+    if (errors.length > 0) {
+      return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
     const supabase = createAdminClient();
@@ -45,14 +72,15 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from("orders")
       .insert({
+        user_id: user.id,
         order_id: order_id || undefined,
         category,
         subcategory,
         sku_id: sku_id ?? null,
-        quantity,
-        link_submitted,
-        amount: amount_paid,
-        payment_reference: payment_reference || null,
+        quantity: Number(quantity),
+        link_submitted: sanitizeString(link_submitted, 500),
+        amount: Number(amount_paid),
+        payment_reference: sanitizeString(payment_reference, 200) || null,
         refill_guarantee: refill_guarantee ?? null,
         quantity_source,
         status: "pending",
@@ -65,11 +93,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Trigger automatic fulfillment asynchronously
     if (data?.id) {
       Promise.resolve(fulfillOrder(data.id)).catch((err) => {
         console.error("Auto-fulfillment failed for order", data.id, err);
       });
+
+      Promise.resolve(
+        (async () => {
+          try {
+            await supabase.from("notifications").insert({
+              user_id: user.id,
+              type: "order_created",
+              title: "Order Placed",
+              message: `Your order ${data.order_id || data.id.slice(0, 8)} for ${subcategory} has been recorded.`,
+              link: "/orders/all",
+            });
+          } catch (err) {
+            console.error("Failed to create notification for order", data.id, err);
+          }
+        })()
+      ).catch(() => {});
     }
 
     return NextResponse.json({ order: data }, { status: 201 });
@@ -79,29 +122,25 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const header = request.headers.get("authorization") || "";
-    const match = header.match(/^Bearer\s+(.*)$/i);
-    if (!match) {
+    const rl = rateLimit(request, 60);
+    if (!rl.ok && rl.response) return rl.response;
+
+    const user = await getUserFromRequest(request);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = match[1].trim();
     const supabase = createAdminClient();
     if (!supabase) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { data, error } = await supabase
       .from("orders")
       .select("*")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {

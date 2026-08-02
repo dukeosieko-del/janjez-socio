@@ -1,10 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rateLimit } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const rl = rateLimit(request, 60);
+    if (!rl.ok && rl.response) return rl.response;
+
     const requestUrl = new URL(request.url);
     const token = requestUrl.searchParams.get("token");
 

@@ -10,19 +10,25 @@ interface MpesaModalProps {
   onClose: () => void;
 }
 
+const POLL_INTERVAL = 5000;
+const POLL_TIMEOUT = 120000;
+
 export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"input" | "processing" | "success">("input");
   const [txId, setTxId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { user, refreshProfile } = useAuth();
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
+  const { session, walletBalance, refreshProfile } = useAuth();
 
   const resetAndClose = () => {
     setStep("input");
     setPhoneNumber("");
     setAmount("");
+    setTxId("");
     setError(null);
+    setCheckoutRequestId(null);
     onClose();
   };
 
@@ -31,39 +37,70 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
     setError(null);
     setStep("processing");
 
+    const numAmount = Number(amount);
+    if (numAmount < 100) {
+      setError("Minimum top-up is KES 100");
+      setStep("input");
+      return;
+    }
+
+    if (!session?.access_token) {
+      setError("Please sign in to top up your wallet");
+      setStep("input");
+      return;
+    }
+
     try {
-      const numAmount = Number(amount);
-      if (numAmount < 100) {
-        setError("Minimum top-up is KES 100");
-        setStep("input");
-        return;
+      const initiateRes = await fetch("/api/mpesa/stk-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ phoneNumber, amount: numAmount }),
+      });
+
+      const initiateData = await initiateRes.json();
+
+      if (!initiateRes.ok) {
+        throw new Error(initiateData.error || "Failed to initiate M-Pesa payment");
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const checkoutId = initiateData.checkoutRequestId;
+      setCheckoutRequestId(checkoutId);
 
-      setTxId("MP" + Date.now().toString().slice(-10));
+      const startTime = Date.now();
+      const token = session.access_token;
 
-      if (user) {
-        const supabase = (await import("@/lib/supabase/client")).createClient();
-        if (supabase) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("wallet_balance")
-            .eq("id", user.id)
-            .single();
+      const poll = async () => {
+        const statusRes = await fetch(
+          `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-          const currentBalance = Number(profile?.wallet_balance) || 0;
-          await supabase
-            .from("profiles")
-            .update({ wallet_balance: currentBalance + numAmount })
-            .eq("id", user.id);
+        const statusData = await statusRes.json();
+
+        if (statusData.paid) {
+          setTxId(checkoutId.slice(0, 10));
+          setStep("success");
+          await refreshProfile();
+          return;
         }
-      }
 
-      setStep("success");
-      await refreshProfile();
-    } catch {
-      setError("Payment processing failed. Please try again.");
+        if (Date.now() - startTime >= POLL_TIMEOUT) {
+          throw new Error("Payment timed out. Please check your phone and try again.");
+        }
+
+        setTimeout(poll, POLL_INTERVAL);
+      };
+
+      setTimeout(poll, POLL_INTERVAL);
+    } catch (err) {
+      console.error("M-Pesa top-up error:", err);
+      setError(err instanceof Error ? err.message : "Payment processing failed. Please try again.");
       setStep("input");
     }
   };
@@ -88,7 +125,7 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
       <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl">
         {step === "input" && (
           <>
-            <div className="flex items-center justify-between p-6 border-b border-kenya-white/10">
+            <div className="flex items-center justify-between p-6 border-b	border-kenya-white/10">
               <div className="flex items-center gap-3">
                 <Image src="/mpesa-logo.png" alt="M-Pesa" width={40} height={40} className="w-10 h-10 object-contain" />
                 <div>
@@ -169,6 +206,11 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
                 </div>
               )}
 
+              <div className="flex items-center justify-between text-xs text-kenya-white/50 mb-2">
+                <span>Current balance</span>
+                <span>KES {walletBalance.toLocaleString()}</span>
+              </div>
+
               <button
                 onClick={handleTopUp}
                 disabled={!phoneNumber || !amount || Number(amount) < 100}
@@ -188,6 +230,11 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
             <p className="text-kenya-white/60 text-sm">
               Please check your phone and enter your M-Pesa PIN to complete the transaction.
             </p>
+            {checkoutRequestId && (
+              <p className="text-kenya-white/40 text-xs mt-4 font-mono">
+                Ref: {checkoutRequestId.slice(0, 10)}
+              </p>
+            )}
           </div>
         )}
 
