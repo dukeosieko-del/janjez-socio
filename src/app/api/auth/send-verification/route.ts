@@ -2,12 +2,19 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendMail } from "@/lib/email/transport";
 import { SITE_NAME, SITE_URL } from "@/lib/email/config";
+import { rateLimit, getClientIP } from "@/lib/server/rateLimit";
 import crypto from "crypto";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    const rateLimited = !rateLimit(`signup:${ip}`, { windowMs: 60_000, max: 5 });
+    if (rateLimited) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
+    }
+
     const body = await request.json();
     const { email, password, full_name, phone } = body as {
       email: string;
@@ -18,6 +25,15 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
     }
 
     const supabase = createAdminClient();

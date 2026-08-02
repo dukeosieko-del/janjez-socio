@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import { sendMail } from "@/lib/email/transport";
 import { SUPPORT_ADDRESS, EMAIL_FORWARDING, SITE_NAME } from "@/lib/email/config";
 import { getContactNotificationHtml, getContactConfirmationHtml } from "@/lib/email/templates";
+import { rateLimit, getClientIP } from "@/lib/server/rateLimit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const ip = getClientIP(request);
+    const rateLimited = !rateLimit(`contact:${ip}`, { windowMs: 60_000, max: 10 });
+    if (rateLimited) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
+    }
+
     const body = await request.json();
     const { name, email, subject, message, department = "support" } = body as {
       name: string;
@@ -18,6 +25,11 @@ export async function POST(request: Request) {
 
     if (!name || !email || !subject || !message) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
 
     const forwardTo = EMAIL_FORWARDING[`${department}@janjez.social`] || EMAIL_FORWARDING[SUPPORT_ADDRESS] || SUPPORT_ADDRESS;
