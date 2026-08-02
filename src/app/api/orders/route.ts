@@ -4,8 +4,46 @@ import { fulfillOrder } from "@/lib/smm/fulfillment";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
+import { ORDER_SERVICES } from "@/lib/data";
+import { SERVICE_CATALOG } from "@/lib/service-catalog";
 
 export const runtime = "nodejs";
+
+function calculateExpectedAmount(
+  catalogCategoryId: string | undefined,
+  category: string,
+  subcategory: string,
+  skuId: string | null | undefined,
+  quantity: number
+): number {
+  if (skuId && catalogCategoryId) {
+    const service = ORDER_SERVICES.find(
+      (s) => s.categoryId === catalogCategoryId && (s.serviceId === skuId || s.id === skuId)
+    );
+    if (service) {
+      return service.rate * quantity * 0.95;
+    }
+  }
+
+  const catalogItem = SERVICE_CATALOG.find(
+    (c) => c.id === catalogCategoryId || c.name === category
+  );
+  if (catalogItem) {
+    const sub = catalogItem.subcategories.find((s) => s.name === subcategory);
+    if (sub) {
+      const deliverable = sub.deliverables.find((d) => d.name === skuId || d.name === sub.deliverables[0].name);
+      if (deliverable) {
+        const priceMatch = deliverable.price.match(/([\d,.]+)/);
+        if (priceMatch) {
+          const rate = parseFloat(priceMatch[1].replace(/,/g, ""));
+          return rate * quantity * 0.95;
+        }
+      }
+    }
+  }
+
+  return NaN;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,9 +64,10 @@ export async function POST(request: NextRequest) {
       quantity,
       link_submitted,
       amount_paid,
+      catalog_category_id,
        payment_reference,
        refill_guarantee,
-      quantity_source,
+       quantity_source,
     } = body as {
       order_id?: string;
       category?: string;
@@ -37,6 +76,7 @@ export async function POST(request: NextRequest) {
       quantity?: number;
       link_submitted?: string;
       amount_paid?: number;
+      catalog_category_id?: string;
       payment_reference?: string;
       refill_guarantee?: string | null;
       quantity_source?: "preset" | "custom";
@@ -67,6 +107,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
+    const numQuantity = Number(quantity);
+
+    const expectedAmount = calculateExpectedAmount(
+      catalog_category_id,
+      category!,
+      subcategory!,
+      sku_id,
+      numQuantity
+    );
+
+    if (isNaN(expectedAmount) || expectedAmount <= 0) {
+      return NextResponse.json({ error: "Unable to verify service price. Please try a different service." }, { status: 400 });
+    }
+
+    const clientAmount = Number(amount_paid) || 0;
+    const tolerance = 0.01;
+    if (Math.abs(expectedAmount - clientAmount) > tolerance) {
+      console.error(`Order price mismatch: expected ${expectedAmount}, got ${clientAmount}`);
+      return NextResponse.json({
+        error: "Price verification failed. The submitted amount does not match the service price.",
+      }, { status: 400 });
+    }
+
+    const { data: debitData, error: debitError } = await supabase.rpc("debit_wallet", {
+      p_user_id: user.id,
+      p_amount: expectedAmount,
+    });
+
+    const debitResult = debitData as { success: boolean; new_balance: number } | null;
+
+    if (debitError || !debitResult || debitResult.success === false) {
+      const currentBalance = await supabase
+        .from("profiles")
+        .select("wallet_balance")
+        .eq("id", user.id)
+        .single();
+      const balance = Number(currentBalance.data?.wallet_balance) || 0;
+      await supabase.from("notifications").insert({
+        user_id: user.id,
+        type: "order_failed",
+        title: "Order Failed - Insufficient Wallet Balance",
+        message: `Your order could not be placed: insufficient wallet balance (KES ${balance.toFixed(2)}). Top up via M-Pesa first.`,
+        link: "/pay",
+      });
+      return NextResponse.json({
+        error: "Insufficient wallet balance. Please top up your wallet before placing an order.",
+      }, { status: 402 });
+    }
+
     const { data, error } = await supabase
       .from("orders")
       .insert({
@@ -74,15 +163,20 @@ export async function POST(request: NextRequest) {
         order_id: order_id || undefined,
         category,
         subcategory,
+        service_name: subcategory,
         sku_id: sku_id ?? null,
-        quantity: Number(quantity),
+        quantity: numQuantity,
         link_submitted: sanitizeString(link_submitted, 500),
-        amount: Number(amount_paid),
+        link: sanitizeString(link_submitted, 500),
+        amount: expectedAmount,
+        amount_paid: expectedAmount,
         payment_reference: sanitizeString(payment_reference, 200) || null,
         refill_guarantee: refill_guarantee ?? null,
         quantity_source,
+        catalog_category_id,
         status: "pending",
         payment_status: "paid",
+        fulfillment_status: "pending",
       })
       .select("*")
       .single();

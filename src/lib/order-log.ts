@@ -101,7 +101,8 @@ export async function submitOrder(payload: OrderLogPayload) {
     method: "POST",
     headers,
     body: JSON.stringify({
-      order_id: orderId,
+    catalog_category_id: payload.categoryId,
+  order_id: orderId,
       category: categoryName,
       subcategory: subcategoryName,
       sku_id: payload.selectedSkuId ?? skuId ?? null,

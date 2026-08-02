@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { syncOrderStatuses } from "@/lib/smm/fulfillment";
-import { requireCronSecret } from "@/lib/server/auth-helpers";
+import { getUserFromRequest, requireCronSecret } from "@/lib/server/auth-helpers";
 import { rateLimitCron } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
@@ -9,7 +9,11 @@ export async function POST(request: NextRequest) {
   const rl = rateLimitCron(request);
   if (!rl.ok && rl.response) return rl.response;
 
-  if (!requireCronSecret(request)) {
+  const isCron = requireCronSecret(request);
+  const user = await getUserFromRequest(request);
+  const isAdmin = user?.role === "admin";
+
+  if (!isCron && !isAdmin) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

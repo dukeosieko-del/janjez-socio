@@ -5,6 +5,7 @@ import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
+import { submitOrder } from "@/lib/order-log";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -18,7 +19,7 @@ const HAPPY_HOUR_DISCOUNT = 0.95;
 const X_URL_PATTERN = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+/;
 
 export default function XTwitterPageClient() {
-  const { openAuth, walletBalance } = useAuth();
+  const { user, session, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -26,6 +27,9 @@ export default function XTwitterPageClient() {
 
 
   const [mpesaOpen, setMpesaOpen] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [orderSuccess, setOrderSuccess] = useState(false);
   
   const xServices = useMemo(() => getServicesByCategory(X_TWITTER_CATEGORY), []);
   const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
@@ -64,20 +68,55 @@ export default function XTwitterPageClient() {
     setQuantity("");
   }, []);
 
-  const handlePlaceOrder = useCallback(() => {
-    if (!selectedService || !link || quantityNum <= 0 || quantityError || linkError) return;
+  const handlePlaceOrder = useCallback(async () => {
+    if (!selectedService || !link || quantityNum <= 0 || quantityError || !linkError) return;
+    if (!user) {
+      openAuth("login");
+      return;
+    }
 
     if (total > walletBalance) {
       setMpesaOpen(true);
       return;
     }
 
-    if (isAnonymous) {
-      window.location.href = "/orders/all";
-      return;
+    setPlacing(true);
+    setOrderError(null);
+    setOrderSuccess(false);
+
+    try {
+      const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
+      const result = await submitOrder({
+        categoryId: "CATEGORY",
+        serviceId: selectedService.name,
+        quantity: quantityNum,
+        link,
+        amountPaid: total,
+        quantitySource,
+        selectedSkuId: selectedService.serviceId || selectedService.name,
+      });
+
+      if (!result.ok) {
+        if (result.error?.includes("401") || result.error?.includes("Unauthorized")) {
+          openAuth("login");
+        } else if (result.error?.includes("balance") || result.error?.includes("402")) {
+          setMpesaOpen(true);
+        } else {
+          setOrderError(result.error || "Failed to place order.");
+        }
+        return;
+      }
+
+      setOrderSuccess(true);
+      setTimeout(() => {
+        window.location.href = "/orders/all";
+      }, 1500);
+    } catch {
+      setOrderError("Unexpected error while placing order.");
+    } finally {
+      setPlacing(false);
     }
-    openAuth("login");
-  }, [selectedService, link, quantityNum, quantityError, linkError, total, walletBalance, isAnonymous, openAuth]);
+  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth, linkError]);
 
   const isValid =
     selectedService &&
@@ -244,13 +283,23 @@ export default function XTwitterPageClient() {
                     <label htmlFor="anonymous" className="text-sm text-kenya-white/70 cursor-pointer">Place order anonymously (no account required)</label>
                   </div>
 
-                  <button
+                              {orderError && (
+              <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
+                <p className="text-kenya-red text-sm">{orderError}</p>
+              </div>
+            )}
+
+            {orderSuccess && (
+              <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-xl p-4">
+                <p className="text-kenya-green text-sm font-medium">Order recorded successfully. Redirecting…</p>
+              </div>
+            )}
+
+<button
                     onClick={handlePlaceOrder}
-                    disabled={!isValid}
-                    className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2"
-                  >
-                    🛒 Place Order
-                  </button>
+                    disabled={!isValid || placing}
+                    className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2">
+{placing ? "Placing Order…" : "🛒 Place Order"}</button>
                 </div>
               </div>
             )}

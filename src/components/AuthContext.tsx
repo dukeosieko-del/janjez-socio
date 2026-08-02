@@ -50,15 +50,11 @@ async function ensureProfile(supabase: ReturnType<typeof createClient>, user: Us
       email: user.email,
       full_name: user.user_metadata?.full_name || null,
       phone: user.user_metadata?.phone || null,
-      wallet_balance: 1000.00,
+      wallet_balance: 0,
       email_verified: false,
     }).select("*").single();
     if (error) return null;
     profile = data as Profile;
-  }
-  if (profile && profile.wallet_balance === 0) {
-    await supabase.from("profiles").update({ wallet_balance: 1000.00 }).eq("id", user.id);
-    profile.wallet_balance = 1000.00;
   }
   return profile;
 }

@@ -173,61 +173,6 @@ export async function queryStkStatus(checkoutRequestId: string): Promise<StkQuer
   return (await res.json()) as StkQueryResponse;
 }
 
-export async function recordWalletTopup(userId: string, amount: number, phone: string, receipt: string) {
-  const supabase = createAdminClient();
-  if (!supabase) {
-    throw new Error("Server misconfigured");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("wallet_balance")
-    .eq("id", userId)
-    .single();
-
-  const currentBalance = Number(profile?.wallet_balance) || 0;
-  const newBalance = currentBalance + amount;
-
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update({ wallet_balance: newBalance })
-    .eq("id", userId);
-
-  if (updateError) {
-    throw new Error(updateError.message);
-  }
-
-  const { error: txError } = await supabase.from("wallet_transactions").insert({
-    user_id: userId,
-    type: "topup",
-    amount: amount,
-    currency: "KES",
-    payment_method: "mpesa",
-    mpesa_receipt: receipt,
-    mpesa_phone: phone,
-    status: "completed",
-    notes: "M-Pesa STK push top-up",
-  });
-
-  if (txError) {
-    console.error("Failed to record wallet transaction:", txError.message);
-  }
-
-  const { error: notifError } = await supabase.from("notifications").insert({
-    user_id: userId,
-    type: "topup",
-    title: "Wallet Top-Up Successful",
-    message: `KES ${amount.toLocaleString()} has been added to your wallet via M-Pesa. New balance: KES ${newBalance.toLocaleString()}.`,
-    link: "/pay",
-  });
-
-  if (notifError) {
-    console.error("Failed to create notification:", notifError.message);
-  }
-
-  return { newBalance };
-}
-
 export interface StkCallbackMetadata {
   amount?: number;
   phone?: string;
@@ -271,23 +216,18 @@ export async function completeStkPayment(
     throw new Error(updateError.message);
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("wallet_balance")
-    .eq("id", pendingTx.user_id)
-    .single();
+  const { data: creditData, error: creditError } = await supabase.rpc("credit_wallet", {
+    p_user_id: pendingTx.user_id,
+    p_amount: amount,
+  });
 
-  const currentBalance = Number(profile?.wallet_balance) || 0;
-  const newBalance = currentBalance + amount;
+  const creditResult = creditData as { new_balance: number } | null;
 
-  const { error: balanceError } = await supabase
-    .from("profiles")
-    .update({ wallet_balance: newBalance })
-    .eq("id", pendingTx.user_id);
-
-  if (balanceError) {
-    throw new Error(balanceError.message);
+  if (creditError || !creditResult) {
+    throw new Error(creditError?.message || "Failed to credit wallet");
   }
+
+  const newBalance = Number(creditResult.new_balance) || 0;
 
   const { error: notifError } = await supabase.from("notifications").insert({
     user_id: pendingTx.user_id,
