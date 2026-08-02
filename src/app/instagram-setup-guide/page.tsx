@@ -95,7 +95,7 @@ export default function InstagramSetupGuidePage() {
                     <div>
                       <h3 className="text-kenya-white font-bold mb-2">Clear Platform Restrictions</h3>
                       <p className="text-kenya-white/70 text-sm leading-relaxed">
-                        Check <strong className="text-kenya-white">Account Status</strong> in Instagram settings to ensure no active community guideline flags or shadowbans. If flagged, submit an appeal immediately and wait for Instagram's resolution before placing orders.
+                        Check <strong className="text-kenya-white">Account Status</strong> in Instagram settings to ensure no active community guideline flags or shadowbans. If flagged, submit an appeal immediately and wait for Instagram&apos;s resolution before placing orders.
                       </p>
                     </div>
                   </div>

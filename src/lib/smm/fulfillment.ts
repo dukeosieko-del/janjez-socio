@@ -2,11 +2,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   fetchProviderServices,
   placeProviderOrder,
-  getProviderStatus,
   getProviderMultipleStatus,
   createProviderRefill,
   createProviderCancel,
-  getProviderBalance,
 } from "./provider";
 import type { ProviderService } from "./provider";
 

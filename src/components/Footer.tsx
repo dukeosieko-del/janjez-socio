@@ -103,9 +103,9 @@ export default function Footer() {
                     <Link
                       href={link.href}
                       className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors flex items-center gap-2"
-                    >
-                      {(link as { icon?: string }).icon && (
-                        <Image src={(link as { icon?: string }).icon!} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
+                      >
+                      {link.icon && (
+                        <Image src={link.icon} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
                       )}
                       {link.label}
                     </Link>
@@ -114,8 +114,8 @@ export default function Footer() {
                       href={link.href}
                       className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors flex items-center gap-2"
                     >
-                      {(link as { icon?: string }).icon && (
-                        <Image src={(link as { icon?: string }).icon!} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
+                      {link.icon && (
+                        <Image src={link.icon} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
                       )}
                       {link.label}
                     </a>

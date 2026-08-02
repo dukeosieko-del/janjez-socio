@@ -26,9 +26,8 @@ export async function POST(request: NextRequest) {
       quantity,
       link_submitted,
       amount_paid,
-      payment_reference,
-      timestamp,
-      refill_guarantee,
+       payment_reference,
+       refill_guarantee,
       quantity_source,
     } = body as {
       order_id?: string;
@@ -39,7 +38,6 @@ export async function POST(request: NextRequest) {
       link_submitted?: string;
       amount_paid?: number;
       payment_reference?: string;
-      timestamp?: string;
       refill_guarantee?: string | null;
       quantity_source?: "preset" | "custom";
     };

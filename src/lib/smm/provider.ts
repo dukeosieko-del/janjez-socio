@@ -41,7 +41,7 @@ export async function smmPost<T>(body: Record<string, unknown>): Promise<T> {
     body: new URLSearchParams({
       key: SMM_API_KEY,
       ...body,
-    } as any).toString(),
+    } as Record<string, string>).toString(),
   });
 
   if (!res.ok) {

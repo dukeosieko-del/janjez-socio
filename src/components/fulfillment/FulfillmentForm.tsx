@@ -5,8 +5,6 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import MpesaModal from "@/components/MpesaModal";
 import { submitOrder } from "@/lib/order-log";
-import { resolveCategoryName, resolveSubcategoryName, resolveSkuId, requiresSkuSelection } from "@/lib/order-log";
-import { SERVICE_CATALOG } from "@/lib/service-catalog";
 
 export interface FulfillmentProps {
   platformId: string;

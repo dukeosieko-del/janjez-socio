@@ -101,7 +101,7 @@ export default async function SMMProviderPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-kenya-white/10">
-                    {(logs.logs || []).map((log: any) => (
+                    {(logs.logs || []).map((log: { id: string; order_id?: string; action: string; status: string; error?: string; created_at: string }) => (
                       <tr key={log.id} className="hover:bg-kenya-white/5 transition-colors">
                         <td className="px-4 py-3 text-kenya-white">{log.order_id?.slice(0, 8) || "—"}</td>
                         <td className="px-4 py-3 text-kenya-white/80">{log.action}</td>
