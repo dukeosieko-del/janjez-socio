@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/server/auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const { supabase } = auth;
+
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const orderId = searchParams.get("orderId") || "";
-
-    const supabase = createAdminClient();
-    if (!supabase) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-    }
 
     let query = supabase
       .from("fulfillment_logs")
@@ -24,10 +25,10 @@ export async function GET(request: Request) {
       query = query.eq("order_id", orderId);
     }
 
-    const { data, error, count } = await query;
+    const { data, error: dbError, count } = await query;
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 400 });
     }
 
     return NextResponse.json({ logs: data || [], total: count || 0 });

@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/server/auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const { supabase } = auth;
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "100");
     const type = searchParams.get("type") || "";
-
-    const supabase = createAdminClient();
-    if (!supabase) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ledger: any[] = [];

@@ -1,34 +1,15 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/server/auth";
 
 export const runtime = "nodejs";
 
-async function getAdminUser() {
-  const supabase = createAdminClient();
-  if (!supabase) return null;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, email, role, created_at")
-    .eq("role", "admin")
-    .limit(1)
-    .single();
-
-  if (error || !data) return null;
-  return data;
-}
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const admin = await getAdminUser();
-    if (!admin) {
-      return NextResponse.json({ error: "No admin found" }, { status: 403 });
+    const auth = await requireAdmin(request);
+    if (auth instanceof NextResponse) {
+      return auth;
     }
-
-    const supabase = createAdminClient();
-    if (!supabase) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-    }
+    const { supabase } = auth;
 
     const [
       { count: totalUsers },

@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/server/auth";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   try {
+    const auth = await requireAdmin(request);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const { supabase } = auth;
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "100");
     const action = searchParams.get("action") || "";
-
-    const supabase = createAdminClient();
-    if (!supabase) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-    }
 
     let query = supabase
       .from("admin_activity_logs")
@@ -26,10 +27,10 @@ export async function GET(request: Request) {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await query.order("created_at", { ascending: false }).range(from, to);
+    const { data, error: dbError, count } = await query.order("created_at", { ascending: false }).range(from, to);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 400 });
     }
 
     return NextResponse.json({
@@ -47,29 +48,32 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin(request);
+    if (auth instanceof NextResponse) {
+      return auth;
+    }
+    const { supabase, user } = auth;
+
     const body = await request.json();
     const { action, target_type, target_id, details, ip_address, user_agent } = body;
 
-    const supabase = createAdminClient();
-    if (!supabase) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
-    }
-
-    const { data, error } = await supabase
+    const { data, error: dbError } = await supabase
       .from("admin_activity_logs")
       .insert({
         action,
         target_type,
         target_id,
         details,
-        ip_address,
-        user_agent,
+        ip_address: ip_address || request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+        user_agent: user_agent || request.headers.get("user-agent"),
+        actor_id: user.id,
+        actor_email: user.email,
       })
       .select()
       .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 400 });
     }
 
     return NextResponse.json({ log: data });
