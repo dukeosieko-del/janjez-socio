@@ -79,7 +79,7 @@ export default function YouTubeLikesClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "youtube-likes",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

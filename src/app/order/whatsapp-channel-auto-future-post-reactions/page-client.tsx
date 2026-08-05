@@ -79,7 +79,7 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "{WHATSAPP_CHANNEL_AUTO_FUTURE_POST_REACTIONS}",
+        categoryId: "whatsapp-channel-auto-future-post-reactions",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

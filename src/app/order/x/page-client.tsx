@@ -87,7 +87,7 @@ export default function XTwitterPageClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "x",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

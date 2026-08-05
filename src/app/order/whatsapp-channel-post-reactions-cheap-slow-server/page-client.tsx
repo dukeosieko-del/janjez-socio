@@ -79,7 +79,7 @@ export default function WhatsAppChannelPostReactionsCheapSlowServerClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "{WHATSAPP_CHANNEL_POST_REACTIONS_CHEAP_SLOW_SERVER}",
+        categoryId: "whatsapp-channel-post-reactions-cheap-slow-server",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

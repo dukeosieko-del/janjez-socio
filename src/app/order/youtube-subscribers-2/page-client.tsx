@@ -79,7 +79,7 @@ export default function YouTubeSubscribersClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "youtube-subscribers-2",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

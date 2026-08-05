@@ -7,12 +7,13 @@ import { submitOrder } from "@/lib/order-log";
 
 interface OrderFormProps {
   onRequireAuth: (tab?: "login" | "register") => void;
+  onInsufficientBalance?: () => void;
   serviceId?: string | null;
   categoryId?: string | null;
   defaultAnonymous?: boolean;
 }
 
-export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaultAnonymous = false }: OrderFormProps) {
+export default function OrderForm({ onRequireAuth, onInsufficientBalance, serviceId, categoryId, defaultAnonymous = false }: OrderFormProps) {
   const { user, walletBalance } = useAuth();
   const initialCategory = useMemo(() => {
     if (categoryId) return categoryId;
@@ -82,7 +83,7 @@ export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaul
     }
 
     if (total > walletBalance) {
-      onRequireAuth("login");
+      onInsufficientBalance?.();
       return;
     }
 
@@ -120,7 +121,7 @@ export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaul
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, onRequireAuth, user, walletBalance, total, selectedCategory, quantity]);
+  }, [selectedService, link, quantityNum, quantityError, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedCategory, quantity]);
 
   const isValid =
     selectedService &&

@@ -80,7 +80,7 @@ export default function YouTubeOrderClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "youtube",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

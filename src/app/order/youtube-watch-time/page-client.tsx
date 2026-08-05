@@ -79,7 +79,7 @@ export default function YouTubeWatchTimeClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "youtube-watch-time",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

@@ -79,7 +79,7 @@ export default function WhatsAppClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "whatsapp",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

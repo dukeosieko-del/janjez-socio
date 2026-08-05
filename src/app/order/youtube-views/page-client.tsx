@@ -79,7 +79,7 @@ export default function YouTubeViewsClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "youtube-views",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

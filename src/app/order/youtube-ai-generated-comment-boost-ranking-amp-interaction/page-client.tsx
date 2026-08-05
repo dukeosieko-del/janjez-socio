@@ -81,7 +81,7 @@ export default function YouTubeAICommentsClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "youtube-ai-generated-comment-boost-ranking-amp-interaction",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

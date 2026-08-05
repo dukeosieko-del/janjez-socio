@@ -81,7 +81,7 @@ export default function WhatsAppPollVotesClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "whatsapp-poll-votes",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,

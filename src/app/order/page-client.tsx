@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
@@ -7,6 +8,7 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import OrderForm from "@/components/OrderForm";
+import MpesaModal from "@/components/MpesaModal";
 import { useAuth } from "@/components/AuthContext";
 
 export default function OrderPageClient() {
@@ -15,9 +17,14 @@ export default function OrderPageClient() {
   const categoryId = searchParams.get("category");
   const anonymous = searchParams.get("mode") === "anonymous";
   const { openAuth } = useAuth();
+  const [mpesaOpen, setMpesaOpen] = useState(false);
 
   const handleRequireAuth = (tab: "login" | "register" = "login") => {
     openAuth(tab);
+  };
+
+  const handleInsufficientBalance = () => {
+    setMpesaOpen(true);
   };
 
   return (
@@ -41,12 +48,13 @@ export default function OrderPageClient() {
               </p>
             </div>
 
-            <OrderForm onRequireAuth={handleRequireAuth} serviceId={serviceId} categoryId={categoryId} defaultAnonymous={anonymous} />
+            <OrderForm onRequireAuth={handleRequireAuth} onInsufficientBalance={handleInsufficientBalance} serviceId={serviceId} categoryId={categoryId} defaultAnonymous={anonymous} />
           </div>
         </main>
 
         <Footer />
       </div>
+      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
     </div>
   );
 }

@@ -79,7 +79,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "",
+        categoryId: service.categoryId,
         serviceId: service.name,
         quantity: quantityNum,
         link,

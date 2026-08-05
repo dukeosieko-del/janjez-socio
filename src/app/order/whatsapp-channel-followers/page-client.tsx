@@ -79,7 +79,7 @@ export default function WhatsAppChannelFollowersClient() {
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: "CATEGORY",
+        categoryId: "whatsapp-channel-followers",
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,
