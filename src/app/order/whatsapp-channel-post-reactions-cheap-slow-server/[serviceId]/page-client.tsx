@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { getServiceById } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { calculatePrice } from "@/lib/services";
 import Link from "next/link";
 import Image from "next/image";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
@@ -13,7 +14,6 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
-const HAPPY_HOUR_DISCOUNT = 0.95; // -5%
 
 interface FulfillmentClientProps {
   serviceId: string;
@@ -44,9 +44,9 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
   }, [service, quantityNum]);
 
   const total = useMemo(() => {
-    if (subtotal <= 0) return 0;
-    return subtotal * HAPPY_HOUR_DISCOUNT;
-  }, [subtotal]);
+    if (!service || quantityNum <= 0) return 0;
+    return calculatePrice(service.rate, quantityNum);
+  }, [service, quantityNum]);
 
   const savings = useMemo(() => {
     return subtotal - total;
@@ -176,7 +176,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
                 </div>
                 <div className="bg-kenya-black/40 rounded-xl p-4 border border-kenya-green/30">
                   <span className="text-kenya-green text-xs uppercase tracking-wider block mb-1">Final Rate</span>
-                  <p className="text-kenya-green font-bold text-lg">KES {(service.rate * HAPPY_HOUR_DISCOUNT).toFixed(4)}</p>
+                  <p className="text-kenya-green font-bold text-lg">KES {(calculatePrice(service.rate, 1)).toFixed(4)}</p>
                 </div>
               </div>
 
