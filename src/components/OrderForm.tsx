@@ -1,16 +1,20 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useAuth } from "@/components/AuthContext";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
+import { submitOrder } from "@/lib/order-log";
 
 interface OrderFormProps {
   onRequireAuth: (tab?: "login" | "register") => void;
+  onInsufficientBalance?: () => void;
   serviceId?: string | null;
   categoryId?: string | null;
   defaultAnonymous?: boolean;
 }
 
-export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaultAnonymous = false }: OrderFormProps) {
+export default function OrderForm({ onRequireAuth, onInsufficientBalance, serviceId, categoryId, defaultAnonymous = false }: OrderFormProps) {
+  const { user, walletBalance } = useAuth();
   const initialCategory = useMemo(() => {
     if (categoryId) return categoryId;
     if (!serviceId) return "";
@@ -24,6 +28,9 @@ export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaul
   const [quantity, setQuantity] = useState("");
   const [comments, setComments] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(defaultAnonymous);
+  const [placing, setPlacing] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
   const categoryServices = useMemo(() => {
     if (!selectedCategory) return [];
@@ -68,14 +75,53 @@ export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaul
     setComments("");
   }, []);
 
-  const handlePlaceOrder = useCallback(() => {
+  const handlePlaceOrder = useCallback(async () => {
     if (!selectedService || !link || quantityNum <= 0 || quantityError) return;
-    if (isAnonymous) {
-      window.location.href = "/orders/all";
+    if (!user) {
+      onRequireAuth("login");
       return;
     }
-    onRequireAuth("login");
-  }, [selectedService, link, quantityNum, quantityError, isAnonymous, onRequireAuth]);
+
+    if (total > walletBalance) {
+      onInsufficientBalance?.();
+      return;
+    }
+
+    setPlacing(true);
+    setOrderError(null);
+    setOrderSuccess(false);
+
+    try {
+      const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
+      const result = await submitOrder({
+        categoryId: selectedCategory,
+        serviceId: selectedService.name,
+        quantity: quantityNum,
+        link,
+        amountPaid: total,
+        quantitySource,
+        selectedSkuId: selectedService.serviceId,
+      });
+
+      if (!result.ok) {
+        if (result.error?.includes("401") || result.error?.includes("Unauthorized")) {
+          onRequireAuth("login");
+        } else {
+          setOrderError(result.error || "Failed to place order.");
+        }
+        return;
+      }
+
+      setOrderSuccess(true);
+      setTimeout(() => {
+        window.location.href = "/orders/all";
+      }, 1500);
+    } catch {
+      setOrderError("Unexpected error while placing order.");
+    } finally {
+      setPlacing(false);
+    }
+  }, [selectedService, link, quantityNum, quantityError, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedCategory, quantity]);
 
   const isValid =
     selectedService &&
@@ -250,12 +296,24 @@ export default function OrderForm({ onRequireAuth, serviceId, categoryId, defaul
             </div>
 
             {/* Submit */}
+            {orderError && (
+              <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
+                <p className="text-kenya-red text-sm">{orderError}</p>
+              </div>
+            )}
+
+            {orderSuccess && (
+              <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-xl p-4">
+                <p className="text-kenya-green text-sm font-medium">Order recorded successfully. Redirecting…</p>
+              </div>
+            )}
+
             <button
               onClick={handlePlaceOrder}
-              disabled={!isValid}
+              disabled={!isValid || placing}
               className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2"
             >
-              🛒 Place Order
+              {placing ? "Placing Order…" : "🛒 Place Order"}
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useAuth } from "./AuthContext";
@@ -10,73 +10,124 @@ interface MpesaModalProps {
   onClose: () => void;
 }
 
+const POLL_INTERVAL = 5000;
+const POLL_TIMEOUT = 120000;
+
 export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"input" | "processing" | "success">("input");
   const [txId, setTxId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { user, refreshProfile } = useAuth();
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
+  const { session, walletBalance, refreshProfile } = useAuth();
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const resetAndClose = () => {
+  const resetAndClose = useCallback(() => {
     setStep("input");
     setPhoneNumber("");
     setAmount("");
+    setTxId("");
     setError(null);
+    setCheckoutRequestId(null);
     onClose();
-  };
+  }, [onClose]);
 
   const handleTopUp = async () => {
     if (!phoneNumber || !amount) return;
     setError(null);
     setStep("processing");
 
+    const numAmount = Number(amount);
+    if (numAmount < 100) {
+      setError("Minimum top-up is KES 100");
+      setStep("input");
+      return;
+    }
+
+    if (!session?.access_token) {
+      setError("Please sign in to top up your wallet");
+      setStep("input");
+      return;
+    }
+
     try {
-      const numAmount = Number(amount);
-      if (numAmount < 100) {
-        setError("Minimum top-up is KES 100");
-        setStep("input");
-        return;
+      const initiateRes = await fetch("/api/mpesa/stk-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ phoneNumber, amount: numAmount }),
+      });
+
+      const initiateData = await initiateRes.json();
+
+      if (!initiateRes.ok) {
+        throw new Error(initiateData.error || "Failed to initiate M-Pesa payment");
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const checkoutId = initiateData.checkoutRequestId;
+      setCheckoutRequestId(checkoutId);
 
-      setTxId("MP" + Date.now().toString().slice(-10));
+      const startTime = Date.now();
+      const token = session.access_token;
 
-      if (user) {
-        const supabase = (await import("@/lib/supabase/client")).createClient();
-        if (supabase) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("wallet_balance")
-            .eq("id", user.id)
-            .single();
+      const poll = async () => {
+        const statusRes = await fetch(
+          `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-          const currentBalance = Number(profile?.wallet_balance) || 0;
-          await supabase
-            .from("profiles")
-            .update({ wallet_balance: currentBalance + numAmount })
-            .eq("id", user.id);
+        const statusData = await statusRes.json();
+
+        if (statusData.paid) {
+          setTxId(checkoutId.slice(0, 10));
+          setStep("success");
+          await refreshProfile();
+          return;
         }
-      }
 
-      setStep("success");
-      await refreshProfile();
-    } catch {
-      setError("Payment processing failed. Please try again.");
+        if (Date.now() - startTime >= POLL_TIMEOUT) {
+          throw new Error("Payment timed out. Please check your phone and try again.");
+        }
+
+        setTimeout(poll, POLL_INTERVAL);
+      };
+
+      setTimeout(poll, POLL_INTERVAL);
+    } catch (err) {
+      console.error("M-Pesa top-up error:", err);
+      setError(err instanceof Error ? err.message : "Payment processing failed. Please try again.");
       setStep("input");
     }
   };
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
     };
-    document.addEventListener("keydown", handleEsc);
+
+    const focusableElements = modalRef.current?.querySelectorAll(
+      'a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusableElements && focusableElements.length > 0) {
+      (focusableElements[0] as HTMLElement).focus();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
     document.body.style.overflow = "hidden";
+
     return () => {
-      document.removeEventListener("keydown", handleEsc);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
   }, [isOpen, onClose]);
@@ -85,20 +136,28 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+      <div
+        ref={modalRef}
+        className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mpesa-modal-title"
+      >
         {step === "input" && (
           <>
-            <div className="flex items-center justify-between p-6 border-b border-kenya-white/10">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-kenya-white/10">
               <div className="flex items-center gap-3">
                 <Image src="/mpesa-logo.png" alt="M-Pesa" width={40} height={40} className="w-10 h-10 object-contain" />
                 <div>
-                  <h2 className="text-xl font-bold text-kenya-white">Lipa na M-Pesa</h2>
+                  <h2 id="mpesa-modal-title" className="text-xl font-bold text-kenya-white">Lipa na M-Pesa</h2>
                   <p className="text-kenya-white/50 text-sm">Top up your wallet instantly</p>
                 </div>
               </div>
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
-                className="text-kenya-white/50 hover:text-kenya-white transition-colors"
+                className="text-kenya-white/50 hover:text-kenya-white transition-colors p-1"
+                aria-label="Close modal"
               >
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -106,35 +165,39 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-4 sm:p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                <label htmlFor="mpesa-phone" className="block text-sm font-medium text-kenya-white/70 mb-2">
                   M-Pesa Phone Number
                 </label>
                 <input
+                  id="mpesa-phone"
                   type="tel"
                   placeholder="07XXXXXXXX or 01XXXXXXXX"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
+                  autoComplete="tel"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                <label htmlFor="mpesa-amount" className="block text-sm font-medium text-kenya-white/70 mb-2">
                   Amount (KES)
                 </label>
                 <input
+                  id="mpesa-amount"
                   type="number"
                   placeholder="Enter amount (minimum KES 100)"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   min="100"
                   className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
+                  inputMode="numeric"
                 />
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[100, 500, 1000, 5000].map((preset) => (
                   <button
                     key={preset}
@@ -169,6 +232,11 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
                 </div>
               )}
 
+              <div className="flex items-center justify-between text-xs text-kenya-white/50 mb-2">
+                <span>Current balance</span>
+                <span>KES {walletBalance.toLocaleString()}</span>
+              </div>
+
               <button
                 onClick={handleTopUp}
                 disabled={!phoneNumber || !amount || Number(amount) < 100}
@@ -182,17 +250,22 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
         )}
 
         {step === "processing" && (
-          <div className="p-8 text-center">
+          <div className="p-6 sm:p-8 text-center">
             <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-6"></div>
             <h3 className="text-xl font-bold text-kenya-white mb-2">Processing Payment</h3>
             <p className="text-kenya-white/60 text-sm">
               Please check your phone and enter your M-Pesa PIN to complete the transaction.
             </p>
+            {checkoutRequestId && (
+              <p className="text-kenya-white/40 text-xs mt-4 font-mono">
+                Ref: {checkoutRequestId.slice(0, 10)}
+              </p>
+            )}
           </div>
         )}
 
         {step === "success" && (
-          <div className="p-8 text-center">
+          <div className="p-6 sm:p-8 text-center">
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <Image src="/mpesa-logo.png" alt="M-Pesa" width={48} height={48} className="w-12 h-12 object-contain" />
             </div>

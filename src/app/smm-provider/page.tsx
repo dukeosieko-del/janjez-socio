@@ -3,14 +3,27 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
+import SMMProviderControls from "@/components/smm/SMMProviderControls";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+async function getAuthToken(): Promise<string | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
 
 async function getProviderBalance() {
   try {
     const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const res = await fetch(`${base}/api/smm/balance`, { cache: "no-store" });
+    const token = await getAuthToken();
+    const res = await fetch(`${base}/api/smm/balance`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: "no-store",
+    });
     if (!res.ok) return null;
     return res.json();
   } catch {
@@ -20,7 +33,11 @@ async function getProviderBalance() {
 
 async function getRecentLogs() {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const res = await fetch(`${base}/api/admin/fulfillment-logs?limit=20`, { cache: "no-store" });
+  const token = await getAuthToken();
+  const res = await fetch(`${base}/api/admin/fulfillment-logs?limit=20`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    cache: "no-store",
+  });
   if (!res.ok) return { logs: [], total: 0 };
   return res.json();
 }
@@ -49,22 +66,7 @@ export default async function SMMProviderPage() {
                 <p className="text-kenya-white/60 text-lg">Auto-fulfillment, catalog sync, and provider status.</p>
               </div>
               <div className="flex gap-3">
-                <form action="/api/smm/catalog" method="POST" className="inline">
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-5 py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
-                  >
-                    Sync Catalog
-                  </button>
-                </form>
-                <form action="/api/cron/smm-sync" method="POST" className="inline">
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-5 py-3 rounded-xl hover:bg-kenya-white/20 transition-colors"
-                  >
-                    Sync Statuses
-                  </button>
-                </form>
+                <SMMProviderControls />
               </div>
             </div>
 
@@ -101,7 +103,7 @@ export default async function SMMProviderPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-kenya-white/10">
-                    {(logs.logs || []).map((log: any) => (
+                    {(logs.logs || []).map((log: { id: string; order_id?: string; action: string; status: string; error?: string; created_at: string }) => (
                       <tr key={log.id} className="hover:bg-kenya-white/5 transition-colors">
                         <td className="px-4 py-3 text-kenya-white">{log.order_id?.slice(0, 8) || "—"}</td>
                         <td className="px-4 py-3 text-kenya-white/80">{log.action}</td>

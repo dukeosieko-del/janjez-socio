@@ -9,21 +9,21 @@ function isInternal(href: string) {
 
 export default function Footer() {
   const whatsappIcon = (
-    <Image src="/whatsapp-icon.png" alt="WhatsApp" width={20} height={20} className="w-5 h-5 object-contain" />
+    <Image src="/whatsapp-icon.png" alt="WhatsApp" width={24} height={24} className="w-6 h-6 object-contain" />
   );
   const facebookIcon = (
-    <Image src="/facebook-icon.png" alt="Facebook" width={20} height={20} className="w-5 h-5 object-contain" />
+    <Image src="/facebook-icon.png" alt="Facebook" width={24} height={24} className="w-6 h-6 object-contain" />
   );
   const googleReviewsIcon = (
-    <Image src="/google-reviews-icon.png" alt="Google Reviews" width={20} height={20} className="w-5 h-5 object-contain" />
+    <Image src="/google-reviews-icon.png" alt="Google Reviews" width={24} height={24} className="w-6 h-6 object-contain" />
   );
 
   return (
-    <footer className="bg-kenya-black border-t border-kenya-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+    <footer className="bg-kenya-black border-t border-kenya-white/10" role="contentinfo">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Image src="/janjez-logo.png" alt="janjez.social" width={32} height={32} className="w-8 h-8 object-contain" />
               <span className="text-xl font-bold text-kenya-white">
@@ -34,12 +34,12 @@ export default function Footer() {
               Kenya&apos;s plug for instant social clout. Pata clout chapchap —
               Lipa na M-Pesa.
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <a
                 href="https://www.google.com/search?q=janjez.social"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-red-500 hover:text-white transition-colors"
+                className="w-11 h-11 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-red-500 hover:text-white transition-colors"
                 aria-label="Google Reviews"
               >
                 {googleReviewsIcon}
@@ -48,14 +48,14 @@ export default function Footer() {
                 href="https://www.facebook.com/profile.php?id=61592028091844"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-blue-600 hover:text-white transition-colors"
+                className="w-11 h-11 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-blue-600 hover:text-white transition-colors"
                 aria-label="Facebook"
               >
                 {facebookIcon}
               </a>
               <a
                 href={SUPPORT_WHATSAPP}
-                className="w-10 h-10 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-kenya-green hover:text-kenya-black transition-colors"
+                className="w-11 h-11 rounded-full bg-kenya-white/5 flex items-center justify-center text-kenya-white/70 hover:bg-kenya-green hover:text-kenya-black transition-colors"
                 aria-label="WhatsApp"
               >
                 {whatsappIcon}
@@ -103,9 +103,9 @@ export default function Footer() {
                     <Link
                       href={link.href}
                       className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors flex items-center gap-2"
-                    >
-                      {(link as { icon?: string }).icon && (
-                        <Image src={(link as { icon?: string }).icon!} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
+                      >
+                      {link.icon && (
+                        <Image src={link.icon} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
                       )}
                       {link.label}
                     </Link>
@@ -114,8 +114,8 @@ export default function Footer() {
                       href={link.href}
                       className="text-kenya-white/50 hover:text-kenya-green text-sm transition-colors flex items-center gap-2"
                     >
-                      {(link as { icon?: string }).icon && (
-                        <Image src={(link as { icon?: string }).icon!} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
+                      {link.icon && (
+                        <Image src={link.icon} alt={link.label} width={20} height={20} className="w-5 h-5 object-contain" />
                       )}
                       {link.label}
                     </a>
@@ -153,7 +153,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-16 pt-8 border-t border-kenya-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-12 sm:mt-16 pt-6 sm:pt-8 border-t border-kenya-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-kenya-white/30 text-sm">
             &copy; {new Date().getFullYear()} janjez.social. All rights reserved.
           </p>

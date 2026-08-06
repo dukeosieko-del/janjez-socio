@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { getProviderBalance } from "@/lib/smm/provider";
+import { requireAdmin } from "@/lib/server/auth-helpers";
+import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const rl = rateLimitAdmin(request);
+  if (!rl.ok && rl.response) return rl.response;
+
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const balance = await getProviderBalance();
     return NextResponse.json({ ...balance });

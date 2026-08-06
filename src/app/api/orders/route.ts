@@ -1,11 +1,60 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fulfillOrder } from "@/lib/smm/fulfillment";
+import { getUserFromRequest } from "@/lib/server/auth-helpers";
+import { rateLimit } from "@/lib/server/rate-limiter";
+import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
+import { ORDER_SERVICES } from "@/lib/data";
+import { SERVICE_CATALOG } from "@/lib/service-catalog";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+function calculateExpectedAmount(
+  catalogCategoryId: string | undefined,
+  category: string,
+  subcategory: string,
+  skuId: string | null | undefined,
+  quantity: number
+): number {
+  if (skuId && catalogCategoryId) {
+    const service = ORDER_SERVICES.find(
+      (s) => s.categoryId === catalogCategoryId && (s.serviceId === skuId || s.id === skuId)
+    );
+    if (service) {
+      return service.rate * quantity * 0.95;
+    }
+  }
+
+  const catalogItem = SERVICE_CATALOG.find(
+    (c) => c.id === catalogCategoryId || c.name === category
+  );
+  if (catalogItem) {
+    const sub = catalogItem.subcategories.find((s) => s.name === subcategory);
+    if (sub) {
+      const deliverable = sub.deliverables.find((d) => d.name === skuId || d.name === sub.deliverables[0].name);
+      if (deliverable) {
+        const priceMatch = deliverable.price.match(/([\d,.]+)/);
+        if (priceMatch) {
+          const rate = parseFloat(priceMatch[1].replace(/,/g, ""));
+          return rate * quantity * 0.95;
+        }
+      }
+    }
+  }
+
+  return NaN;
+}
+
+export async function POST(request: NextRequest) {
   try {
+    const rl = rateLimit(request, 30);
+    if (!rl.ok && rl.response) return rl.response;
+
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       order_id,
@@ -15,10 +64,10 @@ export async function POST(request: Request) {
       quantity,
       link_submitted,
       amount_paid,
-      payment_reference,
-      timestamp,
-      refill_guarantee,
-      quantity_source,
+      catalog_category_id,
+       payment_reference,
+       refill_guarantee,
+       quantity_source,
     } = body as {
       order_id?: string;
       category?: string;
@@ -27,14 +76,30 @@ export async function POST(request: Request) {
       quantity?: number;
       link_submitted?: string;
       amount_paid?: number;
+      catalog_category_id?: string;
       payment_reference?: string;
-      timestamp?: string;
       refill_guarantee?: string | null;
       quantity_source?: "preset" | "custom";
     };
 
-    if (!category || !subcategory || !quantity || !link_submitted || amount_paid === undefined || !quantity_source) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const errors: string[] = [];
+
+    if (!category) errors.push("category is required");
+    if (!subcategory) errors.push("subcategory is required");
+    if (!quantity_source) errors.push("quantity_source is required");
+
+    const quantityErr = validateNumber(quantity, "quantity", { min: 1 });
+    if (quantityErr) errors.push(quantityErr);
+
+    const linkErr = validateLink(link_submitted);
+    if (linkErr) errors.push(linkErr);
+
+    if (amount_paid === undefined || isNaN(Number(amount_paid)) || Number(amount_paid) < 0) {
+      errors.push("amount_paid must be a non-negative number");
+    }
+
+    if (errors.length > 0) {
+      return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
     const supabase = createAdminClient();
@@ -42,21 +107,76 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
+    const numQuantity = Number(quantity);
+
+    const expectedAmount = calculateExpectedAmount(
+      catalog_category_id,
+      category!,
+      subcategory!,
+      sku_id,
+      numQuantity
+    );
+
+    if (isNaN(expectedAmount) || expectedAmount <= 0) {
+      return NextResponse.json({ error: "Unable to verify service price. Please try a different service." }, { status: 400 });
+    }
+
+    const clientAmount = Number(amount_paid) || 0;
+    const tolerance = 0.01;
+    if (Math.abs(expectedAmount - clientAmount) > tolerance) {
+      console.error(`Order price mismatch: expected ${expectedAmount}, got ${clientAmount}`);
+      return NextResponse.json({
+        error: "Price verification failed. The submitted amount does not match the service price.",
+      }, { status: 400 });
+    }
+
+    const { data: debitData, error: debitError } = await supabase.rpc("debit_wallet", {
+      p_user_id: user.id,
+      p_amount: expectedAmount,
+    });
+
+    const debitResult = debitData as { success: boolean; new_balance: number } | null;
+
+    if (debitError || !debitResult || debitResult.success === false) {
+      const currentBalance = await supabase
+        .from("profiles")
+        .select("wallet_balance")
+        .eq("id", user.id)
+        .single();
+      const balance = Number(currentBalance.data?.wallet_balance) || 0;
+      await supabase.from("notifications").insert({
+        user_id: user.id,
+        type: "order_failed",
+        title: "Order Failed - Insufficient Wallet Balance",
+        message: `Your order could not be placed: insufficient wallet balance (KES ${balance.toFixed(2)}). Top up via M-Pesa first.`,
+        link: "/pay",
+      });
+      return NextResponse.json({
+        error: "Insufficient wallet balance. Please top up your wallet before placing an order.",
+      }, { status: 402 });
+    }
+
     const { data, error } = await supabase
       .from("orders")
       .insert({
+        user_id: user.id,
         order_id: order_id || undefined,
         category,
         subcategory,
+        service_name: subcategory,
         sku_id: sku_id ?? null,
-        quantity,
-        link_submitted,
-        amount: amount_paid,
-        payment_reference: payment_reference || null,
+        quantity: numQuantity,
+        link_submitted: sanitizeString(link_submitted, 500),
+        link: sanitizeString(link_submitted, 500),
+        amount: expectedAmount,
+        amount_paid: expectedAmount,
+        payment_reference: sanitizeString(payment_reference, 200) || null,
         refill_guarantee: refill_guarantee ?? null,
         quantity_source,
+        catalog_category_id,
         status: "pending",
         payment_status: "paid",
+        fulfillment_status: "pending",
       })
       .select("*")
       .single();
@@ -65,11 +185,57 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    // Trigger automatic fulfillment asynchronously
     if (data?.id) {
-      Promise.resolve(fulfillOrder(data.id)).catch((err) => {
-        console.error("Auto-fulfillment failed for order", data.id, err);
-      });
+      try {
+        const fulfillmentResult = await fulfillOrder(data.id);
+
+        if (fulfillmentResult.status === "failed" || fulfillmentResult.status === "error") {
+          await supabase.from("notifications").insert({
+            user_id: user.id,
+            type: "order_failed",
+            title: "Order Fulfillment Failed",
+            message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be fulfilled: ${fulfillmentResult.error || "Unknown error"}. Our team has been notified.`,
+            link: "/orders/all",
+          });
+        } else {
+          await supabase.from("notifications").insert({
+            user_id: user.id,
+            type: "order_fulfilled",
+            title: "Order Accepted",
+            message: `Your order ${data.order_id || data.id.slice(0, 8)} has been sent to the provider. Status: ${fulfillmentResult.status}.`,
+            link: "/orders/all",
+          });
+        }
+      } catch (fulfillError) {
+        console.error("Auto-fulfillment failed for order", data.id, fulfillError);
+        const errorMessage = fulfillError instanceof Error ? fulfillError.message : "Auto-fulfillment error";
+        await supabase
+          .from("orders")
+          .update({
+            fulfillment_status: "failed",
+            fulfillment_error: errorMessage,
+          })
+          .eq("id", data.id);
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          type: "order_failed",
+          title: "Order Fulfillment Failed",
+          message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be processed: ${errorMessage}.`,
+          link: "/orders/all",
+        });
+      }
+
+      try {
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          type: "order_created",
+          title: "Order Placed",
+          message: `Your order ${data.order_id || data.id.slice(0, 8)} for ${subcategory} has been recorded.`,
+          link: "/orders/all",
+        });
+      } catch (notifErr) {
+        console.error("Failed to create notification for order", data.id, notifErr);
+      }
     }
 
     return NextResponse.json({ order: data }, { status: 201 });
@@ -79,29 +245,25 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const header = request.headers.get("authorization") || "";
-    const match = header.match(/^Bearer\s+(.*)$/i);
-    if (!match) {
+    const rl = rateLimit(request, 60);
+    if (!rl.ok && rl.response) return rl.response;
+
+    const user = await getUserFromRequest(request);
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = match[1].trim();
     const supabase = createAdminClient();
     if (!supabase) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { data, error } = await supabase
       .from("orders")
       .select("*")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {

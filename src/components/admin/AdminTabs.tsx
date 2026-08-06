@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { ReactNode } from "react";
+import { useAuth } from "@/components/AuthContext";
+
+function authHeaders(session: { access_token?: string } | null): Record<string, string> {
+  return session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : {};
+}
 
 interface ProfileShape {
   id: string;
@@ -68,6 +75,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 }
 
 export function OverviewTab() {
+  const { session } = useAuth();
   const [stats, setStats] = useState<{
     stats: { totalUsers?: number; totalOrders?: number; pendingOrders?: number };
     recentUsers?: ProfileShape[];
@@ -76,7 +84,7 @@ export function OverviewTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/stats")
+    fetch("/api/admin/stats", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setStats(data);
@@ -129,11 +137,12 @@ function DataTable({ headers, rows }: { headers: string[]; rows: TableRow[] }) {
 }
 
 export function UsersTab() {
+  const { session } = useAuth();
   const [users, setUsers] = useState<ProfileShape[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/users?limit=50")
+    fetch("/api/admin/users?limit=50", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setUsers(data.users || []);
@@ -167,11 +176,12 @@ export function UsersTab() {
 }
 
 export function OrdersTab() {
+  const { session } = useAuth();
   const [orders, setOrders] = useState<OrderShape[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/orders?limit=50")
+    fetch("/api/admin/orders?limit=50", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setOrders(data.orders || []);
@@ -204,11 +214,12 @@ export function OrdersTab() {
 }
 
 export function LogsTab() {
+  const { session } = useAuth();
   const [logs, setLogs] = useState<LogShape[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/logs?limit=100")
+    fetch("/api/admin/logs?limit=100", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setLogs(data.logs || []);
@@ -241,11 +252,12 @@ export function LogsTab() {
 }
 
 export function LedgerTab() {
+  const { session } = useAuth();
   const [ledger, setLedger] = useState<LedgerShape[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/ledger?limit=100")
+    fetch("/api/admin/ledger?limit=100", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setLedger(data.ledger || []);

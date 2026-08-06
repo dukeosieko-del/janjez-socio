@@ -1,9 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/server/auth-helpers";
+import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const rl = rateLimitAdmin(request);
+  if (!rl.ok && rl.response) return rl.response;
+
+  const auth = await requireAdmin(request);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -17,7 +25,7 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from("orders")
-      .select("id, user_id, service_name, service_id, link, quantity, amount, comments, status, payment_status, created_at, updated_at", { count: "exact" });
+       .select("id, order_id, user_id, service_name, service_id, link, quantity, amount, category, subcategory, sku_id, fulfillment_status, provider_status, provider_order_id, provider_charge, provider_currency, fulfillment_error, fulfilled_at, comments, status, payment_status, created_at, updated_at", { count: "exact" });
 
     if (status) {
       query = query.eq("status", status);

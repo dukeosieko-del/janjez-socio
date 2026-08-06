@@ -41,15 +41,20 @@ export async function smmPost<T>(body: Record<string, unknown>): Promise<T> {
     body: new URLSearchParams({
       key: SMM_API_KEY,
       ...body,
-    } as any).toString(),
+    } as Record<string, string>).toString(),
   });
 
   if (!res.ok) {
     throw new Error(`Provider HTTP ${res.status}: ${res.statusText}`);
   }
 
-  const data = (await res.json()) as T;
-  return data;
+  const data = (await res.json()) as T & { error?: string };
+
+  if (data.error) {
+    throw new Error(`Provider API error: ${data.error}`);
+  }
+
+  return data as T;
 }
 
 export async function fetchProviderServices(): Promise<ProviderService[]> {

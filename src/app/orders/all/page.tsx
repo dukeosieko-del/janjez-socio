@@ -25,6 +25,11 @@ interface Order {
   amount?: number;
   status?: string;
   payment_status?: string;
+  fulfillment_status?: string;
+  provider_status?: string;
+  provider_order_id?: string;
+  fulfillment_error?: string;
+  fulfilled_at?: string;
   refill_guarantee?: string | null;
   quantity_source?: string;
   created_at?: string;
@@ -200,6 +205,7 @@ export default function MyOrdersPage() {
                         <th className="px-4 py-3 font-medium text-right">Amount</th>
                         <th className="px-4 py-3 font-medium text-center">Status</th>
                         <th className="px-4 py-3 font-medium text-center">Payment</th>
+                        <th className="px-4 py-3 font-medium text-center">Fulfillment</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-kenya-white/10">
@@ -214,6 +220,17 @@ export default function MyOrdersPage() {
                           completed: "bg-kenya-green/10 text-kenya-green border border-kenya-green/20",
                           cancelled: "bg-kenya-red/10 text-kenya-red border border-kenya-red/20",
                           failed: "bg-kenya-red/10 text-kenya-red border border-kenya-red/20",
+                        };
+
+                        const fulfillmentStatus = order.fulfillment_status || "pending";
+
+                        const fulfillmentStyles: Record<string, string> = {
+                          pending: "bg-yellow-500/10 text-yellow-300 border border-yellow-500/20",
+                          processing: "bg-blue-500/10 text-blue-300 border border-blue-500/20",
+                          fulfilled: "bg-kenya-green/10 text-kenya-green border border-kenya-green/20",
+                          cancelled: "bg-kenya-red/10 text-kenya-red border border-kenya-red/20",
+                          failed: "bg-kenya-red/10 text-kenya-red border border-kenya-red/20",
+                          refunded: "bg-kenya-white/10 text-kenya-white/70 border border-kenya-white/20",
                         };
 
                         const paymentStyles: Record<string, string> = {
@@ -251,9 +268,17 @@ export default function MyOrdersPage() {
                             <td className="px-4 py-3 text-center">
                               <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${paymentStyles[paymentStatus] || paymentStyles.unpaid}`}>
                                 {paymentStatus}
-                              </span>
-                            </td>
-                          </tr>
+                            </span>
+                             </td>
+                             <td className="px-4 py-3 text-center">
+                               <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${fulfillmentStyles[fulfillmentStatus] || fulfillmentStyles.pending}`}>
+                                 {fulfillmentStatus}
+                               </span>
+                               {order.provider_order_id && (
+                                 <div className="text-kenya-white/40 text-xs mt-1 font-mono">{order.provider_order_id.slice(0, 8)}</div>
+                               )}
+                             </td>
+                           </tr>
                         );
                       })}
                     </tbody>

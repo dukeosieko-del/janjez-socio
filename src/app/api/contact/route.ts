@@ -1,12 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { sendMail } from "@/lib/email/transport";
 import { SUPPORT_ADDRESS, EMAIL_FORWARDING, SITE_NAME } from "@/lib/email/config";
 import { getContactNotificationHtml, getContactConfirmationHtml } from "@/lib/email/templates";
+import { rateLimit } from "@/lib/server/rate-limiter";
+import { sanitizeString } from "@/lib/server/validation";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const rl = rateLimit(request, 10);
+    if (!rl.ok && rl.response) return rl.response;
+
     const body = await request.json();
     const { name, email, subject, message, department = "support" } = body as {
       name: string;
@@ -20,8 +27,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const forwardTo = EMAIL_FORWARDING[`${department}@janjez.social`] || EMAIL_FORWARDING[SUPPORT_ADDRESS] || SUPPORT_ADDRESS;
-    const data = { name, email, subject, message, department };
+    if (!EMAIL_RE.test(email)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
+
+    const sanitizedName = sanitizeString(name, 100) || name;
+    const sanitizedEmail = sanitizeString(email, 254) || email;
+    const sanitizedSubject = sanitizeString(subject, 200) || subject;
+    const sanitizedMessage = sanitizeString(message, 5000) || message;
+    const sanitizedDept = sanitizeString(department, 50) || department;
+
+    const forwardTo = EMAIL_FORWARDING[`${sanitizedDept}@janjez.social`] || EMAIL_FORWARDING[SUPPORT_ADDRESS] || SUPPORT_ADDRESS;
+    const data = { name: sanitizedName, email: sanitizedEmail, subject: sanitizedSubject, message: sanitizedMessage, department: sanitizedDept };
 
     let mailSent = false;
     try {
