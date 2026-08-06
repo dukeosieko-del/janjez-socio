@@ -1,4 +1,10 @@
-import { SERVICE_CATALOG, type ServiceCatalogItem } from "./service-catalog";
+import {
+  resolveCategoryName,
+  resolveSubcategoryName,
+  resolveSkuId,
+  resolveRefillGuarantee,
+  requiresSkuSelection,
+} from "@/lib/services";
 
 export interface OrderLogPayload {
   categoryId: string;
@@ -11,60 +17,13 @@ export interface OrderLogPayload {
   selectedSkuId?: string;
 }
 
-function getCatalogItem(categoryId: string): ServiceCatalogItem | undefined {
-  return SERVICE_CATALOG.find((c) => c.id === categoryId);
-}
-
-export function resolveCategoryName(categoryId: string): string {
-  const item = getCatalogItem(categoryId);
-  return item?.name ?? categoryId;
-}
-
-export function resolveSubcategoryName(categoryId: string, serviceId: string): string {
-  const item = getCatalogItem(categoryId);
-  if (!item) return serviceId;
-  for (const sub of item.subcategories) {
-    const match = sub.deliverables.find((d) => d.name === serviceId);
-    if (match) return sub.name;
-  }
-  return serviceId;
-}
-
-export function resolveSkuId(categoryId: string, serviceId: string): string {
-  return serviceId;
-}
-
-export function resolveRefillGuarantee(categoryId: string, serviceId: string): string | null {
-  const item = getCatalogItem(categoryId);
-  if (!item) return null;
-  for (const sub of item.subcategories) {
-    const match = sub.deliverables.find((d) => d.name === serviceId);
-    if (match) {
-      if (match.name.toLowerCase().includes("no warranty") || match.name.toLowerCase().includes("no refill")) {
-        return "none";
-      }
-      if (match.name.toLowerCase().includes("lifetime")) {
-        return "lifetime";
-      }
-      if (match.name.toLowerCase().includes("30-day") || match.name.toLowerCase().includes("30 day")) {
-        return "30-day";
-      }
-      return "standard";
-    }
-  }
-  return null;
-}
-
-export function requiresSkuSelection(categoryId: string): boolean {
-  const item = getCatalogItem(categoryId);
-  if (!item) return false;
-  for (const sub of item.subcategories) {
-    if (sub.deliverables.length > 1) {
-      return true;
-    }
-  }
-  return false;
-}
+export {
+  resolveCategoryName,
+  resolveSubcategoryName,
+  resolveSkuId,
+  resolveRefillGuarantee,
+  requiresSkuSelection,
+};
 
 async function getSessionToken(): Promise<string | null> {
   try {
@@ -81,7 +40,7 @@ async function getSessionToken(): Promise<string | null> {
 export async function submitOrder(payload: OrderLogPayload) {
   const categoryName = resolveCategoryName(payload.categoryId);
   const subcategoryName = resolveSubcategoryName(payload.categoryId, payload.serviceId);
-  const skuId = resolveSkuId(payload.categoryId, payload.serviceId);
+  const skuId = resolveSkuId(payload.selectedSkuId ?? payload.serviceId);
   const refillGuarantee = resolveRefillGuarantee(payload.categoryId, payload.serviceId);
 
   if (requiresSkuSelection(payload.categoryId) && !payload.selectedSkuId) {
@@ -101,8 +60,8 @@ export async function submitOrder(payload: OrderLogPayload) {
     method: "POST",
     headers,
     body: JSON.stringify({
-    catalog_category_id: payload.categoryId,
-  order_id: orderId,
+      catalog_category_id: payload.categoryId,
+      order_id: orderId,
       category: categoryName,
       subcategory: subcategoryName,
       sku_id: payload.selectedSkuId ?? skuId ?? null,

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { calculatePrice } from "@/lib/services";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -36,16 +37,10 @@ export default function YouTubeLikesClient() {
     return isNaN(num) ? 0 : num;
   }, [quantity]);
 
-  const subtotal = useMemo(() => {
-    if (!selectedService || quantityNum <= 0) return 0;
-    return selectedService.rate * quantityNum;
-  }, [selectedService, quantityNum]);
-
   const total = useMemo(() => {
-    if (subtotal <= 0) return 0;
-    const discount = 0.95; // Happy Hour -5%
-    return subtotal * discount;
-  }, [subtotal]);
+    if (!selectedService || quantityNum <= 0) return 0;
+    return calculatePrice(selectedService.rate, quantityNum);
+  }, [selectedService, quantityNum]);
 
   const quantityError = useMemo(() => {
     if (!selectedService || quantityNum <= 0) return "";

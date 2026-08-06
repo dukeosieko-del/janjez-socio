@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { getServiceById } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { calculatePrice } from "@/lib/services";
 import Link from "next/link";
 import Image from "next/image";
 import AnnouncementBanner from "@/components/AnnouncementBanner";

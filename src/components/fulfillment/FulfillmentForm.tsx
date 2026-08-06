@@ -5,6 +5,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import MpesaModal from "@/components/MpesaModal";
 import { submitOrder } from "@/lib/order-log";
+import { calculatePrice } from "@/lib/services";
 
 export interface FulfillmentProps {
   platformId: string;
@@ -30,15 +31,10 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     return Number.isNaN(num) ? 0 : num;
   }, [quantity]);
 
-  const subtotal = useMemo(() => {
-    if (!parsedAmount || quantityNum <= 0) return 0;
-    return parsedAmount * quantityNum;
-  }, [parsedAmount, quantityNum]);
-
   const total = useMemo(() => {
-    if (subtotal <= 0) return 0;
-    return subtotal * 0.95;
-  }, [subtotal]);
+    if (!parsedAmount || quantityNum <= 0) return 0;
+    return calculatePrice(parsedAmount, quantityNum);
+  }, [parsedAmount, quantityNum]);
 
   const qtyMin = deliverable.minQty ?? 10;
   const qtyMax = deliverable.maxQty ?? 10000;

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { calculatePrice } from "@/lib/services";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -14,7 +15,6 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const X_TWITTER_CATEGORY = "x";
-const HAPPY_HOUR_DISCOUNT = 0.95;
 
 const X_URL_PATTERN = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+/;
 
@@ -39,15 +39,10 @@ export default function XTwitterPageClient() {
     return isNaN(num) ? 0 : num;
   }, [quantity]);
 
-  const subtotal = useMemo(() => {
-    if (!selectedService || quantityNum <= 0) return 0;
-    return selectedService.rate * quantityNum;
-  }, [selectedService, quantityNum]);
-
   const total = useMemo(() => {
-    if (subtotal <= 0) return 0;
-    return subtotal * HAPPY_HOUR_DISCOUNT;
-  }, [subtotal]);
+    if (!selectedService || quantityNum <= 0) return 0;
+    return calculatePrice(selectedService.rate, quantityNum);
+  }, [selectedService, quantityNum]);
 
   const linkError = useMemo(() => {
     if (!link) return "";
@@ -157,7 +152,7 @@ export default function XTwitterPageClient() {
                   </div>
                   <p className="text-kenya-white/50 text-xs mb-3 line-clamp-2">{service.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-kenya-green font-bold text-sm">KES {(service.rate * HAPPY_HOUR_DISCOUNT).toFixed(2)}</span>
+                    <span className="text-kenya-green font-bold text-sm">KES {calculatePrice(service.rate, 1).toFixed(2)}</span>
                     <svg className="h-4 w-4 text-kenya-green opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>

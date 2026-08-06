@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
+import { calculatePrice } from "@/lib/services";
 import { submitOrder } from "@/lib/order-log";
 
 interface OrderFormProps {
@@ -48,8 +49,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
   const total = useMemo(() => {
     if (!selectedService || quantityNum <= 0) return 0;
-    const discount = 0.95;
-    return selectedService.rate * quantityNum * discount;
+    return calculatePrice(selectedService.rate, quantityNum);
   }, [selectedService, quantityNum]);
 
   const quantityError = useMemo(() => {
