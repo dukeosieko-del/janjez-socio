@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/server/auth-helpers";
+import { requireAdmin, logAdminAction } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
@@ -15,7 +15,14 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient();
     if (!supabase) {
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  
+    await logAdminAction({
+      actorId: auth.id,
+      actorEmail: auth.email,
+      action: "stats_viewed",
+      request,
+    }).catch(() => {});
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
     const [

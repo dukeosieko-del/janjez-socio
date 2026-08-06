@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { requestCancel } from "@/lib/smm/fulfillment";
-import { requireAdmin } from "@/lib/server/auth-helpers";
+import { requireAdmin, logAdminAction } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
@@ -17,7 +17,15 @@ export async function POST(request: NextRequest) {
     const { orderId } = body as { orderId?: string };
 
     if (!orderId) {
-      return NextResponse.json({ error: "orderId is required" }, { status: 400 });
+  
+    await logAdminAction({
+      actorId: auth.id,
+      actorEmail: auth.email,
+      action: "provider_order_cancelled",
+      targetType: "order",
+      request,
+    }).catch(() => {});
+    return NextResponse.json({ error: "orderId is required" }, { status: 400 });
     }
 
     const result = await requestCancel(orderId);

@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { syncOrderStatuses } from "@/lib/smm/fulfillment";
-import { requireAdmin } from "@/lib/server/auth-helpers";
+import { requireAdmin, logAdminAction } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
@@ -17,6 +17,14 @@ export async function POST(request: NextRequest) {
     const orderIds = body?.orderIds as string[] | undefined;
 
     await syncOrderStatuses(orderIds);
+
+    await logAdminAction({
+      actorId: auth.id,
+      actorEmail: auth.email,
+      action: "provider_status_sync",
+      targetType: "provider",
+      request,
+    }).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("SMM status sync error:", error);

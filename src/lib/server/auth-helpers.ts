@@ -56,6 +56,41 @@ export async function requireAdmin(request: NextRequest): Promise<NextResponse |
   return user;
 }
 
+export async function logAdminAction(params: {
+  actorId: string;
+  actorEmail: string;
+  action: string;
+  targetType?: string;
+  targetId?: string;
+  details?: unknown;
+  request?: NextRequest;
+}) {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return false;
+
+  const ip =
+    params.request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    params.request?.headers.get("x-real-ip") ||
+    null;
+
+  const { error } = await supabase.from("admin_activity_logs").insert({
+    actor_id: params.actorId,
+    actor_email: params.actorEmail,
+    action: params.action,
+    target_type: params.targetType ?? null,
+    target_id: params.targetId ?? null,
+    details: params.details ?? null,
+    ip_address: ip,
+    user_agent: params.request?.headers.get("user-agent") ?? null,
+  });
+
+  if (error) {
+    console.error("Failed to log admin action:", error.message);
+    return false;
+  }
+  return true;
+}
+
 export function requireCronSecret(request: NextRequest): boolean {
   const token =
     request.headers.get("x-cron-secret") ||

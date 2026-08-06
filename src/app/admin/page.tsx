@@ -14,14 +14,14 @@ import {
 type Tab = "overview" | "users" | "orders" | "logs" | "ledger";
 
 export default function AdminDashboardPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, session } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [authorized, setAuthorized] = useState(false);
 
   const isAdmin = useMemo(
-    () => (user?.user_metadata?.role || profile?.role) === "admin",
-    [user, profile]
+    () => profile?.role === "admin",
+    [profile]
   );
 
   useEffect(() => {
@@ -36,6 +36,23 @@ export default function AdminDashboardPage() {
 
     setAuthorized(true);
   }, [user, isAdmin, loading, router]);
+
+  useEffect(() => {
+    if (authorized && session?.access_token) {
+      fetch("/api/admin/logs", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "dashboard_opened",
+          target_type: "dashboard",
+          details: { source: window.location.pathname },
+        }),
+      }).catch(() => {});
+    }
+  }, [authorized, session]);
 
   if (loading || !authorized) {
     return (

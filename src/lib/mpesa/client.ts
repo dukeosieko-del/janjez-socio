@@ -188,6 +188,26 @@ export async function completeStkPayment(
     throw new Error("Server misconfigured");
   }
 
+  // Idempotency: check if transaction was already completed
+  const { data: completedTx } = await supabase
+    .from("wallet_transactions")
+    .select("user_id, amount")
+    .eq("reference", checkoutRequestId)
+    .eq("status", "completed")
+    .single();
+
+  if (completedTx) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("wallet_balance")
+      .eq("id", completedTx.user_id)
+      .single();
+    return {
+      newBalance: Number(profile?.wallet_balance) || 0,
+      amount: Number(completedTx.amount) || 0,
+    };
+  }
+
   const { data: pendingTx, error: findError } = await supabase
     .from("wallet_transactions")
     .select("user_id, amount")
