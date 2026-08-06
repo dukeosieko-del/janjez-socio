@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { SIDEBAR_ITEMS, type SidebarItem } from "@/lib/data";
@@ -12,7 +12,7 @@ function SidebarIcon({ icon, label }: { icon: string; label: string }) {
       <Image src={icon} alt={label} width={20} height={20} className="w-5 h-5 object-contain" />
     );
   }
-  return <span className="text-lg">{icon}</span>;
+  return <span className="text-lg" aria-hidden="true">{icon}</span>;
 }
 
 function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number }) {
@@ -42,6 +42,7 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
               ? "bg-kenya-green/10 text-kenya-green border border-kenya-green/20"
               : "text-kenya-white/70 hover:text-kenya-white hover:bg-kenya-white/5"
           }`}
+          aria-expanded={isExpanded}
         >
           {item.icon && <SidebarIcon icon={item.icon} label={item.label} />}
           <span className="flex-1 text-left">{item.label}</span>
@@ -50,12 +51,13 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
         {isExpanded && (
-          <div className="mt-1 space-y-1">
+          <div className="mt-1 space-y-1" role="group">
             {item.children.map((child, idx) => (
               <SidebarNavItem key={child.label + idx} item={child} depth={depth + 1} />
             ))}
@@ -84,6 +86,7 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   const navItems = useMemo(() => {
     const baseItems = [
@@ -108,6 +111,31 @@ export default function Sidebar() {
     ];
   }, [user]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    const focusableElements = sidebarRef.current?.querySelectorAll(
+      'a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusableElements && focusableElements.length > 0) {
+      (focusableElements[0] as HTMLElement).focus();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -115,14 +143,18 @@ export default function Sidebar() {
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
       <aside
+        ref={sidebarRef}
         className={`fixed left-0 top-0 z-40 h-screen bg-kenya-black border-r border-kenya-white/10 transition-transform duration-300 w-64 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
+        role="navigation"
+        aria-label="Sidebar"
       >
         <div className="flex flex-col h-full">
           {/* Logo area */}
@@ -136,6 +168,7 @@ export default function Sidebar() {
             <button
               onClick={() => setIsOpen(false)}
               className="lg:hidden p-2 rounded-lg hover:bg-kenya-white/10 transition-colors text-kenya-white/60 hover:text-kenya-white"
+              aria-label="Close menu"
             >
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -175,8 +208,9 @@ export default function Sidebar() {
       {/* Mobile toggle button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-30 lg:hidden w-12 h-12 bg-kenya-green text-kenya-black rounded-full shadow-lg flex items-center justify-center hover:bg-kenya-green/90 transition-colors"
+        className="fixed bottom-6 left-6 z-30 lg:hidden w-14 h-14 bg-kenya-green text-kenya-black rounded-full shadow-lg flex items-center justify-center hover:bg-kenya-green/90 transition-colors"
         aria-label="Open menu"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
