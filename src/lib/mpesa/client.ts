@@ -190,13 +190,20 @@ export async function completeStkPayment(
 
   const { data: pendingTx, error: findError } = await supabase
     .from("wallet_transactions")
-    .select("user_id, amount")
+    .select("user_id, amount, status")
     .eq("reference", checkoutRequestId)
-    .eq("status", "pending")
     .single();
 
   if (findError || !pendingTx) {
     throw new Error("No pending transaction found for this CheckoutRequestID");
+  }
+
+  if (pendingTx.status === "completed") {
+    const { data: balanceData } = await supabase.rpc("get_wallet_balance", {
+      p_user_id: pendingTx.user_id,
+    });
+    const newBalance = Number((balanceData as { balance: number } | null)?.balance || 0);
+    return { newBalance, amount: metadata.amount || Number(pendingTx.amount) || 0 };
   }
 
   const amount = metadata.amount || Number(pendingTx.amount) || 0;
@@ -214,6 +221,20 @@ export async function completeStkPayment(
 
   if (updateError) {
     throw new Error(updateError.message);
+  }
+
+  const { data: verifyTx } = await supabase
+    .from("wallet_transactions")
+    .select("status")
+    .eq("reference", checkoutRequestId)
+    .single();
+
+  if (verifyTx?.status !== "completed") {
+    const { data: balanceData } = await supabase.rpc("get_wallet_balance", {
+      p_user_id: pendingTx.user_id,
+    });
+    const newBalance = Number((balanceData as { balance: number } | null)?.balance || 0);
+    return { newBalance, amount };
   }
 
   const { data: creditData, error: creditError } = await supabase.rpc("credit_wallet", {

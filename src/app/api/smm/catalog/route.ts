@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { syncProviderCatalog } from "@/lib/smm/fulfillment";
-import { requireAdmin } from "@/lib/server/auth-helpers";
+import { requireAdmin, logAdminAction } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    await logAdminAction({ actor_id: auth.id, actor_email: auth.email, action: "provider_catalog_sync" });
     const result = await syncProviderCatalog();
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {

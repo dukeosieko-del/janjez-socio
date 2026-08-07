@@ -10,6 +10,7 @@ import {
   LogsTab,
   LedgerTab,
 } from "@/components/admin/AdminTabs";
+import { logDashboardOpened } from "./actions";
 
 type Tab = "overview" | "users" | "orders" | "logs" | "ledger";
 
@@ -19,10 +20,7 @@ export default function AdminDashboardPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [authorized, setAuthorized] = useState(false);
 
-  const isAdmin = useMemo(
-    () => (user?.user_metadata?.role || profile?.role) === "admin",
-    [user, profile]
-  );
+  const isAdmin = useMemo(() => profile?.role === "admin", [profile]);
 
   useEffect(() => {
     if (loading) return;
@@ -35,7 +33,11 @@ export default function AdminDashboardPage() {
     }
 
     setAuthorized(true);
-  }, [user, isAdmin, loading, router]);
+    logDashboardOpened({
+      actor_id: profile?.id,
+      actor_email: profile?.email || user?.email || undefined,
+    });
+  }, [user, isAdmin, loading, router, profile]);
 
   if (loading || !authorized) {
     return (

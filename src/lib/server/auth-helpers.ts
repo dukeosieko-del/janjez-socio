@@ -64,3 +64,32 @@ export function requireCronSecret(request: NextRequest): boolean {
   if (!expected || !token) return false;
   return token === expected;
 }
+
+export async function logAdminAction(params: {
+  actor_id?: string;
+  actor_email?: string;
+  action: string;
+  target_type?: string;
+  target_id?: string;
+  details?: Record<string, unknown> | null;
+  ip_address?: string;
+  user_agent?: string;
+}): Promise<void> {
+  try {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return;
+
+    await supabase.from("admin_activity_logs").insert({
+      actor_id: params.actor_id,
+      actor_email: params.actor_email,
+      action: params.action,
+      target_type: params.target_type,
+      target_id: params.target_id,
+      details: params.details ?? null,
+      ip_address: params.ip_address,
+      user_agent: params.user_agent,
+    });
+  } catch {
+    // Intentionally silent: logging must never break the caller
+  }
+}

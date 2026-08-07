@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { syncOrderStatuses } from "@/lib/smm/fulfillment";
-import { requireAdmin } from "@/lib/server/auth-helpers";
+import { requireAdmin, logAdminAction } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    await logAdminAction({ actor_id: auth.id, actor_email: auth.email, action: "provider_status_sync" });
     const body = await request.json().catch(() => ({}));
     const orderIds = body?.orderIds as string[] | undefined;
 
