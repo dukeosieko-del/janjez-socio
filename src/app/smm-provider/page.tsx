@@ -5,6 +5,20 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 
+interface FulfillmentLog {
+  id: string;
+  order_id: string;
+  action: string;
+  status: string;
+  error?: string;
+  created_at: string;
+}
+
+interface FulfillmentLogsResponse {
+  logs: FulfillmentLog[];
+  total: number;
+}
+
 export const dynamic = "force-dynamic";
 
 async function getProviderBalance() {
@@ -22,7 +36,7 @@ async function getRecentLogs() {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const res = await fetch(`${base}/api/admin/fulfillment-logs?limit=20`, { cache: "no-store" });
   if (!res.ok) return { logs: [], total: 0 };
-  return res.json();
+  return res.json() as Promise<FulfillmentLogsResponse>;
 }
 
 export default async function SMMProviderPage() {
@@ -101,7 +115,7 @@ export default async function SMMProviderPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-kenya-white/10">
-                    {(logs.logs || []).map((log: any) => (
+                    {(logs.logs || []).map((log: FulfillmentLog) => (
                       <tr key={log.id} className="hover:bg-kenya-white/5 transition-colors">
                         <td className="px-4 py-3 text-kenya-white">{log.order_id?.slice(0, 8) || "—"}</td>
                         <td className="px-4 py-3 text-kenya-white/80">{log.action}</td>

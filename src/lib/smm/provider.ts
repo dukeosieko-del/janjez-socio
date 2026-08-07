@@ -35,13 +35,14 @@ export interface ProviderBalanceResponse {
 }
 
 export async function smmPost<T>(body: Record<string, unknown>): Promise<T> {
+  const params = new URLSearchParams({ key: SMM_API_KEY });
+  for (const [k, v] of Object.entries(body)) {
+    if (typeof v === "string") params.append(k, v);
+  }
   const res = await fetch(SMM_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      key: SMM_API_KEY,
-      ...body,
-    } as any).toString(),
+    body: params.toString(),
   });
 
   if (!res.ok) {
