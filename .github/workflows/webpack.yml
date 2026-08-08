@@ -61,7 +61,6 @@ jobs:
         MPESA_ENV: ${{ secrets.MPESA_ENV }}
         SMM_API_URL: ${{ secrets.SMM_API_URL }}
         SMM_API_KEY: ${{ secrets.SMM_API_KEY }}
-        SMM_FULFILLMENT_ENABLED: ${{ secrets.SMM_FULFILLMENT_ENABLED }}
         CRON_SECRET: ${{ secrets.CRON_SECRET }}
         NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
 
