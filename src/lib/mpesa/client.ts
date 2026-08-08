@@ -208,7 +208,7 @@ export async function completeStkPayment(
 
   const amount = metadata.amount || Number(pendingTx.amount) || 0;
 
-  const { error: updateError, count } = await supabase
+  const { data: updatedRows, error: updateError } = await supabase
     .from("wallet_transactions")
     .update({
       status: "completed",
@@ -217,13 +217,14 @@ export async function completeStkPayment(
       notes: "M-Pesa STK push completed",
     })
     .eq("reference", checkoutRequestId)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .select("id");
 
   if (updateError) {
     throw new Error(updateError.message);
   }
 
-  if (count === 0) {
+  if (!updatedRows || updatedRows.length === 0) {
     const { data: balanceData } = await supabase.rpc("get_wallet_balance", {
       p_user_id: pendingTx.user_id,
     });
