@@ -23,11 +23,18 @@ services:
       - MPESA_PASSKEY=${MPESA_PASSKEY}
       - MPESA_SHORTCODE=${MPESA_SHORTCODE}
       - MPESA_ENV=${MPESA_ENV:-production}
+<<<<<<< ours
       - NEXT_PUBLIC_GA_ID=${NEXT_PUBLIC_GA_ID}
     volumes:
       - ./:/app
       - janjez_node_modules:/app/node_modules
       - janjez_next:/app/.next
+=======
+      - SMM_API_URL=${SMM_API_URL}
+      - SMM_API_KEY=${SMM_API_KEY}
+      - CRON_SECRET=${CRON_SECRET}
+      - DEPLOY_URL=${DEPLOY_URL}
+>>>>>>> theirs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3000"]
