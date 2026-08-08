@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { HAPPY_HOUR_DISCOUNT } from "@/lib/services";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -14,7 +15,6 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const WHATSAPP_CHANNEL_AUTO_FUTURE_POST_REACTIONS = "whatsapp-channel-auto-future-post-reactions";
-const HAPPY_HOUR_DISCOUNT = 0.95;
 
 export default function WhatsAppChannelAutoFuturePostReactionsClient() {
   const { user, session, openAuth, walletBalance } = useAuth();

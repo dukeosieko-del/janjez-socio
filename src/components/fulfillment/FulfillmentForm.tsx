@@ -5,6 +5,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import MpesaModal from "@/components/MpesaModal";
 import { submitOrder } from "@/lib/order-log";
+import { HAPPY_HOUR_DISCOUNT } from "@/lib/services";
 
 export interface FulfillmentProps {
   platformId: string;
@@ -37,7 +38,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
   const total = useMemo(() => {
     if (subtotal <= 0) return 0;
-    return subtotal * 0.95;
+    return subtotal * HAPPY_HOUR_DISCOUNT;
   }, [subtotal]);
 
   const qtyMin = deliverable.minQty ?? 10;

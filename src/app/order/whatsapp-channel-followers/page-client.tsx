@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { HAPPY_HOUR_DISCOUNT } from "@/lib/services";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -43,7 +44,7 @@ export default function WhatsAppChannelFollowersClient() {
 
   const total = useMemo(() => {
     if (subtotal <= 0) return 0;
-    const discount = 0.95; // Happy Hour -5%
+    const discount = HAPPY_HOUR_DISCOUNT;
     return subtotal * discount;
   }, [subtotal]);
 

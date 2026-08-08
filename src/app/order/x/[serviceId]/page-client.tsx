@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { getServiceById } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { HAPPY_HOUR_DISCOUNT } from "@/lib/services";
 import Link from "next/link";
 import Image from "next/image";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
@@ -13,7 +14,6 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
-const HAPPY_HOUR_DISCOUNT = 0.95; // -5%
 
 const X_URL_PATTERN = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+/;
 

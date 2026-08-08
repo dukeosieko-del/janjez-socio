@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
 import { ORDER_SERVICES } from "@/lib/data";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
+import { HAPPY_HOUR_DISCOUNT } from "@/lib/services";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,7 @@ function calculateExpectedAmount(
       (s) => s.categoryId === catalogCategoryId && (s.serviceId === skuId || s.id === skuId)
     );
     if (service) {
-      return service.rate * quantity * 0.95;
+      return service.rate * quantity * HAPPY_HOUR_DISCOUNT;
     }
   }
 
@@ -36,7 +37,7 @@ function calculateExpectedAmount(
         const priceMatch = deliverable.price.match(/([\d,.]+)/);
         if (priceMatch) {
           const rate = parseFloat(priceMatch[1].replace(/,/g, ""));
-          return rate * quantity * 0.95;
+          return rate * quantity * HAPPY_HOUR_DISCOUNT;
         }
       }
     }
