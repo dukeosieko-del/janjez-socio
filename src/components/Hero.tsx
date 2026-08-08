@@ -89,7 +89,7 @@ export default function Hero() {
               href="/pay"
               className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl border border-kenya-white/20 hover:bg-kenya-white/20 transition-all hover:scale-105"
             >
-              <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />
+              <Image src="/mpesa-home-icon.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />
               Top Up via M-Pesa
             </Link>
           </div>
