@@ -208,7 +208,7 @@ export async function completeStkPayment(
 
   const amount = metadata.amount || Number(pendingTx.amount) || 0;
 
-  const { error: updateError } = await supabase
+  const { error: updateError, count } = await supabase
     .from("wallet_transactions")
     .update({
       status: "completed",
@@ -223,13 +223,7 @@ export async function completeStkPayment(
     throw new Error(updateError.message);
   }
 
-  const { data: verifyTx } = await supabase
-    .from("wallet_transactions")
-    .select("status")
-    .eq("reference", checkoutRequestId)
-    .single();
-
-  if (verifyTx?.status !== "completed") {
+  if (count === 0) {
     const { data: balanceData } = await supabase.rpc("get_wallet_balance", {
       p_user_id: pendingTx.user_id,
     });
