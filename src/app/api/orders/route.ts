@@ -68,6 +68,8 @@ export async function POST(request: NextRequest) {
        payment_reference,
        refill_guarantee,
        quantity_source,
+       runs,
+       interval,
     } = body as {
       order_id?: string;
       category?: string;
@@ -80,6 +82,8 @@ export async function POST(request: NextRequest) {
       payment_reference?: string;
       refill_guarantee?: string | null;
       quantity_source?: "preset" | "custom";
+      runs?: number | null;
+      interval?: number | null;
     };
 
     const errors: string[] = [];
@@ -96,6 +100,13 @@ export async function POST(request: NextRequest) {
 
     if (amount_paid === undefined || isNaN(Number(amount_paid)) || Number(amount_paid) < 0) {
       errors.push("amount_paid must be a non-negative number");
+    }
+
+    if (runs !== undefined && runs !== null && (typeof runs !== "number" || isNaN(runs) || runs <= 0 || !Number.isInteger(runs))) {
+      errors.push("runs must be a positive integer");
+    }
+    if (interval !== undefined && interval !== null && (typeof interval !== "number" || isNaN(interval) || interval <= 0 || !Number.isInteger(interval))) {
+      errors.push("interval must be a positive integer in minutes");
     }
 
     if (errors.length > 0) {
@@ -177,6 +188,8 @@ export async function POST(request: NextRequest) {
         status: "pending",
         payment_status: "paid",
         fulfillment_status: "pending",
+        runs: runs ?? null,
+        interval: interval ?? null,
       })
       .select("*")
       .single();

@@ -35,6 +35,13 @@ interface OrderShape {
   created_at?: string;
   updated_at?: string;
   profiles?: { email?: string; full_name?: string | null } | null;
+  fulfillment_status?: string;
+  provider_status?: string;
+  provider_order_id?: string;
+  fulfillment_error?: string;
+  fulfilled_at?: string;
+  runs?: number | null;
+  interval?: number | null;
 }
 
 interface LogShape {
@@ -198,6 +205,10 @@ export function OrdersTab() {
     o.service_name || "—",
     `KES ${Number(o.amount || 0).toFixed(2)}`,
     o.status || "—",
+    o.fulfillment_status || "—",
+    o.provider_status || "—",
+    o.provider_order_id ? o.provider_order_id.slice(0, 8) : "—",
+    o.runs && o.interval ? `Drip-feed: ${o.runs} runs / ${o.interval} min` : "Instant",
     o.created_at ? new Date(o.created_at).toLocaleString() : "—",
   ]);
 
@@ -205,7 +216,7 @@ export function OrdersTab() {
     <div>
       <h2 className="text-xl font-bold text-kenya-white mb-4">Orders</h2>
       <DataTable
-        headers={["Order ID", "User", "Service", "Amount", "Status", "Created"]}
+        headers={["Order ID", "User", "Service", "Amount", "Status", "Fulfillment", "Provider", "Provider Order", "Drip-feed", "Created"]}
         rows={rows}
       />
       {orders.length === 0 && <p className="text-kenya-white/50 text-sm mt-4">No orders found.</p>}

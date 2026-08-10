@@ -28,6 +28,9 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
   const [quantity, setQuantity] = useState("");
   const [comments, setComments] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(defaultAnonymous);
+  const [dripFeedEnabled, setDripFeedEnabled] = useState(false);
+  const [runs, setRuns] = useState("");
+  const [interval, setInterval] = useState("");
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
@@ -66,6 +69,9 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     setLink("");
     setQuantity("");
     setComments("");
+    setDripFeedEnabled(false);
+    setRuns("");
+    setInterval("");
   }, []);
 
   const handleServiceChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -73,6 +79,9 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     setLink("");
     setQuantity("");
     setComments("");
+    setDripFeedEnabled(false);
+    setRuns("");
+    setInterval("");
   }, []);
 
   const handlePlaceOrder = useCallback(async () => {
@@ -80,6 +89,19 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     if (!user) {
       onRequireAuth("login");
       return;
+    }
+
+    if (dripFeedEnabled) {
+      const runsNum = parseInt(runs, 10);
+      const intervalNum = parseInt(interval, 10);
+      if (!runs || isNaN(runsNum) || runsNum <= 0) {
+        setOrderError("Runs must be a positive integer.");
+        return;
+      }
+      if (!interval || isNaN(intervalNum) || intervalNum <= 0) {
+        setOrderError("Interval must be a positive integer (minutes).");
+        return;
+      }
     }
 
     if (total > walletBalance) {
@@ -101,6 +123,8 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
         amountPaid: total,
         quantitySource,
         selectedSkuId: selectedService.serviceId,
+        runs: dripFeedEnabled ? (parseInt(runs, 10) || null) : null,
+        interval: dripFeedEnabled ? (parseInt(interval, 10) || null) : null,
       });
 
       if (!result.ok) {
@@ -121,7 +145,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedCategory, quantity]);
+  }, [selectedService, link, quantityNum, quantityError, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedCategory, quantity, dripFeedEnabled, runs, interval]);
 
   const isValid =
     selectedService &&
@@ -263,6 +287,63 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
                   rows={4}
                   className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all resize-none"
                 />
+              </div>
+            )}
+
+            {/* Drip-feed toggle */}
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="drip-feed"
+                checked={dripFeedEnabled}
+                onChange={(e) => setDripFeedEnabled(e.target.checked)}
+                className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+              />
+              <label htmlFor="drip-feed" className="text-sm text-kenya-white/70 cursor-pointer">
+                Enable drip-feed (deliver over time)
+              </label>
+            </div>
+
+            {dripFeedEnabled && (
+              <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-4 space-y-3">
+                <p className="text-xs text-kenya-white/60">
+                  Quantity is the <span className="text-kenya-green font-semibold">TOTAL</span> amount delivered across the entire drip-feed schedule.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                      Runs
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={runs}
+                      onChange={(e) => setRuns(e.target.value)}
+                      placeholder="e.g. 10"
+                      className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                      Interval (minutes)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      value={interval}
+                      onChange={(e) => setInterval(e.target.value)}
+                      placeholder="e.g. 60"
+                      className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                    />
+                  </div>
+                </div>
+                {runs && interval && (
+                  <p className="text-xs text-kenya-white/50">
+                    Schedule: {(parseInt(runs, 10) || 0) * (parseInt(interval, 10) || 0)} minutes total runtime
+                  </p>
+                )}
               </div>
             )}
 

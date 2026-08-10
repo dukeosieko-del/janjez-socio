@@ -34,6 +34,8 @@ interface Order {
   quantity_source?: string;
   created_at?: string;
   updated_at?: string;
+  runs?: number | null;
+  interval?: number | null;
 }
 
 export default function MyOrdersPage() {
@@ -270,14 +272,19 @@ export default function MyOrdersPage() {
                                 {paymentStatus}
                             </span>
                              </td>
-                             <td className="px-4 py-3 text-center">
-                               <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${fulfillmentStyles[fulfillmentStatus] || fulfillmentStyles.pending}`}>
-                                 {fulfillmentStatus}
-                               </span>
-                               {order.provider_order_id && (
-                                 <div className="text-kenya-white/40 text-xs mt-1 font-mono">{order.provider_order_id.slice(0, 8)}</div>
-                               )}
-                             </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${fulfillmentStyles[fulfillmentStatus] || fulfillmentStyles.pending}`}>
+                                  {fulfillmentStatus}
+                                </span>
+                                {order.provider_order_id && (
+                                  <div className="text-kenya-white/40 text-xs mt-1 font-mono">{order.provider_order_id.slice(0, 8)}</div>
+                                )}
+                                {order.runs && order.interval && (
+                                  <div className="text-kenya-white/40 text-xs mt-1">
+                                    Drip-feed: {order.runs} runs / {order.interval} min
+                                  </div>
+                                )}
+                              </td>
                            </tr>
                         );
                       })}
