@@ -112,17 +112,19 @@ export async function fulfillOrder(orderId: string) {
       .eq("id", order.janjez_service_id)
       .single();
 
-    if (js?.provider_service) {
+    const provider = (js as { provider_service?: ProviderService & { id: string } } | null)?.provider_service;
+
+    if (provider) {
       providerService = {
-        service: parseInt(js.provider_service.id, 10),
-        name: js.provider_service.name,
-        type: js.provider_service.type,
-        category: js.provider_service.category,
-        rate: String(js.provider_service.rate),
-        min: String(js.provider_service.min_quantity),
-        max: String(js.provider_service.max_quantity),
-        refill: js.provider_service.supports_refill,
-        cancel: js.provider_service.supports_cancel,
+        service: parseInt(provider.id, 10),
+        name: provider.name,
+        type: provider.type,
+        category: provider.category,
+        rate: String(provider.rate),
+        min: String(provider.min),
+        max: String(provider.max),
+        refill: provider.refill,
+        cancel: provider.cancel,
       };
     }
   }

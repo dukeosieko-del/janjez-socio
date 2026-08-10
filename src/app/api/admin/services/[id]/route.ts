@@ -7,8 +7,9 @@ export const runtime = "nodejs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const rl = rateLimitAdmin(request);
   if (!rl.ok && rl.response) return rl.response;
 
@@ -24,7 +25,7 @@ export async function GET(
     const { data, error } = await supabase
       .from("janjez_services")
       .select("*, provider_service:provider_services(*)")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (error) {
@@ -39,8 +40,9 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const rl = rateLimitAdmin(request);
   if (!rl.ok && rl.response) return rl.response;
 
@@ -73,7 +75,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from("janjez_services")
       .update(updates)
-      .eq("id", params.id)
+      .eq("id", id)
       .select("*, provider_service:provider_services(*)")
       .single();
 
@@ -89,8 +91,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const rl = rateLimitAdmin(request);
   if (!rl.ok && rl.response) return rl.response;
 
@@ -106,7 +109,7 @@ export async function DELETE(
     const { error } = await supabase
       .from("janjez_services")
       .update({ is_active: false })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
