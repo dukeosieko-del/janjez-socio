@@ -339,7 +339,7 @@ echo "8. DRIP-FEED SETTINGS"
 echo "=================================================="
 
 if [ -z "${NEXT_PUBLIC_SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
-  echo("DRIP_FEED=SKIP (no Supabase credentials)")
+  echo "DRIP_FEED=SKIP (no Supabase credentials)"
 else
   DRIP_SCRIPT=$(cat <<'DRIP_EOF'
 const { createClient } = require('@supabase/supabase-js');
