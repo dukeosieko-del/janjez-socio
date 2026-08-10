@@ -102,14 +102,15 @@ else
   PROVIDER_SCRIPT=$(cat <<'PROVIDER_EOF'
 const https = require('https');
 const url = new URL(process.env.SMM_API_URL || '');
+const postData = new URLSearchParams({ key: process.env.SMM_API_KEY || '', action: 'balance' }).toString();
 const options = {
   hostname: url.hostname,
   port: url.port || 443,
-  path: '/?action=balance',
-  method: 'GET',
+  path: url.pathname || '/',
+  method: 'POST',
   headers: {
-    'Authorization': `Bearer ${process.env.SMM_API_KEY}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Content-Length': Buffer.byteLength(postData)
   },
   timeout: 10000
 };
@@ -140,6 +141,7 @@ req.on('timeout', () => {
   console.log('PROVIDER_ERROR=Timeout');
   req.destroy();
 });
+req.write(postData);
 req.end();
 PROVIDER_EOF
 )
