@@ -7,11 +7,15 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-import OrderForm from "@/components/OrderForm";
+import OrderForm, { OrderFormService } from "@/components/OrderForm";
 import MpesaModal from "@/components/MpesaModal";
 import { useAuth } from "@/components/AuthContext";
 
-export default function OrderPageClient() {
+interface OrderPageClientProps {
+  services?: OrderFormService[];
+}
+
+export default function OrderPageClient({ services }: OrderPageClientProps) {
   const searchParams = useSearchParams();
   const serviceId = searchParams.get("service");
   const categoryId = searchParams.get("category");
@@ -48,7 +52,7 @@ export default function OrderPageClient() {
               </p>
             </div>
 
-            <OrderForm onRequireAuth={handleRequireAuth} onInsufficientBalance={handleInsufficientBalance} serviceId={serviceId} categoryId={categoryId} defaultAnonymous={anonymous} />
+            <OrderForm onRequireAuth={handleRequireAuth} onInsufficientBalance={handleInsufficientBalance} serviceId={serviceId} categoryId={categoryId} defaultAnonymous={anonymous} services={services} />
           </div>
         </main>
 

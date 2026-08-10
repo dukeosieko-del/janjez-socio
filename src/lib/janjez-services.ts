@@ -42,6 +42,15 @@ export async function fetchJanjezServices(category?: string): Promise<JanjezServ
   return data.services || [];
 }
 
+export async function fetchJanjezServiceById(id: string): Promise<JanjezService | null> {
+  const res = await fetch(`/api/services/${encodeURIComponent(id)}`);
+  if (!res.ok) {
+    return null;
+  }
+  const data = await res.json();
+  return data.service || null;
+}
+
 export function getServiceById(services: JanjezService[], id: string): JanjezService | undefined {
   return services.find(s => s.id === id);
 }

@@ -12,15 +12,19 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category") || "";
+    const subcategory = searchParams.get("subcategory") || "";
     const search = searchParams.get("search") || "";
 
     let query = supabase
       .from("janjez_services")
-      .select("*, provider_service:provider_services(*)")
+      .select("id, name, slug, category, subcategory, description, selling_price_ksh, min_quantity, max_quantity, is_active, display_order, supports_drip_feed, supports_refill, supports_cancel, created_at, updated_at")
       .eq("is_active", true);
 
     if (category) {
       query = query.ilike("category", `%${category}%`);
+    }
+    if (subcategory) {
+      query = query.ilike("subcategory", `%${subcategory}%`);
     }
     if (search) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);

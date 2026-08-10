@@ -11,11 +11,21 @@ export interface FulfillmentProps {
   platformName: string;
   platformIcon: string;
   subcategoryName: string;
-  deliverable: { name: string; price: string; note?: string; flag?: string; minQty?: number; maxQty?: number };
+  deliverable?: { name: string; price: string; note?: string; flag?: string; minQty?: number; maxQty?: number };
+  janjezService?: {
+    id: string;
+    name: string;
+    selling_price_ksh: number;
+    min_quantity: number;
+    max_quantity: number;
+    supports_drip_feed: boolean;
+    supports_refill: boolean;
+    supports_cancel: boolean;
+  };
   onRequireAuth?: (tab?: "login" | "register") => void;
 }
 
-export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable, onRequireAuth }: FulfillmentProps) {
+export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable, janjezService, onRequireAuth }: FulfillmentProps) {
   const { user, walletBalance } = useAuth();
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -23,25 +33,32 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [mpesaOpen, setMpesaOpen] = useState(false);
+  const [dripFeedEnabled, setDripFeedEnabled] = useState(false);
+  const [runs, setRuns] = useState("");
+  const [interval, setInterval] = useState("");
 
-  const parsedAmount = useMemo(() => parseFloat(deliverable.price.replace(" Ksh", "") || "0"), [deliverable.price]);
+  const useJanjez = !!janjezService;
+  const servicePrice = useJanjez ? janjezService!.selling_price_ksh : parseFloat(deliverable?.price.replace(" Ksh", "") || "0");
+  const qtyMin = useJanjez ? janjezService!.min_quantity : (deliverable?.minQty ?? 10);
+  const qtyMax = useJanjez ? janjezService!.max_quantity : (deliverable?.maxQty ?? 10000);
+  const serviceName = useJanjez ? janjezService!.name : (deliverable?.name || "");
+  const supportsDripFeed = useJanjez ? janjezService!.supports_drip_feed : false;
+  const serviceId = useJanjez ? janjezService!.id : (deliverable?.name || "");
+
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
     return Number.isNaN(num) ? 0 : num;
   }, [quantity]);
 
   const subtotal = useMemo(() => {
-    if (!parsedAmount || quantityNum <= 0) return 0;
-    return parsedAmount * quantityNum;
-  }, [parsedAmount, quantityNum]);
+    if (!servicePrice || quantityNum <= 0) return 0;
+    return servicePrice * quantityNum;
+  }, [servicePrice, quantityNum]);
 
   const total = useMemo(() => {
     if (subtotal <= 0) return 0;
     return subtotal * 0.95;
   }, [subtotal]);
-
-  const qtyMin = deliverable.minQty ?? 10;
-  const qtyMax = deliverable.maxQty ?? 10000;
 
   const quantityError = useMemo(() => {
     if (quantityNum <= 0) return "";
@@ -74,12 +91,15 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
         categoryId: platformId,
-        serviceId: deliverable.name,
+        serviceId: serviceName,
         quantity: quantityNum,
         link,
         amountPaid: total,
         quantitySource,
-        selectedSkuId: deliverable.name,
+        selectedSkuId: serviceName,
+        janjezServiceId: useJanjez ? serviceId : undefined,
+        runs: (supportsDripFeed && dripFeedEnabled) ? (parseInt(runs, 10) || null) : null,
+        interval: (supportsDripFeed && dripFeedEnabled) ? (parseInt(interval, 10) || null) : null,
       });
 
       if (!result.ok) {
@@ -101,7 +121,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       setOrderError("Unexpected error while placing order.");
       setPlacing(false);
     }
-  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable.name]);
+  }, [link, quantityNum, quantityError, total, walletBalance, platformId, serviceName, useJanjez, serviceId, supportsDripFeed, dripFeedEnabled, runs, interval, user, onRequireAuth]);
 
   const isValid = link.trim().length > 0 && quantityNum >= qtyMin && quantityNum <= qtyMax;
 
@@ -117,12 +137,27 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         </div>
       </div>
 
-      {deliverable.flag && (
+      {(janjezService?.supports_refill || janjezService?.supports_cancel) && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {janjezService.supports_refill && (
+            <span className="inline-flex items-center gap-1.5 bg-kenya-green/20 text-kenya-green text-xs px-3 py-1.5 rounded-lg border border-kenya-green/30">
+              🔄 Refill supported
+            </span>
+          )}
+          {janjezService.supports_cancel && (
+            <span className="inline-flex items-center gap-1.5 bg-kenya-white/10 text-kenya-white text-xs px-3 py-1.5 rounded-lg border border-kenya-white/10">
+              ❌ Cancel supported
+            </span>
+          )}
+        </div>
+      )}
+
+      {deliverable?.flag && (
           <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-3">
             <p className="text-kenya-red text-xs">{deliverable.flag}</p>
           </div>
         )}
-        {deliverable.note && (
+        {deliverable?.note && (
           <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3">
             <p className="text-kenya-white/50 text-xs italic">{deliverable.note}</p>
           </div>
@@ -156,6 +191,60 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
           />
           {quantityError && <p className="text-kenya-red text-sm mt-2">{quantityError}</p>}
         </div>
+
+        {supportsDripFeed && (
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="drip-feed"
+              checked={dripFeedEnabled}
+              onChange={(e) => setDripFeedEnabled(e.target.checked)}
+              className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+            />
+            <label htmlFor="drip-feed" className="text-sm text-kenya-white/70 cursor-pointer">
+              Enable drip-feed (deliver over time)
+            </label>
+          </div>
+        )}
+
+        {supportsDripFeed && dripFeedEnabled && (
+          <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-4 space-y-3">
+            <p className="text-xs text-kenya-white/60">
+              Quantity is the <span className="text-kenya-green font-semibold">TOTAL</span> amount delivered across the entire drip-feed schedule.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-kenya-white/70 mb-2">Runs</label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  value={runs}
+                  onChange={(e) => setRuns(e.target.value)}
+                  placeholder="e.g. 10"
+                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-kenya-white/70 mb-2">Interval (minutes)</label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  value={interval}
+                  onChange={(e) => setInterval(e.target.value)}
+                  placeholder="e.g. 60"
+                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                />
+              </div>
+            </div>
+            {runs && interval && (
+              <p className="text-xs text-kenya-white/50">
+                Schedule: {(parseInt(runs, 10) || 0) * (parseInt(interval, 10) || 0)} minutes total runtime
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-between bg-kenya-black/60 rounded-xl px-5 py-4 border border-kenya-white/10">
           <div>

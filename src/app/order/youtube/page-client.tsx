@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useAuth } from "@/components/AuthContext";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import OrderForm, { OrderFormService } from "@/components/OrderForm";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -14,7 +15,11 @@ import MpesaModal from "@/components/MpesaModal";
 
 const YOUTUBE_CATEGORY = "youtube";
 
-export default function YouTubeOrderClient() {
+interface YouTubeOrderClientProps {
+  services?: OrderFormService[];
+}
+
+export default function YouTubeOrderClient({ services }: YouTubeOrderClientProps) {
   const { user, session, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
@@ -22,14 +27,14 @@ export default function YouTubeOrderClient() {
   const [comments, setComments] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
-
   const [mpesaOpen, setMpesaOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
-  
+
+  const availableServices = services && services.length > 0 ? services : ORDER_SERVICES;
   const youtubeServices = useMemo(() => getServicesByCategory(YOUTUBE_CATEGORY), []);
-  const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
+  const selectedService = useMemo(() => availableServices.find((s) => s.id === selectedServiceId) || null, [selectedServiceId, availableServices]);
 
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
@@ -87,6 +92,7 @@ export default function YouTubeOrderClient() {
         amountPaid: total,
         quantitySource,
         selectedSkuId: selectedService.serviceId || selectedService.name,
+        janjezServiceId: (selectedService as { janjez_service_id?: string }).janjez_service_id,
       });
 
       if (!result.ok) {

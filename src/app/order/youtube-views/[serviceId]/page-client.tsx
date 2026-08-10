@@ -17,11 +17,45 @@ const HAPPY_HOUR_DISCOUNT = 0.95; // -5%
 
 interface FulfillmentClientProps {
   serviceId: string;
+  dynamicService?: {
+    id: string;
+    name: string;
+    category: string;
+    selling_price_ksh: number;
+    min_quantity: number;
+    max_quantity: number;
+    description: string | null;
+    supports_drip_feed: boolean;
+    supports_refill: boolean;
+    supports_cancel: boolean;
+  } | null;
 }
 
-export default function FulfillmentClient({ serviceId }: FulfillmentClientProps) {
+function toOrderService(s: FulfillmentClientProps["dynamicService"]) {
+  if (!s) return null;
+  return {
+    id: s.id,
+    categoryId: s.category.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name: s.name,
+    serviceId: s.id,
+    rate: s.selling_price_ksh,
+    min: s.min_quantity,
+    max: s.max_quantity,
+    description: s.description || "",
+    refill: s.supports_refill ? "Refill supported" : "No refill",
+    monetizable: false,
+    speed: "Standard",
+    startTime: "Instant",
+    notice: undefined,
+    requiresComments: false,
+  };
+}
+
+export default function FulfillmentClient({ serviceId, dynamicService }: FulfillmentClientProps) {
   const { user, session, openAuth, walletBalance } = useAuth();
-  const service = useMemo(() => getServiceById(serviceId), [serviceId]);
+  const dynamicServiceObj = useMemo(() => toOrderService(dynamicService), [dynamicService]);
+  const staticService = useMemo(() => getServiceById(serviceId), [serviceId]);
+  const service = dynamicServiceObj || staticService;
 
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -85,6 +119,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
         amountPaid: total,
         quantitySource,
         selectedSkuId: service.serviceId || service.name,
+        janjezServiceId: dynamicService?.id,
       });
 
       if (!result.ok) {

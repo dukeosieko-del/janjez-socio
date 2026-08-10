@@ -5,22 +5,66 @@ import { useAuth } from "@/components/AuthContext";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
 
+export interface OrderFormService {
+  id: string;
+  categoryId: string;
+  name: string;
+  serviceId: string;
+  rate: number;
+  min: number;
+  max: number;
+  description: string;
+  refill: string;
+  requiresComments?: boolean;
+  requiresLink?: boolean;
+  speed?: string;
+  startTime?: string;
+  notice?: string;
+  monetizable?: boolean;
+  supports_drip_feed?: boolean;
+  janjez_service_id?: string;
+}
+
 interface OrderFormProps {
   onRequireAuth: (tab?: "login" | "register") => void;
   onInsufficientBalance?: () => void;
   serviceId?: string | null;
   categoryId?: string | null;
   defaultAnonymous?: boolean;
+  services?: OrderFormService[];
 }
 
-export default function OrderForm({ onRequireAuth, onInsufficientBalance, serviceId, categoryId, defaultAnonymous = false }: OrderFormProps) {
+function isOrderFormService(s: OrderFormService | (typeof ORDER_SERVICES)[number]): s is OrderFormService {
+  return "janjez_service_id" in s;
+}
+
+function toOrderFormService(s: { id: string; category: string; name: string; selling_price_ksh: number; min_quantity: number; max_quantity: number; description: string | null; supports_refill: boolean; supports_drip_feed: boolean; }): OrderFormService {
+  return {
+    id: s.id,
+    categoryId: s.category.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name: s.name,
+    serviceId: s.id,
+    rate: s.selling_price_ksh,
+    min: s.min_quantity,
+    max: s.max_quantity,
+    description: s.description || "",
+    refill: s.supports_refill ? "Refill supported" : "No refill",
+    requiresComments: false,
+    supports_drip_feed: s.supports_drip_feed,
+    janjez_service_id: s.id,
+  };
+}
+
+export default function OrderForm({ onRequireAuth, onInsufficientBalance, serviceId, categoryId, defaultAnonymous = false, services: dynamicServices }: OrderFormProps) {
   const { user, walletBalance } = useAuth();
+  const availableServices = dynamicServices && dynamicServices.length > 0 ? dynamicServices : ORDER_SERVICES;
+
   const initialCategory = useMemo(() => {
     if (categoryId) return categoryId;
     if (!serviceId) return "";
-    const service = ORDER_SERVICES.find((s) => s.id === serviceId);
+    const service = availableServices.find((s) => s.id === serviceId);
     return service ? service.categoryId : "";
-  }, [serviceId, categoryId]);
+  }, [serviceId, categoryId, availableServices]);
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedServiceId, setSelectedServiceId] = useState(serviceId || "");
@@ -41,8 +85,8 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
   }, [selectedCategory]);
 
   const selectedService = useMemo(() => {
-    return ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null;
-  }, [selectedServiceId]);
+    return availableServices.find((s) => s.id === selectedServiceId) || null;
+  }, [selectedServiceId, availableServices]);
 
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
@@ -123,8 +167,9 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
         amountPaid: total,
         quantitySource,
         selectedSkuId: selectedService.serviceId,
-        runs: dripFeedEnabled ? (parseInt(runs, 10) || null) : null,
-        interval: dripFeedEnabled ? (parseInt(interval, 10) || null) : null,
+        janjezServiceId: "janjez_service_id" in selectedService ? selectedService.janjez_service_id : undefined,
+        runs: ("supports_drip_feed" in selectedService && selectedService.supports_drip_feed && dripFeedEnabled) ? (parseInt(runs, 10) || null) : null,
+        interval: ("supports_drip_feed" in selectedService && selectedService.supports_drip_feed && dripFeedEnabled) ? (parseInt(interval, 10) || null) : null,
       });
 
       if (!result.ok) {
@@ -168,8 +213,8 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
           <option value="" className="bg-kenya-black text-kenya-white/50">
             -- Choose a platform --
           </option>
-          {ORDER_SERVICES.length > 0 &&
-            [...new Set(ORDER_SERVICES.map((s) => s.categoryId))].map((catId) => (
+          {availableServices.length > 0 &&
+            [...new Set(availableServices.map((s) => s.categoryId))].map((catId) => (
               <option key={catId} value={catId} className="bg-kenya-black text-kenya-white">
                 {catId
                   .replace(/-/g, " ")
@@ -291,20 +336,22 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
             )}
 
             {/* Drip-feed toggle */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="drip-feed"
-                checked={dripFeedEnabled}
-                onChange={(e) => setDripFeedEnabled(e.target.checked)}
-                className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
-              />
-              <label htmlFor="drip-feed" className="text-sm text-kenya-white/70 cursor-pointer">
-                Enable drip-feed (deliver over time)
-              </label>
-            </div>
+            {"supports_drip_feed" in selectedService && selectedService.supports_drip_feed && (
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="drip-feed"
+                  checked={dripFeedEnabled}
+                  onChange={(e) => setDripFeedEnabled(e.target.checked)}
+                  className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+                />
+                <label htmlFor="drip-feed" className="text-sm text-kenya-white/70 cursor-pointer">
+                  Enable drip-feed (deliver over time)
+                </label>
+              </div>
+            )}
 
-            {dripFeedEnabled && (
+            {"supports_drip_feed" in selectedService && selectedService.supports_drip_feed && dripFeedEnabled && (
               <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-4 space-y-3">
                 <p className="text-xs text-kenya-white/60">
                   Quantity is the <span className="text-kenya-green font-semibold">TOTAL</span> amount delivered across the entire drip-feed schedule.
@@ -402,3 +449,5 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     </div>
   );
 }
+
+export { toOrderFormService };
