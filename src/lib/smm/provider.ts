@@ -11,6 +11,15 @@ export interface ProviderService {
   max: string;
   refill: boolean;
   cancel: boolean;
+  id?: string;
+  min_quantity?: number;
+  max_quantity?: number;
+  supports_refill?: boolean;
+  supports_cancel?: boolean;
+  supports_drip_feed?: boolean;
+  is_active?: boolean;
+  last_synced_at?: string;
+  provider_name?: string;
 }
 
 export interface ProviderOrderResponse {

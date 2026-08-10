@@ -1,8 +1,31 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
+
+interface IntegrationProvider {
+  name: string;
+  apiUrl: string;
+  apiKey: string;
+}
+
+interface IntegrationCatalog {
+  totalServices: number;
+  activeServices: number;
+  lastSync: string | null;
+}
+
+interface IntegrationStatus {
+  provider: IntegrationProvider;
+  catalog: IntegrationCatalog;
+}
+
+interface ProviderBalance {
+  ok: boolean;
+  balance: string;
+  currency: string;
+}
 
 type SettingsTab = "integrations" | "drip-feed" | "daraja";
 
@@ -20,6 +43,7 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     if (loading) return;
     if (!user || !isAdmin) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- required for auth gate redirect
       setAuthorized(false);
       router.replace("/dashboard");
       return;
@@ -81,22 +105,24 @@ export default function AdminSettingsPage() {
 }
 
 function IntegrationsTab() {
-  const [status, setStatus] = useState<any>(null);
-  const [balance, setBalance] = useState<any>(null);
+  const [status, setStatus] = useState<IntegrationStatus | null>(null);
+  const [balance, setBalance] = useState<ProviderBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [checkingBalance, setCheckingBalance] = useState(false);
   const { session } = useAuth();
 
-  const loadStatus = async () => {
+  const loadStatus = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/admin/integrations/provider", { headers: { Authorization: `Bearer ${session?.access_token || ""}` } });
-    const data = await res.json();
+    const data = await res.json() as IntegrationStatus;
     setStatus(data);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- required for integration status load
     setLoading(false);
-  };
+  }, [session]);
 
-  useEffect(() => { loadStatus(); }, [session]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- required for integration status load
+  useEffect(() => { loadStatus(); }, [loadStatus]);
 
   const testConnection = async () => {
     setTesting(true);
@@ -175,6 +201,7 @@ function IntegrationsTab() {
 }
 
 function DripFeedSettingsTab() {
+  const { session } = useAuth();
   const [settings, setSettings] = useState({
     enabled: true,
     minRuns: 1,
@@ -183,13 +210,55 @@ function DripFeedSettingsTab() {
     maxInterval: 1440,
   });
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- required for drip-feed settings load
+    setLoading(true);
+    fetch("/api/admin/settings/drip-feed", { headers: { Authorization: `Bearer ${session?.access_token || ""}` } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.settings) {
+          setSettings({
+            enabled: data.settings.enabled ?? true,
+            minRuns: data.settings.min_runs ?? 1,
+            maxRuns: data.settings.max_runs ?? 10,
+            minInterval: data.settings.min_interval ?? 1,
+            maxInterval: data.settings.max_interval ?? 1440,
+          });
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [session]);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise(r => setTimeout(r, 500));
-    alert("Settings saved (placeholder)");
+    const res = await fetch("/api/admin/settings/drip-feed", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token || ""}`,
+      },
+      body: JSON.stringify(settings),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Failed to save settings");
+    } else {
+      alert("Drip-feed settings saved");
+    }
     setSaving(false);
   };
+
+  if (loading) {
+    return <p className="text-kenya-white/60 text-sm">Loading drip-feed settings...</p>;
+  }
 
   return (
     <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-6">
@@ -232,16 +301,13 @@ function DarajaSettingsTab() {
   const [config, setConfig] = useState({
     env: "sandbox",
     shortcode: "",
-    passkey: "••••••••",
-    consumerKey: "••••••••",
-    consumerSecret: "••••••••",
   });
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
     await new Promise(r => setTimeout(r, 500));
-    alert("Settings saved (placeholder)");
+    alert("Daraja settings require a server-side implementation. Credentials are never exposed to the browser.");
     setSaving(false);
   };
 
@@ -263,15 +329,18 @@ function DarajaSettingsTab() {
         </div>
         <div>
           <label className="block text-sm text-kenya-white/70 mb-1">Passkey</label>
-          <input type="password" className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white text-sm" value={config.passkey} onChange={(e) => setConfig({ ...config, passkey: e.target.value })} />
+          <p className="text-kenya-white font-medium text-sm">••••••••</p>
+          <p className="text-kenya-white/50 text-xs mt-1">Stored server-side only</p>
         </div>
         <div>
           <label className="block text-sm text-kenya-white/70 mb-1">Consumer Key</label>
-          <input type="password" className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white text-sm" value={config.consumerKey} onChange={(e) => setConfig({ ...config, consumerKey: e.target.value })} />
+          <p className="text-kenya-white font-medium text-sm">••••••••</p>
+          <p className="text-kenya-white/50 text-xs mt-1">Stored server-side only</p>
         </div>
         <div>
           <label className="block text-sm text-kenya-white/70 mb-1">Consumer Secret</label>
-          <input type="password" className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white text-sm" value={config.consumerSecret} onChange={(e) => setConfig({ ...config, consumerSecret: e.target.value })} />
+          <p className="text-kenya-white font-medium text-sm">••••••••</p>
+          <p className="text-kenya-white/50 text-xs mt-1">Stored server-side only</p>
         </div>
       </div>
       <div className="mt-6">

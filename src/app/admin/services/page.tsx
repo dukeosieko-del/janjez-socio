@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
+import { JanjezService } from "@/lib/janjez-services";
+import type { ProviderService } from "@/lib/smm/provider";
 
 type Tab = "janjez" | "provider";
 
@@ -88,7 +90,7 @@ export default function AdminServicesPage() {
 }
 
 function JanjezServicesTab({ session }: { session: { access_token?: string } | null }) {
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<JanjezService[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -97,7 +99,7 @@ function JanjezServicesTab({ session }: { session: { access_token?: string } | n
     selling_price_ksh: "", provider_service_id: "", min_quantity: "", max_quantity: "",
     is_active: true, display_order: "0", supports_drip_feed: false, supports_refill: false, supports_cancel: false,
   });
-  const [providerServices, setProviderServices] = useState<any[]>([]);
+  const [providerServices, setProviderServices] = useState<ProviderService[]>([]);
   const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
@@ -118,8 +120,14 @@ function JanjezServicesTab({ session }: { session: { access_token?: string } | n
     setProviderServices(data.services || []);
   }, [session]);
 
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { loadProviderServices(); }, [loadProviderServices]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- required for janjez service catalog load
+    load();
+  }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- required for provider catalog load
+    loadProviderServices();
+  }, [loadProviderServices]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,7 +152,7 @@ function JanjezServicesTab({ session }: { session: { access_token?: string } | n
     }
   };
 
-  const handleEdit = (service: any) => {
+  const handleEdit = (service: JanjezService) => {
     setEditingId(service.id);
     setForm({
       name: service.name, slug: service.slug, category: service.category, subcategory: service.subcategory || "",
@@ -218,9 +226,9 @@ function JanjezServicesTab({ session }: { session: { access_token?: string } | n
                   ...form, provider_service_id: e.target.value,
                   min_quantity: ps ? String(ps.min_quantity) : form.min_quantity,
                   max_quantity: ps ? String(ps.max_quantity) : form.max_quantity,
-                  supports_drip_feed: ps ? ps.supports_drip_feed : form.supports_drip_feed,
-                  supports_refill: ps ? ps.supports_refill : form.supports_refill,
-                  supports_cancel: ps ? ps.supports_cancel : form.supports_cancel,
+                  supports_drip_feed: ps ? ps.supports_drip_feed ?? false : form.supports_drip_feed,
+                  supports_refill: ps ? ps.supports_refill ?? false : form.supports_refill,
+                  supports_cancel: ps ? ps.supports_cancel ?? false : form.supports_cancel,
                 });
               }} required>
                 <option value="">Select provider service</option>
@@ -314,7 +322,7 @@ function JanjezServicesTab({ session }: { session: { access_token?: string } | n
 }
 
 function ProviderServicesTab({ session }: { session: { access_token?: string } | null }) {
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<ProviderService[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
@@ -343,6 +351,7 @@ function ProviderServicesTab({ session }: { session: { access_token?: string } |
     load();
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- required for provider catalog load
   useEffect(() => { load(); }, [load]);
 
   const categories = Array.from(new Set(services.map(s => s.category).filter(Boolean)));

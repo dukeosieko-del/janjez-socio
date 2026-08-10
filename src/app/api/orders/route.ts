@@ -126,7 +126,17 @@ export async function POST(request: NextRequest) {
     let resolvedCategory = category;
     let resolvedSubcategory = subcategory;
     let resolvedSkuId = sku_id;
-    let janjezService: any = null;
+    let janjezService: {
+      id: string;
+      name: string;
+      category: string;
+      subcategory: string | null;
+      selling_price_ksh: number;
+      provider_service_id: string;
+      is_active: boolean;
+      min_quantity: number;
+      max_quantity: number;
+    } | null = null;
 
     if (janjez_service_id) {
       const { data: js, error: jsError } = await supabase
@@ -148,6 +158,33 @@ export async function POST(request: NextRequest) {
       resolvedSubcategory = js.subcategory || js.category;
       resolvedSkuId = js.provider_service_id;
       expectedAmount = js.selling_price_ksh * numQuantity;
+
+      if (js.supports_drip_feed && (runs != null || interval != null)) {
+        try {
+          const { data: dfSettings } = await supabase
+            .from("drip_feed_settings")
+            .select("*")
+            .limit(1)
+            .single();
+
+          if (dfSettings && !dfSettings.enabled) {
+            errors.push("Drip-feed is currently disabled globally");
+          } else if (dfSettings) {
+            if (runs != null) {
+              if (runs < dfSettings.min_runs || runs > dfSettings.max_runs) {
+                errors.push(`runs must be between ${dfSettings.min_runs} and ${dfSettings.max_runs}`);
+              }
+            }
+            if (interval != null) {
+              if (interval < dfSettings.min_interval || interval > dfSettings.max_interval) {
+                errors.push(`interval must be between ${dfSettings.min_interval} and ${dfSettings.max_interval} minutes`);
+              }
+            }
+          }
+        } catch {
+          // drip_feed_settings table may not exist yet; skip validation
+        }
+      }
     } else {
       expectedAmount = calculateExpectedAmount(
         catalog_category_id,
