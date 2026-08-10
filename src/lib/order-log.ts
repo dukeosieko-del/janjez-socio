@@ -9,6 +9,8 @@ export interface OrderLogPayload {
   paymentReference?: string;
   quantitySource: "preset" | "custom";
   selectedSkuId?: string;
+  runs?: number | null;
+  interval?: number | null;
 }
 
 function getCatalogItem(categoryId: string): ServiceCatalogItem | undefined {
@@ -101,8 +103,8 @@ export async function submitOrder(payload: OrderLogPayload) {
     method: "POST",
     headers,
     body: JSON.stringify({
-    catalog_category_id: payload.categoryId,
-  order_id: orderId,
+      catalog_category_id: payload.categoryId,
+      order_id: orderId,
       category: categoryName,
       subcategory: subcategoryName,
       sku_id: payload.selectedSkuId ?? skuId ?? null,
@@ -113,6 +115,8 @@ export async function submitOrder(payload: OrderLogPayload) {
       timestamp,
       refill_guarantee: refillGuarantee,
       quantity_source: payload.quantitySource,
+      runs: payload.runs ?? null,
+      interval: payload.interval ?? null,
     }),
   });
 

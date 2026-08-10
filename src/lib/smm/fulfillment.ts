@@ -129,6 +129,8 @@ export async function fulfillOrder(orderId: string) {
       service: providerService.service,
       link: order.link_submitted || "",
       quantity,
+      ...(order.runs != null ? { runs: order.runs } : {}),
+      ...(order.interval != null ? { interval: order.interval } : {}),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Provider request failed";
@@ -208,8 +210,14 @@ export async function syncOrderStatuses(orderIds?: string[]) {
        updates.fulfillment_status = "cancelled";
      } else if (status.status === "Partial") {
        updates.fulfillment_status = "processing";
+     } else if (status.status && ["Pending", "In Progress", "Processing"].includes(status.status)) {
+       updates.fulfillment_status = "processing";
      } else {
        updates.fulfillment_status = "processing";
+       console.warn(
+         `[fulfillment] Unknown provider status "${status.status}" for order ${order.order_id || order.id}; mapped to processing`
+       );
+       await logFulfillment(supabase, order.id, "status", "unknown_status", null, status, `Unknown provider status: ${status.status}`);
      }
 
      const prevStatus = order.fulfillment_status;
