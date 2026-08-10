@@ -103,11 +103,36 @@ export async function fulfillOrder(orderId: string) {
     return { status: "already_fulfilled", providerOrderId: order.provider_order_id };
   }
 
-  const category = order.category || "";
-  const subcategory = order.subcategory || "";
-  const sku = order.sku_id || order.service_name || "";
+  let providerService = null;
 
-  const providerService = await findCheapestProviderService(category, sku || subcategory);
+  if (order.janjez_service_id) {
+    const { data: js } = await supabase
+      .from("janjez_services")
+      .select("provider_service:provider_services(*)")
+      .eq("id", order.janjez_service_id)
+      .single();
+
+    if (js?.provider_service) {
+      providerService = {
+        service: parseInt(js.provider_service.id, 10),
+        name: js.provider_service.name,
+        type: js.provider_service.type,
+        category: js.provider_service.category,
+        rate: String(js.provider_service.rate),
+        min: String(js.provider_service.min_quantity),
+        max: String(js.provider_service.max_quantity),
+        refill: js.provider_service.supports_refill,
+        cancel: js.provider_service.supports_cancel,
+      };
+    }
+  }
+
+  if (!providerService) {
+    const category = order.category || "";
+    const subcategory = order.subcategory || "";
+    const sku = order.sku_id || order.service_name || "";
+    providerService = await findCheapestProviderService(category, sku || subcategory);
+  }
 
   if (!providerService) {
     await logFulfillment(supabase, order.id, "place", "failed", null, null, "No matching provider service found");

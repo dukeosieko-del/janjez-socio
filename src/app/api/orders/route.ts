@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
        quantity_source,
        runs,
        interval,
+       janjez_service_id,
     } = body as {
       order_id?: string;
       category?: string;
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
       quantity_source?: "preset" | "custom";
       runs?: number | null;
       interval?: number | null;
+      janjez_service_id?: string | null;
     };
 
     const errors: string[] = [];
@@ -120,13 +122,41 @@ export async function POST(request: NextRequest) {
 
     const numQuantity = Number(quantity);
 
-    const expectedAmount = calculateExpectedAmount(
-      catalog_category_id,
-      category!,
-      subcategory!,
-      sku_id,
-      numQuantity
-    );
+    let expectedAmount: number;
+    let resolvedCategory = category;
+    let resolvedSubcategory = subcategory;
+    let resolvedSkuId = sku_id;
+    let janjezService: any = null;
+
+    if (janjez_service_id) {
+      const { data: js, error: jsError } = await supabase
+        .from("janjez_services")
+        .select("*, provider_service:provider_services(*)")
+        .eq("id", janjez_service_id)
+        .single();
+
+      if (jsError || !js) {
+        return NextResponse.json({ error: "Invalid service selected" }, { status: 400 });
+      }
+
+      if (!js.is_active) {
+        return NextResponse.json({ error: "Service is no longer available" }, { status: 400 });
+      }
+
+      janjezService = js;
+      resolvedCategory = js.category;
+      resolvedSubcategory = js.subcategory || js.category;
+      resolvedSkuId = js.provider_service_id;
+      expectedAmount = js.selling_price_ksh * numQuantity;
+    } else {
+      expectedAmount = calculateExpectedAmount(
+        catalog_category_id,
+        category!,
+        subcategory!,
+        sku_id,
+        numQuantity
+      );
+    }
 
     if (isNaN(expectedAmount) || expectedAmount <= 0) {
       return NextResponse.json({ error: "Unable to verify service price. Please try a different service." }, { status: 400 });
@@ -172,10 +202,10 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         order_id: order_id || undefined,
-        category,
-        subcategory,
-        service_name: subcategory,
-        sku_id: sku_id ?? null,
+        category: resolvedCategory,
+        subcategory: resolvedSubcategory,
+        service_name: resolvedSubcategory,
+        sku_id: resolvedSkuId ?? null,
         quantity: numQuantity,
         link_submitted: sanitizeString(link_submitted, 500),
         link: sanitizeString(link_submitted, 500),
@@ -190,6 +220,7 @@ export async function POST(request: NextRequest) {
         fulfillment_status: "pending",
         runs: runs ?? null,
         interval: interval ?? null,
+        janjez_service_id: janjez_service_id ?? null,
       })
       .select("*")
       .single();
