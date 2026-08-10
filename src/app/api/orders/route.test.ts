@@ -71,143 +71,133 @@ vi.mock("@/lib/smm/fulfillment", () => ({
   fulfillOrder: vi.fn().mockResolvedValue({ status: "processing", providerOrderId: "12345" }),
 }));
 
+vi.mock("@/lib/data", () => ({
+  ORDER_SERVICES: [
+    {
+      categoryId: "youtube",
+      serviceId: "likes",
+      id: "likes",
+      rate: 0.295,
+      min: 10,
+      max: 10000,
+    },
+  ],
+  getServicesByCategory: vi.fn(),
+}));
+
+vi.mock("@/lib/service-catalog", () => ({
+  SERVICE_CATALOG: [
+    {
+      id: "youtube",
+      name: "YouTube",
+      subcategories: [
+        {
+          name: "likes",
+          deliverables: [
+            { name: "likes", price: "0.295 Ksh" },
+          ],
+        },
+      ],
+    },
+  ],
+}));
+
 describe("POST /api/orders drip-feed validation", () => {
   it("accepts valid runs and interval", async () => {
-    const routeModule = await import("@/app/api/orders/route");
-    const originalCalculate = routeModule.calculateExpectedAmount;
-    
-    try {
-      vi.spyOn(routeModule, "calculateExpectedAmount").mockReturnValue(28.12);
-      
-      const { POST } = routeModule;
-      const request = {
-        json: vi.fn().mockResolvedValue({
-          category: "youtube",
-          subcategory: "likes",
-          quantity_source: "custom",
-          quantity: 100,
-          link_submitted: "https://example.com",
-          amount_paid: 28.12,
-          catalog_category_id: "youtube",
-          runs: 10,
-          interval: 60,
-        }),
-      } as const;
+    const { POST } = await import("@/app/api/orders/route");
+    const request = {
+      json: vi.fn().mockResolvedValue({
+        category: "youtube",
+        subcategory: "likes",
+        quantity_source: "custom",
+        quantity: 100,
+        link_submitted: "https://example.com",
+        amount_paid: 28.025,
+        catalog_category_id: "youtube",
+        runs: 10,
+        interval: 60,
+      }),
+    } as const;
 
-      const response = await POST(request);
-      expect(response.status).not.toBe(400);
-    } finally {
-      vi.restoreAllMocks();
-    }
+    const response = await POST(request);
+    expect(response.status).not.toBe(400);
   });
 
   it("rejects non-integer runs", async () => {
-    const routeModule = await import("@/app/api/orders/route");
-    
-    try {
-      vi.spyOn(routeModule, "calculateExpectedAmount").mockReturnValue(28.12);
-      
-      const { POST } = routeModule;
-      const request = {
-        json: vi.fn().mockResolvedValue({
-          category: "youtube",
-          subcategory: "likes",
-          quantity_source: "custom",
-          quantity: 100,
-          link_submitted: "https://example.com",
-          amount_paid: 28.12,
-          catalog_category_id: "youtube",
-          runs: 10.5,
-          interval: 60,
-        }),
-      } as const;
+    const { POST } = await import("@/app/api/orders/route");
+    const request = {
+      json: vi.fn().mockResolvedValue({
+        category: "youtube",
+        subcategory: "likes",
+        quantity_source: "custom",
+        quantity: 100,
+        link_submitted: "https://example.com",
+        amount_paid: 28.12,
+        catalog_category_id: "youtube",
+        runs: 10.5,
+        interval: 60,
+      }),
+    } as const;
 
-      const response = await POST(request);
-      expect(response.status).toBe(400);
-    } finally {
-      vi.restoreAllMocks();
-    }
+    const response = await POST(request);
+    expect(response.status).toBe(400);
   });
 
   it("rejects zero runs", async () => {
-    const routeModule = await import("@/app/api/orders/route");
-    
-    try {
-      vi.spyOn(routeModule, "calculateExpectedAmount").mockReturnValue(28.12);
-      
-      const { POST } = routeModule;
-      const request = {
-        json: vi.fn().mockResolvedValue({
-          category: "youtube",
-          subcategory: "likes",
-          quantity_source: "custom",
-          quantity: 100,
-          link_submitted: "https://example.com",
-          amount_paid: 28.12,
-          catalog_category_id: "youtube",
-          runs: 0,
-          interval: 60,
-        }),
-      } as const;
+    const { POST } = await import("@/app/api/orders/route");
+    const request = {
+      json: vi.fn().mockResolvedValue({
+        category: "youtube",
+        subcategory: "likes",
+        quantity_source: "custom",
+        quantity: 100,
+        link_submitted: "https://example.com",
+        amount_paid: 28.12,
+        catalog_category_id: "youtube",
+        runs: 0,
+        interval: 60,
+      }),
+    } as const;
 
-      const response = await POST(request);
-      expect(response.status).toBe(400);
-    } finally {
-      vi.restoreAllMocks();
-    }
+    const response = await POST(request);
+    expect(response.status).toBe(400);
   });
 
   it("rejects non-integer interval", async () => {
-    const routeModule = await import("@/app/api/orders/route");
-    
-    try {
-      vi.spyOn(routeModule, "calculateExpectedAmount").mockReturnValue(28.12);
-      
-      const { POST } = routeModule;
-      const request = {
-        json: vi.fn().mockResolvedValue({
-          category: "youtube",
-          subcategory: "likes",
-          quantity_source: "custom",
-          quantity: 100,
-          link_submitted: "https://example.com",
-          amount_paid: 28.12,
-          catalog_category_id: "youtube",
-          runs: 10,
-          interval: 30.5,
-        }),
-      } as const;
+    const { POST } = await import("@/app/api/orders/route");
+    const request = {
+      json: vi.fn().mockResolvedValue({
+        category: "youtube",
+        subcategory: "likes",
+        quantity_source: "custom",
+        quantity: 100,
+        link_submitted: "https://example.com",
+        amount_paid: 28.12,
+        catalog_category_id: "youtube",
+        runs: 10,
+        interval: 30.5,
+      }),
+    } as const;
 
-      const response = await POST(request);
-      expect(response.status).toBe(400);
-    } finally {
-      vi.restoreAllMocks();
-    }
+    const response = await POST(request);
+    expect(response.status).toBe(400);
   });
 
   it("accepts order without drip-feed fields", async () => {
-    const routeModule = await import("@/app/api/orders/route");
-    
-    try {
-      vi.spyOn(routeModule, "calculateExpectedAmount").mockReturnValue(28.12);
-      
-      const { POST } = routeModule;
-      const request = {
-        json: vi.fn().mockResolvedValue({
-          category: "youtube",
-          subcategory: "likes",
-          quantity_source: "custom",
-          quantity: 100,
-          link_submitted: "https://example.com",
-          amount_paid: 28.12,
-          catalog_category_id: "youtube",
-        }),
-      } as const;
+    const { POST } = await import("@/app/api/orders/route");
+    const request = {
+      json: vi.fn().mockResolvedValue({
+        category: "youtube",
+        subcategory: "likes",
+        quantity_source: "custom",
+        quantity: 100,
+        link_submitted: "https://example.com",
+        amount_paid: 28.025,
+        catalog_category_id: "youtube",
+      }),
+    } as const;
 
-      const response = await POST(request);
-      expect(response.status).not.toBe(400);
-    } finally {
-      vi.restoreAllMocks();
-    }
+    const response = await POST(request);
+    expect(response.status).not.toBe(400);
   });
 });
