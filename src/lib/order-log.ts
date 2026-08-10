@@ -11,6 +11,7 @@ export interface OrderLogPayload {
   selectedSkuId?: string;
   runs?: number | null;
   interval?: number | null;
+  janjezServiceId?: string | null;
 }
 
 function getCatalogItem(categoryId: string): ServiceCatalogItem | undefined {
@@ -117,6 +118,7 @@ export async function submitOrder(payload: OrderLogPayload) {
       quantity_source: payload.quantitySource,
       runs: payload.runs ?? null,
       interval: payload.interval ?? null,
+      janjez_service_id: payload.janjezServiceId ?? null,
     }),
   });
 
