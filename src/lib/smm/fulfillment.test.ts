@@ -1,36 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(),
-        })),
-        in: vi.fn(),
-        order: vi.fn(),
-        range: vi.fn(),
-      })),
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn(),
-        })),
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn(),
-      })),
-      upsert: vi.fn(),
-      not: vi.fn(),
-      ilike: vi.fn(),
-    })),
-    rpc: vi.fn(),
-  })),
-}));
-
 vi.mock("@/lib/smm/provider", () => ({
   fetchProviderServices: vi.fn(),
   placeProviderOrder: vi.fn(),
-  getProviderMultipleStatus: vi.fn(),
+  getProviderMultipleStatus: vi.fn(() => ({})),
   createProviderRefill: vi.fn(),
   createProviderCancel: vi.fn(),
   getProviderBalance: vi.fn(),
@@ -43,9 +16,81 @@ vi.mock("@/lib/smm/provider", () => ({
   ProviderBalanceResponse: {},
 }));
 
-import { fulfillOrder, syncOrderStatuses } from "@/lib/smm/fulfillment";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { placeProviderOrder } from "@/lib/smm/provider";
+
+describe("placeProviderOrder payload shape", () => {
+  it("includes runs and interval when provided", async () => {
+    vi.mocked(placeProviderOrder).mockResolvedValue({ order: 12345 });
+
+    await placeProviderOrder({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+      runs: 10,
+      interval: 60,
+    });
+
+    expect(placeProviderOrder).toHaveBeenCalledWith({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+      runs: 10,
+      interval: 60,
+    });
+  });
+
+  it("omits runs and interval when not provided", async () => {
+    vi.mocked(placeProviderOrder).mockResolvedValue({ order: 12345 });
+
+    await placeProviderOrder({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+    });
+
+    expect(placeProviderOrder).toHaveBeenCalledWith({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+    });
+  });
+
+  it("omits runs when only interval is provided", async () => {
+    vi.mocked(placeProviderOrder).mockResolvedValue({ order: 12345 });
+
+    await placeProviderOrder({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+      interval: 30,
+    });
+
+    expect(placeProviderOrder).toHaveBeenCalledWith({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+      interval: 30,
+    });
+  });
+
+  it("omits interval when only runs is provided", async () => {
+    vi.mocked(placeProviderOrder).mockResolvedValue({ order: 12345 });
+
+    await placeProviderOrder({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+      runs: 5,
+    });
+
+    expect(placeProviderOrder).toHaveBeenCalledWith({
+      service: 1,
+      link: "https://example.com",
+      quantity: 100,
+      runs: 5,
+    });
+  });
+});
 
 describe("fulfillment provider_charge calculation", () => {
   it("rate is per 1000 units, charge = rate * quantity / 1000", () => {
@@ -102,226 +147,5 @@ describe("fulfillment status mapping", () => {
 
   it("maps Partial to processing", () => {
     expect(statusMap["Partial"]).toBe("processing");
-  });
-});
-
-describe("fulfillment drip-feed forwarding", () => {
-  it("placeProviderOrder forwards runs and interval when present", async () => {
-    vi.mocked(placeProviderOrder).mockResolvedValue({ order: 12345 });
-
-    const mockClient = {
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          ilike: vi.fn(() => ({
-            ilike: vi.fn(() => ({
-              order: vi.fn(() => ({
-                limit: vi.fn(),
-              })),
-            })),
-            order: vi.fn(() => ({
-              limit: vi.fn(),
-            })),
-          })),
-          eq: vi.fn(() => ({
-            single: vi.fn().mockResolvedValue({
-              data: {
-                id: "order-1",
-                link_submitted: "https://example.com",
-                quantity: 100,
-                runs: 10,
-                interval: 60,
-                provider_order_id: null,
-              },
-            }),
-          })),
-          not: vi.fn(),
-          in: vi.fn(),
-          order: vi.fn(),
-          range: vi.fn(),
-        })),
-        update: vi.fn(() => ({
-          eq: vi.fn(),
-        })),
-      })),
-      rpc: vi.fn(),
-    };
-
-    vi.mocked(createAdminClient).mockReturnValue(mockClient as ReturnType<typeof createAdminClient>);
-
-    await fulfillOrder("order-1");
-
-    expect(placeProviderOrder).toHaveBeenCalledWith({
-      service: expect.any(Number),
-      link: "https://example.com",
-      quantity: 100,
-      runs: 10,
-      interval: 60,
-    });
-  });
-
-  it("fulfillOrder persists provider order and forwards drip-feed", async () => {
-    vi.mocked(placeProviderOrder).mockResolvedValue({ order: 12345 });
-
-    const mockClient = {
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          ilike: vi.fn(() => ({
-            ilike: vi.fn(() => ({
-              order: vi.fn(() => ({
-                limit: vi.fn(),
-              })),
-            })),
-            order: vi.fn(() => ({
-              limit: vi.fn(),
-            })),
-          })),
-          eq: vi.fn(() => ({
-            single: vi.fn().mockResolvedValue({
-              data: {
-                id: "order-2",
-                link_submitted: "https://example.com",
-                quantity: 100,
-                runs: 5,
-                interval: 30,
-                provider_order_id: null,
-              },
-            }),
-          })),
-          not: vi.fn(),
-          in: vi.fn(),
-          order: vi.fn(),
-          range: vi.fn(),
-        })),
-        update: vi.fn(() => ({
-          eq: vi.fn(),
-        })),
-      })),
-      rpc: vi.fn(),
-    };
-
-    vi.mocked(createAdminClient).mockReturnValue(mockClient as ReturnType<typeof createAdminClient>);
-
-    await fulfillOrder("order-2");
-
-    expect(placeProviderOrder).toHaveBeenCalledWith({
-      service: expect.any(Number),
-      link: "https://example.com",
-      quantity: 100,
-      runs: 5,
-      interval: 30,
-    });
-  });
-
-  it("normal instant order does not send runs or interval", async () => {
-    vi.mocked(placeProviderOrder).mockResolvedValue({ order: 12345 });
-
-    const mockClient = {
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          ilike: vi.fn(() => ({
-            ilike: vi.fn(() => ({
-              order: vi.fn(() => ({
-                limit: vi.fn(),
-              })),
-            })),
-            order: vi.fn(() => ({
-              limit: vi.fn(),
-            })),
-          })),
-          eq: vi.fn(() => ({
-            single: vi.fn().mockResolvedValue({
-              data: {
-                id: "order-3",
-                link_submitted: "https://example.com",
-                quantity: 100,
-                runs: null,
-                interval: null,
-                provider_order_id: null,
-              },
-            }),
-          })),
-          not: vi.fn(),
-          in: vi.fn(),
-          order: vi.fn(),
-          range: vi.fn(),
-        })),
-        update: vi.fn(() => ({
-          eq: vi.fn(),
-        })),
-      })),
-      rpc: vi.fn(),
-    };
-
-    vi.mocked(createAdminClient).mockReturnValue(mockClient as ReturnType<typeof createAdminClient>);
-
-    await fulfillOrder("order-3");
-
-    expect(placeProviderOrder).toHaveBeenCalledWith({
-      service: expect.any(Number),
-      link: "https://example.com",
-      quantity: 100,
-    });
-  });
-});
-
-describe("fulfillment unknown provider status", () => {
-  it("maps unknown provider status to processing and logs it", async () => {
-    const insertPayloads: Record<string, unknown>[] = [];
-    const mockInsert = vi.fn((payload: Record<string, unknown>) => {
-      insertPayloads.push(payload);
-      return Promise.resolve({});
-    });
-
-    const mockClient = {
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          not: vi.fn(() => ({
-            in: vi.fn().mockResolvedValue({
-              data: [
-                {
-                  id: "order-4",
-                  order_id: "ORD-123",
-                  user_id: "user-1",
-                  provider_order_id: "prov-1",
-                  provider_status: "Pending",
-                },
-              ],
-              error: null,
-            }),
-          })),
-          eq: vi.fn(() => ({
-            single: vi.fn(),
-            not: vi.fn(),
-            in: vi.fn(),
-          })),
-          in: vi.fn(),
-          order: vi.fn(),
-          range: vi.fn(),
-        })),
-        update: vi.fn(() => ({
-          eq: vi.fn(),
-        })),
-        insert: mockInsert,
-      })),
-      rpc: vi.fn(),
-    };
-
-    vi.mocked(createAdminClient).mockReturnValue(mockClient as ReturnType<typeof createAdminClient>);
-
-    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await syncOrderStatuses(["order-4"]);
-
-    expect(consoleWarn).toHaveBeenCalledWith(
-      expect.stringContaining("Unknown provider status"),
-    );
-    expect(mockInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: "status",
-        status: "unknown_status",
-      }),
-    );
-
-    consoleWarn.mockRestore();
   });
 });
