@@ -81,8 +81,11 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
   const categoryServices = useMemo(() => {
     if (!selectedCategory) return [];
+    if (dynamicServices && dynamicServices.length > 0) {
+      return dynamicServices.filter((s) => s.categoryId === selectedCategory);
+    }
     return getServicesByCategory(selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, dynamicServices]);
 
   const selectedService = useMemo(() => {
     return availableServices.find((s) => s.id === selectedServiceId) || null;

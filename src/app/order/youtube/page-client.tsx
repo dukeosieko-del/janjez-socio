@@ -33,7 +33,12 @@ export default function YouTubeOrderClient({ services }: YouTubeOrderClientProps
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   const availableServices = services && services.length > 0 ? services : ORDER_SERVICES;
-  const youtubeServices = useMemo(() => getServicesByCategory(YOUTUBE_CATEGORY), []);
+  const youtubeServices = useMemo(() => {
+    if (services && services.length > 0) {
+      return services.filter((s) => s.categoryId === YOUTUBE_CATEGORY);
+    }
+    return getServicesByCategory(YOUTUBE_CATEGORY);
+  }, [services]);
   const selectedService = useMemo(() => availableServices.find((s) => s.id === selectedServiceId) || null, [selectedServiceId, availableServices]);
 
   const quantityNum = useMemo(() => {
