@@ -3,7 +3,7 @@ module.exports = {
     name: "janjez-app",
     script: "npm",
     args: "start",
-    instances: "max",
+    instances: 1,
     exec_mode: "cluster",
     env: {
       NODE_ENV: "production",
