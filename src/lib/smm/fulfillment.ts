@@ -116,15 +116,35 @@ export interface JanjezServiceWithProvider {
   max_quantity: number;
   supports_drip_feed: boolean;
   supports_refill: boolean;
+  supports_cancel: boolean;
+  category: string;
+  subcategory: string | null;
+  slug: string;
+  description: string | null;
 }
 
-export async function resolveJanjezService(skuId?: string | null, catalogCategoryId?: string | null): Promise<JanjezServiceWithProvider | null> {
+export async function resolveJanjezService(
+  skuId?: string | null,
+  catalogCategoryId?: string | null,
+  janjezServiceId?: string | null
+): Promise<JanjezServiceWithProvider | null> {
   const supabase = createAdminClient();
   if (!supabase) return null;
 
+  if (janjezServiceId) {
+    const { data } = await supabase
+      .from("janjez_services")
+      .select("id, name, slug, category, subcategory, description, selling_price_ksh, provider_service_id, min_quantity, max_quantity, supports_drip_feed, supports_refill, supports_cancel")
+      .eq("id", janjezServiceId)
+      .eq("is_active", true)
+      .single();
+    if (!data) return null;
+    return data as unknown as JanjezServiceWithProvider;
+  }
+
   let query = supabase
     .from("janjez_services")
-    .select("id, name, selling_price_ksh, provider_service_id, min_quantity, max_quantity, supports_drip_feed, supports_refill")
+    .select("id, name, slug, category, subcategory, description, selling_price_ksh, provider_service_id, min_quantity, max_quantity, supports_drip_feed, supports_refill, supports_cancel")
     .eq("is_active", true);
 
   if (skuId) {
@@ -169,7 +189,7 @@ export async function fulfillOrder(orderId: string) {
   let quantity = order.quantity || 1;
   let providerRate = 0;
 
-  const janjezService = await resolveJanjezService(order.sku_id, order.catalog_category_id);
+  const janjezService = await resolveJanjezService(order.janjez_service_id, order.sku_id, order.catalog_category_id);
   if (janjezService && janjezService.provider_service_id) {
     resolvedService = janjezService;
     const { data: providerData } = await supabase
@@ -261,6 +281,110 @@ export async function fulfillOrder(orderId: string) {
     .eq("id", order.id);
 
   return { status: "failed", error: message };
+}
+
+export async function cancelOrder(orderId: string) {
+  const supabase = createAdminClient();
+  if (!supabase) {
+    throw new Error("Server misconfigured");
+  }
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) {
+    throw new Error(error?.message || "Order not found");
+  }
+
+  if (!order.provider_order_id) {
+    return { status: "not_fulfilled", error: "Order has no provider order to cancel" };
+  }
+
+  const janjezServiceId = order.janjez_service_id;
+  let resolvedService: JanjezServiceWithProvider | null = null;
+
+  if (janjezServiceId) {
+    resolvedService = await resolveJanjezService(janjezServiceId, null, janjezServiceId);
+  }
+
+  if (!resolvedService) {
+    return { status: "error", error: "Unable to resolve service for cancellation" };
+  }
+
+  if (!resolvedService.supports_cancel) {
+    return { status: "cancel_not_supported", error: "This service does not support cancellation" };
+  }
+
+  try {
+    await createProviderCancel([String(order.provider_order_id)]);
+    await supabase
+      .from("orders")
+      .update({
+        fulfillment_status: "cancelled",
+        provider_status: "Cancelled",
+        status: "cancelled",
+      })
+      .eq("id", order.id);
+    await logFulfillment(supabase, order.id, "cancel", "cancelled", { order_id: order.provider_order_id }, null);
+    return { status: "cancelled" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Provider cancellation failed";
+    await logFulfillment(supabase, order.id, "cancel", "error", { order_id: order.provider_order_id }, null, message);
+    return { status: "error", error: message };
+  }
+}
+
+export async function refillOrder(orderId: string) {
+  const supabase = createAdminClient();
+  if (!supabase) {
+    throw new Error("Server misconfigured");
+  }
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) {
+    throw new Error(error?.message || "Order not found");
+  }
+
+  if (!order.provider_order_id) {
+    return { status: "not_fulfilled", error: "Order has no provider order to refill" };
+  }
+
+  const janjezServiceId = order.janjez_service_id;
+  let resolvedService: JanjezServiceWithProvider | null = null;
+
+  if (janjezServiceId) {
+    resolvedService = await resolveJanjezService(janjezServiceId, null, janjezServiceId);
+  }
+
+  if (!resolvedService) {
+    return { status: "error", error: "Unable to resolve service for refill" };
+  }
+
+  if (!resolvedService.supports_refill) {
+    return { status: "refill_not_supported", error: "This service does not support refill" };
+  }
+
+  try {
+    await createProviderRefill([String(order.provider_order_id)]);
+    await supabase
+      .from("orders")
+      .update({ provider_status: "Pending" })
+      .eq("id", order.id);
+    await logFulfillment(supabase, order.id, "refill", "processing", { order_id: order.provider_order_id }, null);
+    return { status: "refill_submitted" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Provider refill failed";
+    await logFulfillment(supabase, order.id, "refill", "error", { order_id: order.provider_order_id }, null, message);
+    return { status: "error", error: message };
+  }
 }
 
 function mapProviderStatus(status: string | null | undefined): "fulfilled" | "cancelled" | "processing" {

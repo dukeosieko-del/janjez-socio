@@ -87,7 +87,7 @@ export default function Sidebar() {
 
   const navItems = useMemo(() => {
     const baseItems = [
-      { label: "New Order", href: "/order", icon: "🛒", active: true },
+      { label: "New Order", href: "/services", icon: "🛒", active: true },
       { label: "Blog & News", href: "/blog", icon: "💬" },
     ];
     const expandableItems = SIDEBAR_ITEMS.filter((item) => item.children && item.children.length > 0);
@@ -160,13 +160,13 @@ export default function Sidebar() {
                 🚪 Sign Out
               </button>
             ) : (
-              <a
-                href="/order"
+              <Link
+                href="/services"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center justify-center gap-2 w-full bg-kenya-green text-kenya-black font-bold text-sm py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
               >
                 🛒 Start Order
-              </a>
+              </Link>
             )}
           </div>
         </div>

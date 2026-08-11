@@ -48,7 +48,7 @@ export default function Hero() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              href="/order"
+              href="/services"
               className="group inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:bg-kenya-green/90 transition-all hover:scale-105 shadow-lg shadow-kenya-green/20"
             >
               🛒 Start New Order

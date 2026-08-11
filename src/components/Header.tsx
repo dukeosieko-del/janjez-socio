@@ -30,7 +30,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <Link
-              href="/order"
+              href="/services"
               className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
             >
               🛒 New Order
@@ -101,7 +101,7 @@ export default function Header() {
             </div>
             <div className="flex flex-col gap-2">
               <Link
-                href="/order"
+                href="/services"
                 className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
               >
                 🛒 New Order

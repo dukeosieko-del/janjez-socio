@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       display_order,
       supports_drip_feed,
       supports_refill,
+      supports_cancel,
     } = body as Record<string, unknown>;
 
     const errors: string[] = [];
@@ -91,6 +92,7 @@ export async function POST(request: NextRequest) {
       display_order: display_order !== undefined ? Number(display_order) : 0,
       supports_drip_feed: Boolean(supports_drip_feed),
       supports_refill: Boolean(supports_refill),
+      supports_cancel: Boolean(supports_cancel),
     });
 
     if ("error" in result) {

@@ -11,9 +11,10 @@ interface OrderFormProps {
   serviceId?: string | null;
   categoryId?: string | null;
   defaultAnonymous?: boolean;
+  janjezServiceId?: string | null;
 }
 
-export default function OrderForm({ onRequireAuth, onInsufficientBalance, serviceId, categoryId, defaultAnonymous = false }: OrderFormProps) {
+export default function OrderForm({ onRequireAuth, onInsufficientBalance, serviceId, categoryId, defaultAnonymous = false, janjezServiceId }: OrderFormProps) {
   const { user, walletBalance } = useAuth();
   const initialCategory = useMemo(() => {
     if (categoryId) return categoryId;
@@ -115,6 +116,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
         amountPaid: total,
         quantitySource,
         selectedSkuId: selectedService.serviceId,
+        janjezServiceId: janjezServiceId || null,
         runs: dripFeed ? runsNum : null,
         interval: dripFeed ? intervalNum : null,
       });

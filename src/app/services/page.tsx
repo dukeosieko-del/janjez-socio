@@ -4,24 +4,38 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
-import { useMemo } from "react";
-import { SERVICE_CATALOG, type ServiceCatalogItem } from "@/lib/service-catalog";
-import { getPlatformSlug } from "@/lib/service-routes";
+import { listJanjezServices } from "@/lib/janjez-services";
 import ProtectedRoute from "@/lib/auth/protected-route";
 
-export default function ServicesPage() {
-  const platforms = useMemo(() => {
-    return SERVICE_CATALOG.map((item) => ({
-      id: item.id,
-      name: item.name,
-      icon: item.icon,
-      category: item.id,
-      description: `${item.subcategories.length} subcategories`,
-      href: `/services/${getPlatformSlug(item.id)}`,
-      status: "active" as const,
-      modalSize: item.modalSize,
-    }));
-  }, []);
+export const revalidate = 0;
+
+interface PlatformCard {
+  id: string;
+  name: string;
+  icon: string;
+  href: string;
+  serviceCount: number;
+}
+
+async function getPlatforms(): Promise<PlatformCard[]> {
+  const services = await listJanjezServices(true);
+  const platformMap = new Map<string, { name: string; count: number }>();
+  for (const svc of services) {
+    const existing = platformMap.get(svc.category) || { name: svc.category, count: 0 };
+    existing.count += 1;
+    platformMap.set(svc.category, existing);
+  }
+  return Array.from(platformMap.entries()).map(([id, { name, count }]) => ({
+    id,
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    icon: `/icons/services/${id}.svg`,
+    href: `/services/${id}`,
+    serviceCount: count,
+  }));
+}
+
+export default async function ServicesPage() {
+  const platforms = await getPlatforms();
 
   return (
     <ProtectedRoute>
@@ -52,11 +66,15 @@ export default function ServicesPage() {
                     </div>
                     <div>
                       <h3 className="text-kenya-white font-semibold text-base">{platform.name}</h3>
-                      <p className="text-kenya-white/50 text-xs">{platform.description}</p>
+                      <p className="text-kenya-white/50 text-xs">{platform.serviceCount} service{platform.serviceCount !== 1 ? "s" : ""}</p>
                     </div>
                   </Link>
                 ))}
               </div>
+
+              {platforms.length === 0 && (
+                <p className="text-kenya-white/50 text-center py-12">No services available. Check back soon!</p>
+              )}
             </div>
           </main>
           <Footer />

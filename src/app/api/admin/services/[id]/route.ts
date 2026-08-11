@@ -44,9 +44,9 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const supabase = createAdminClient();
 
     if (body.provider_service_id) {
-      const supabase = createAdminClient();
       if (supabase) {
         const { data: providerExists } = await supabase
           .from("provider_services")
@@ -60,9 +60,30 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updates: Record<string, unknown> = {};
-    for (const key of ["name", "slug", "category", "subcategory", "description", "selling_price_ksh", "min_quantity", "max_quantity", "is_active", "display_order", "supports_drip_feed", "supports_refill"]) {
+    for (const key of ["name", "slug", "category", "subcategory", "description", "selling_price_ksh", "min_quantity", "max_quantity", "is_active", "display_order", "supports_drip_feed", "supports_refill", "supports_cancel"]) {
       if (key in body && body[key] !== undefined) {
-        updates[key] = body[key];
+        if (key === "selling_price_ksh" || key === "min_quantity" || key === "max_quantity" || key === "display_order") {
+          updates[key] = Number(body[key]);
+        } else if (key === "is_active" || key === "supports_drip_feed" || key === "supports_refill" || key === "supports_cancel") {
+          updates[key] = Boolean(body[key]);
+        } else {
+          updates[key] = body[key];
+        }
+      }
+    }
+
+    if (updates.is_active === true && body.provider_service_id === undefined) {
+      if (supabase) {
+        const { data: existing } = await supabase
+          .from("janjez_services")
+          .select("provider_service_id")
+          .eq("id", id)
+          .single();
+        if (!existing || !existing.provider_service_id) {
+          return NextResponse.json({
+            error: "Cannot publish an unmapped service. Select a provider service first.",
+          }, { status: 400 });
+        }
       }
     }
 

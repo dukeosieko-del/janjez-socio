@@ -16,6 +16,7 @@ export interface JanjezService {
   display_order: number;
   supports_drip_feed: boolean;
   supports_refill: boolean;
+  supports_cancel: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -120,6 +121,7 @@ export async function createJanjezService(input: {
   display_order?: number;
   supports_drip_feed?: boolean;
   supports_refill?: boolean;
+  supports_cancel?: boolean;
 }): Promise<JanjezService | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };
@@ -140,6 +142,7 @@ export async function createJanjezService(input: {
       display_order: input.display_order ?? 0,
       supports_drip_feed: input.supports_drip_feed ?? false,
       supports_refill: input.supports_refill ?? false,
+      supports_cancel: input.supports_cancel ?? false,
     })
     .select("*")
     .single();
@@ -162,6 +165,7 @@ export async function updateJanjezService(id: string, input: Partial<{
   display_order: number;
   supports_drip_feed: boolean;
   supports_refill: boolean;
+  supports_cancel: boolean;
 }>): Promise<JanjezService | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };

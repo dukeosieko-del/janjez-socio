@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from("orders")
-      .select("id, order_id, user_id, service_name, service_id, link, quantity, amount, runs, interval, category, subcategory, sku_id, fulfillment_status, provider_status, provider_order_id, provider_charge, provider_currency, fulfillment_error, fulfilled_at, comments, status, payment_status, created_at, updated_at", { count: "exact" });
+      .select("id, order_id, user_id, service_name, service_id, link, quantity, amount, runs, interval, category, subcategory, sku_id, janjez_service_id, fulfillment_status, provider_status, provider_order_id, provider_charge, provider_currency, fulfillment_error, fulfilled_at, comments, status, payment_status, created_at, updated_at", { count: "exact" });
 
     if (status) {
       query = query.eq("status", status);

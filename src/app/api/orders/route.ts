@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { fulfillOrder } from "@/lib/smm/fulfillment";
+import { fulfillOrder, resolveJanjezService } from "@/lib/smm/fulfillment";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
@@ -68,39 +68,43 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      order_id,
-      category,
-      subcategory,
-      sku_id,
-      quantity,
-      link_submitted,
-      amount_paid,
-      catalog_category_id,
-       payment_reference,
-       refill_guarantee,
-       quantity_source,
-       runs,
-       interval,
-    } = body as {
-      order_id?: string;
-      category?: string;
-      subcategory?: string;
-      sku_id?: string | null;
-      quantity?: number;
-      link_submitted?: string;
-      amount_paid?: number;
-      catalog_category_id?: string;
-      payment_reference?: string;
-      refill_guarantee?: string | null;
-      quantity_source?: "preset" | "custom";
-      runs?: number | null;
-      interval?: number | null;
-    };
+       order_id,
+       category,
+       subcategory,
+       sku_id,
+       quantity,
+       link_submitted,
+       amount_paid,
+       catalog_category_id,
+        payment_reference,
+        refill_guarantee,
+        quantity_source,
+        runs,
+        interval,
+        janjez_service_id,
+     } = body as {
+       order_id?: string;
+       category?: string;
+       subcategory?: string;
+       sku_id?: string | null;
+       quantity?: number;
+       link_submitted?: string;
+       amount_paid?: number;
+       catalog_category_id?: string;
+       payment_reference?: string;
+       refill_guarantee?: string | null;
+       quantity_source?: "preset" | "custom";
+       runs?: number | null;
+       interval?: number | null;
+       janjez_service_id?: string | null;
+     };
 
     const errors: string[] = [];
 
-    if (!category) errors.push("category is required");
-    if (!subcategory) errors.push("subcategory is required");
+    if (!janjez_service_id) {
+      if (!category) errors.push("category is required");
+      if (!subcategory) errors.push("subcategory is required");
+    }
     if (!quantity_source) errors.push("quantity_source is required");
 
     const quantityErr = validateNumber(quantity, "quantity", { min: 1 });
@@ -130,13 +134,34 @@ export async function POST(request: NextRequest) {
 
     const numQuantity = Number(quantity);
 
-    const expectedAmount = calculateExpectedAmount(
-      catalog_category_id,
-      category!,
-      subcategory!,
-      sku_id,
-      numQuantity
-    );
+    let expectedAmount: number;
+    let janjezService = null;
+
+    if (janjez_service_id) {
+      janjezService = await resolveJanjezService(janjez_service_id, null, janjez_service_id);
+      if (!janjezService) {
+        return NextResponse.json({ error: "Service not found or not available" }, { status: 404 });
+      }
+      if (numQuantity < janjezService.min_quantity || numQuantity > janjezService.max_quantity) {
+        return NextResponse.json({
+          error: `Quantity must be between ${janjezService.min_quantity} and ${janjezService.max_quantity.toLocaleString()}.`,
+        }, { status: 400 });
+      }
+      if (runs != null || interval != null) {
+        if (!janjezService.supports_drip_feed) {
+          return NextResponse.json({ error: "This service does not support drip-feed" }, { status: 400 });
+        }
+      }
+      expectedAmount = janjezService.selling_price_ksh * numQuantity * 0.95;
+    } else {
+      expectedAmount = calculateExpectedAmount(
+        catalog_category_id,
+        category!,
+        subcategory!,
+        sku_id,
+        numQuantity
+      );
+    }
 
     if (isNaN(expectedAmount) || expectedAmount <= 0) {
       return NextResponse.json({ error: "Unable to verify service price. Please try a different service." }, { status: 400 });
@@ -185,7 +210,7 @@ export async function POST(request: NextRequest) {
         category,
         subcategory,
         service_name: subcategory,
-        sku_id: sku_id ?? null,
+        sku_id: sku_id ?? janjezService?.slug ?? null,
         quantity: numQuantity,
         link_submitted: sanitizeString(link_submitted, 500),
         link: sanitizeString(link_submitted, 500),
@@ -195,6 +220,7 @@ export async function POST(request: NextRequest) {
         refill_guarantee: refill_guarantee ?? null,
         quantity_source,
         catalog_category_id,
+        janjez_service_id: janjez_service_id || null,
         status: "pending",
         payment_status: "paid",
         fulfillment_status: "pending",

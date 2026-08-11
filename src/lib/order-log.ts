@@ -11,6 +11,7 @@ export interface OrderLogPayload {
   selectedSkuId?: string;
   runs?: number | null;
   interval?: number | null;
+  janjezServiceId?: string | null;
 }
 
 function getCatalogItem(categoryId: string): ServiceCatalogItem | undefined {
@@ -102,22 +103,23 @@ export async function submitOrder(payload: OrderLogPayload) {
   const res = await fetch("/api/orders", {
     method: "POST",
     headers,
-    body: JSON.stringify({
-    catalog_category_id: payload.categoryId,
-  order_id: orderId,
-    category: categoryName,
-      subcategory: subcategoryName,
-      sku_id: payload.selectedSkuId ?? skuId ?? null,
-      quantity: payload.quantity,
-      link_submitted: payload.link,
-      amount_paid: payload.amountPaid,
-      payment_reference: payload.paymentReference || null,
-      timestamp,
-      refill_guarantee: refillGuarantee,
-      quantity_source: payload.quantitySource,
-      runs: payload.runs ?? null,
-      interval: payload.interval ?? null,
-    }),
+     body: JSON.stringify({
+     catalog_category_id: payload.categoryId,
+   order_id: orderId,
+     category: categoryName,
+       subcategory: subcategoryName,
+       sku_id: payload.selectedSkuId ?? skuId ?? null,
+       quantity: payload.quantity,
+       link_submitted: payload.link,
+       amount_paid: payload.amountPaid,
+       payment_reference: payload.paymentReference || null,
+       timestamp,
+       refill_guarantee: refillGuarantee,
+       quantity_source: payload.quantitySource,
+       runs: payload.runs ?? null,
+       interval: payload.interval ?? null,
+       janjez_service_id: payload.janjezServiceId || null,
+     }),
   });
 
   if (!res.ok) {

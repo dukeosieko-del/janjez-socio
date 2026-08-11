@@ -43,6 +43,10 @@ interface OrderShape {
   comments?: string | null;
   status?: string;
   payment_status?: string;
+  janjez_service_id?: string | null;
+  fulfillment_status?: string;
+  provider_status?: string;
+  provider_order_id?: string;
   created_at?: string;
   updated_at?: string;
   profiles?: { email?: string; full_name?: string | null } | null;
@@ -201,6 +205,33 @@ export function OrdersTab() {
       .catch(() => setLoading(false));
   }, []);
 
+  const handleAction = async (orderId: string, action: "cancel" | "refill") => {
+    const headers = { ...authHeaders(session), "Content-Type": "application/json" };
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/actions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action, order_id: orderId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Action result: ${JSON.stringify(data.result)}`);
+        loadOrders();
+      } else {
+        alert(`Error: ${data.error || "Failed to process action"}`);
+      }
+    } catch (err) {
+      alert(`Error: ${err instanceof Error ? err.message : "Failed to process action"}`);
+    }
+  };
+
+  const loadOrders = () => {
+    fetch("/api/admin/orders?limit=50", { headers: authHeaders(session) })
+      .then((r) => r.json())
+      .then((data) => setOrders(data.orders || []))
+      .catch(() => {});
+  };
+
   if (loading) return <div className="text-kenya-white/60 text-sm">Loading orders...</div>;
 
   const rows: TableRow[] = (orders || []).map((o) => [
@@ -209,15 +240,43 @@ export function OrdersTab() {
     o.service_name || "—",
     `KES ${Number(o.amount || 0).toFixed(2)}`,
     o.runs && o.interval ? `${o.runs} runs / ${o.interval} min` : "Instant",
+    o.janjez_service_id ? o.janjez_service_id.slice(0, 8) : "—",
+    o.fulfillment_status || "—",
     o.status || "—",
     o.created_at ? new Date(o.created_at).toLocaleString() : "—",
+    <div key={o.id} className="flex gap-1">
+      {o.fulfillment_status === "processing" && o.provider_order_id && (
+        <>
+          <button
+            onClick={() => { if (confirm("Cancel this order?")) handleAction(o.id, "cancel"); }}
+            className="text-xs px-2 py-1 bg-kenya-red/20 text-kenya-red border border-kenya-red/30 rounded hover:bg-kenya-red/30"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => handleAction(o.id, "refill")}
+            className="text-xs px-2 py-1 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded hover:bg-kenya-white/20"
+          >
+            Refill
+          </button>
+        </>
+      )}
+      {o.fulfillment_status === "cancelled" && (
+        <button
+          onClick={() => handleAction(o.id, "refill")}
+          className="text-xs px-2 py-1 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded hover:bg-kenya-white/20"
+        >
+          Refill
+        </button>
+      )}
+    </div>,
   ]);
 
   return (
     <div>
       <h2 className="text-xl font-bold text-kenya-white mb-4">Orders</h2>
       <DataTable
-        headers={["Order ID", "User", "Service", "Amount", "Schedule", "Status", "Created"]}
+        headers={["Order ID", "User", "Service", "Amount", "Schedule", "Janjez Service", "Fulfillment", "Status", "Created", "Actions"]}
         rows={rows}
       />
       {orders.length === 0 && <p className="text-kenya-white/50 text-sm mt-4">No orders found.</p>}
@@ -322,15 +381,19 @@ interface JanjezServiceShape {
   name: string;
   slug: string;
   category: string;
+  subcategory: string | null;
   description: string | null;
   selling_price_ksh: number;
   provider_service_id: string | null;
   min_quantity: number;
   max_quantity: number;
   is_active: boolean;
+  display_order: number;
   supports_drip_feed: boolean;
   supports_refill: boolean;
+  supports_cancel: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export function ServicesTab() {
@@ -340,20 +403,11 @@ export function ServicesTab() {
   const [janjezServices, setJanjezServices] = useState<JanjezServiceShape[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: "",
-    slug: "",
-    category: "",
-    selling_price_ksh: "",
-    provider_service_id: "",
-    min_quantity: "",
-    max_quantity: "",
-    supports_drip_feed: false,
-    supports_refill: false,
-  });
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [createSuccess, setCreateSuccess] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState(false);
+  const [form, setForm] = useState<Partial<JanjezServiceShape>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -389,44 +443,85 @@ export function ServicesTab() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreateError(null);
-    setCreateSuccess(false);
+  const handlePublishToggle = async (svc: JanjezServiceShape) => {
     const headers = { ...authHeaders(session), "Content-Type": "application/json" };
     try {
-      const res = await fetch("/api/admin/services", {
-        method: "POST",
+      await fetch(`/api/admin/services/${svc.id}`, {
+        method: "PATCH",
         headers,
-        body: JSON.stringify({
-          ...createForm,
-          selling_price_ksh: Number(createForm.selling_price_ksh),
-          min_quantity: Number(createForm.min_quantity),
-          max_quantity: Number(createForm.max_quantity),
-          provider_service_id: createForm.provider_service_id || null,
-        }),
+        body: JSON.stringify({ is_active: !svc.is_active }),
       });
+      load();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleEdit = (svc: JanjezServiceShape) => {
+    setEditId(svc.id);
+    setForm({ ...svc, selling_price_ksh: String(svc.selling_price_ksh) } as unknown as Partial<JanjezServiceShape>);
+    setShowForm(true);
+    setFormError(null);
+    setFormSuccess(false);
+  };
+
+  const handleCreateNew = () => {
+    setEditId(null);
+    setForm({ is_active: true, display_order: 0, supports_drip_feed: false, supports_refill: false, supports_cancel: false });
+    setShowForm(true);
+    setFormError(null);
+    setFormSuccess(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setFormSuccess(false);
+    const headers = { ...authHeaders(session), "Content-Type": "application/json" };
+
+    const payload = {
+      name: form.name,
+      slug: form.slug,
+      category: form.category,
+      subcategory: form.subcategory || null,
+      description: form.description || null,
+      selling_price_ksh: Number(form.selling_price_ksh),
+      provider_service_id: form.provider_service_id || null,
+      min_quantity: Number(form.min_quantity),
+      max_quantity: Number(form.max_quantity),
+      is_active: form.is_active ?? true,
+      display_order: Number(form.display_order) || 0,
+      supports_drip_feed: Boolean(form.supports_drip_feed),
+      supports_refill: Boolean(form.supports_refill),
+      supports_cancel: Boolean(form.supports_cancel),
+    };
+
+    try {
+      let res: Response;
+      if (editId) {
+        res = await fetch(`/api/admin/services/${editId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify(payload),
+        });
+      } else {
+        res = await fetch("/api/admin/services", {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        });
+      }
       const data = await res.json();
       if (!res.ok) {
-        setCreateError(data.error || "Failed to create service");
+        setFormError(data.error || "Failed to save service");
       } else {
-        setCreateSuccess(true);
-        setShowCreate(false);
-        setCreateForm({
-          name: "",
-          slug: "",
-          category: "",
-          selling_price_ksh: "",
-          provider_service_id: "",
-          min_quantity: "",
-          max_quantity: "",
-          supports_drip_feed: false,
-          supports_refill: false,
-        });
+        setFormSuccess(true);
+        setShowForm(false);
+        setEditId(null);
         load();
       }
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create service");
+      setFormError(err instanceof Error ? err.message : "Failed to save service");
     }
   };
 
@@ -440,6 +535,7 @@ export function ServicesTab() {
     `KES ${Number(s.rate).toFixed(4)}`,
     `${s.min} - ${s.max.toLocaleString()}`,
     s.refill ? "Yes" : "No",
+    s.cancel ? "Yes" : "No",
     s.supports_drip_feed ? "Yes" : "No",
     s.is_active ? "Active" : "Inactive",
     new Date(s.fetched_at).toLocaleTimeString(),
@@ -448,12 +544,36 @@ export function ServicesTab() {
   const janjezRows: TableRow[] = (janjezServices || []).map((s) => [
     s.name,
     s.category,
+    s.subcategory || "—",
     `KES ${Number(s.selling_price_ksh).toFixed(2)}`,
     `${s.min_quantity} - ${s.max_quantity.toLocaleString()}`,
     s.supports_drip_feed ? "Yes" : "No",
-    s.is_active ? "Active" : "Inactive",
+    s.supports_cancel ? "Yes" : "No",
+    s.provider_service_id ? String(s.provider_service_id) : <span className="text-kenya-red">UNMAPPED</span>,
+    s.is_active ? "Published" : "Draft",
+    s.display_order,
     new Date(s.created_at).toLocaleDateString(),
+    <button
+      key={s.id}
+      onClick={() => handlePublishToggle(s)}
+      className={`text-xs px-2 py-1 rounded ${
+        s.is_active
+          ? "bg-kenya-red/20 text-kenya-red border border-kenya-red/30"
+          : "bg-kenya-green/20 text-kenya-green border border-kenya-green/30"
+      }`}
+    >
+      {s.is_active ? "Unpublish" : "Publish"}
+    </button>,
+    <button
+      key={s.id + "-edit"}
+      onClick={() => handleEdit(s)}
+      className="text-xs px-2 py-1 ml-1 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded hover:bg-kenya-white/20"
+    >
+      Edit
+    </button>,
   ]);
+
+  const providerOptions = providerServices.filter((s) => s.is_active);
 
   return (
     <div>
@@ -483,7 +603,7 @@ export function ServicesTab() {
       {subTab === "provider" && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-kenya-white">Provider Services</h2>
+            <h2 className="text-xl font-bold text-kenya-white">Provider Catalog</h2>
             <button
               onClick={handleSyncCatalog}
               className="px-3 py-1.5 bg-kenya-green text-kenya-black font-bold text-sm rounded-lg hover:bg-kenya-green/90 transition-colors"
@@ -501,7 +621,7 @@ export function ServicesTab() {
             />
           </div>
           <DataTable
-            headers={["Provider ID", "Name", "Category", "Rate", "Min-Max", "Refill", "Drip", "Status", "Last Sync"]}
+            headers={["Provider ID", "Name", "Category", "Rate", "Min-Max", "Refill", "Cancel", "Drip", "Status", "Last Sync"]}
             rows={providerRows}
           />
           {providerServices.length === 0 && <p className="text-kenya-white/50 text-sm mt-4">No provider services found. Sync the catalog first.</p>}
@@ -513,138 +633,219 @@ export function ServicesTab() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-kenya-white">Janjez Services</h2>
             <button
-              onClick={() => setShowCreate(true)}
+              onClick={handleCreateNew}
               className="px-3 py-1.5 bg-kenya-green text-kenya-black font-bold text-sm rounded-lg hover:bg-kenya-green/90 transition-colors"
             >
               Create Service
             </button>
           </div>
 
-          {showCreate && (
+          {showForm && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-              <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                <h3 className="text-lg font-bold text-kenya-white mb-4">Create Janjez Service</h3>
-                <form onSubmit={handleCreate} className="space-y-4">
+              <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <h3 className="text-lg font-bold text-kenya-white mb-4">{editId ? "Edit" : "Create"} Janjez Service</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={form.name || ""}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Slug</label>
+                      <input
+                        type="text"
+                        required
+                        value={form.slug || ""}
+                        onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Platform (Category)</label>
+                      <input
+                        type="text"
+                        required
+                        list="platform-options"
+                        value={form.category || ""}
+                        onChange={(e) => setForm({ ...form, category: e.target.value })}
+                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                      />
+                      <datalist id="platform-options">
+                        {Array.from(new Set(janjezServices.map((s) => s.category))).map((c) => (
+                          <option key={c} value={c} />
+                        ))}
+                        {Array.from(new Set(providerServices.map((s) => s.category).filter(Boolean))).map((c) => (
+                          <option key={c} value={c as string} />
+                        ))}
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Subcategory</label>
+                      <input
+                        type="text"
+                        value={form.subcategory || ""}
+                        onChange={(e) => setForm({ ...form, subcategory: e.target.value || null })}
+                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-kenya-white/70 mb-1">Name</label>
-                <input
-                  type="text"
-                  required
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                />
+                    <label className="block text-sm font-medium text-kenya-white/70 mb-1">Description</label>
+                    <textarea
+                      value={form.description || ""}
+                      onChange={(e) => setForm({ ...form, description: e.target.value || null })}
+                      placeholder="Optional customer-facing description"
+                      rows={3}
+                      className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-kenya-white/70 mb-1">Selling Price (KES per 1k)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      required
+                      value={form.selling_price_ksh || ""}
+                      onChange={(e) => setForm({ ...form, selling_price_ksh: Number(e.target.value) })}
+                      className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-kenya-white/70 mb-1">Provider Service</label>
+                    <select
+                      value={form.provider_service_id || ""}
+                      onChange={(e) => setForm({ ...form, provider_service_id: e.target.value || null })}
+                      className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                    >
+                      <option value="">— Select a provider service —</option>
+                      {providerOptions.map((ps) => (
+                        <option key={ps.id} value={ps.id}>
+                          #{ps.id} — {ps.name} ({ps.category}) — KES {Number(ps.rate).toFixed(4)}
+                        </option>
+                      ))}
+                    </select>
+                    {form.provider_service_id && (
+                      <p className="text-kenya-white/50 text-xs mt-1">
+                        Mapped to: {providerOptions.find((p) => p.id === form.provider_service_id)?.name || form.provider_service_id}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Min Quantity</label>
+                      <input
+                        type="number"
+                        min={1}
+                        required
+                        value={form.min_quantity || ""}
+                        onChange={(e) => setForm({ ...form, min_quantity: Number(e.target.value) })}
+                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Max Quantity</label>
+                      <input
+                        type="number"
+                        min={1}
+                        required
+                        value={form.max_quantity || ""}
+                        onChange={(e) => setForm({ ...form, max_quantity: Number(e.target.value) })}
+                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Display Order</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.display_order || 0}
+                        onChange={(e) => setForm({ ...form, display_order: Number(e.target.value) })}
+                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                        <input
+                          type="checkbox"
+                          checked={form.is_active ?? true}
+                          onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                        />
+                        Published (active)
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                      <input
+                        type="checkbox"
+                        checked={form.supports_drip_feed || false}
+                        onChange={(e) => setForm({ ...form, supports_drip_feed: e.target.checked })}
+                      />
+                      Supports Drip-feed
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                      <input
+                        type="checkbox"
+                        checked={form.supports_refill || false}
+                        onChange={(e) => setForm({ ...form, supports_refill: e.target.checked })}
+                      />
+                      Supports Refill
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                      <input
+                        type="checkbox"
+                        checked={form.supports_cancel || false}
+                        onChange={(e) => setForm({ ...form, supports_cancel: e.target.checked })}
+                      />
+                      Supports Cancel
+                    </label>
+                  </div>
+
+                  {formError && <p className="text-kenya-red text-sm">{formError}</p>}
+                  {formSuccess && <p className="text-kenya-green text-sm">Service saved successfully.</p>}
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors"
+                    >
+                      {editId ? "Update" : "Create"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowForm(false); setEditId(null); }}
+                      className="px-4 py-2 bg-kenya-white/10 text-kenya-white rounded-lg hover:bg-kenya-white/20 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-kenya-white/70 mb-1">Slug</label>
-                <input
-                  type="text"
-                  required
-                  value={createForm.slug}
-                  onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-kenya-white/70 mb-1">Category</label>
-                <input
-                  type="text"
-                  required
-                  value={createForm.category}
-                  onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-kenya-white/70 mb-1">Selling Price (KES per unit)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  required
-                  value={createForm.selling_price_ksh}
-                  onChange={(e) => setCreateForm({ ...createForm, selling_price_ksh: e.target.value })}
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-kenya-white/70 mb-1">Provider Service ID</label>
-                <input
-                  type="text"
-                  value={createForm.provider_service_id}
-                  onChange={(e) => setCreateForm({ ...createForm, provider_service_id: e.target.value })}
-                  placeholder="e.g. 25934"
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-kenya-white/70 mb-1">Min Quantity</label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={createForm.min_quantity}
-                    onChange={(e) => setCreateForm({ ...createForm, min_quantity: e.target.value })}
-                    className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-kenya-white/70 mb-1">Max Quantity</label>
-                  <input
-                    type="number"
-                    min={1}
-                    required
-                    value={createForm.max_quantity}
-                    onChange={(e) => setCreateForm({ ...createForm, max_quantity: e.target.value })}
-                    className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm text-kenya-white/70">
-                  <input
-                    type="checkbox"
-                    checked={createForm.supports_drip_feed}
-                    onChange={(e) => setCreateForm({ ...createForm, supports_drip_feed: e.target.checked })}
-                  />
-                  Supports Drip-feed
-                </label>
-                <label className="flex items-center gap-2 text-sm text-kenya-white/70">
-                  <input
-                    type="checkbox"
-                    checked={createForm.supports_refill}
-                    onChange={(e) => setCreateForm({ ...createForm, supports_refill: e.target.checked })}
-                  />
-                  Supports Refill
-                </label>
-              </div>
-              {createError && <p className="text-kenya-red text-sm">{createError}</p>}
-              {createSuccess && <p className="text-kenya-green text-sm">Service created successfully.</p>}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors"
-                >
-                  Create
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreate(false)}
-                  className="px-4 py-2 bg-kenya-white/10 text-kenya-white rounded-lg hover:bg-kenya-white/20 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-      <DataTable
-        headers={["Name", "Category", "Price", "Limits", "Drip", "Status", "Created"]}
-        rows={janjezRows}
-      />
-      {janjezServices.length === 0 && <p className="text-kenya-white/50 text-sm mt-4">No Janjez services configured. Create one to get started.</p>}
+            </div>
+          )}
+
+          <DataTable
+            headers={["Name", "Category", "Subcategory", "Price", "Min-Max", "Drip", "Cancel", "Provider Service", "Status", "Order", "Created", "Actions"]}
+            rows={janjezRows}
+          />
+          {janjezServices.length === 0 && <p className="text-kenya-white/50 text-sm mt-4">No Janjez services configured. Create one to get started.</p>}
         </div>
       )}
     </div>
@@ -656,11 +857,12 @@ export function SettingsTab() {
   const [subTab, setSubTab] = useState<"integrations" | "dripfeed" | "daraja">("integrations");
   const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
   const [dripFeedSettings, setDripFeedSettings] = useState<{
+    enabled: boolean;
     min_runs: number;
     max_runs: number;
     min_interval: number;
     max_interval: number;
-  }>({ min_runs: 1, max_runs: 10, min_interval: 1, max_interval: 1440 });
+  }>({ enabled: true, min_runs: 1, max_runs: 20, min_interval: 10, max_interval: 1440 });
   const [loading, setLoading] = useState(true);
   const headers = authHeaders(session);
 
@@ -677,9 +879,20 @@ export function SettingsTab() {
     }
   }, [headers]);
 
+  const loadDripFeedSettings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/settings/drip-feed", { headers });
+      const data = await res.json();
+      setDripFeedSettings(data);
+    } catch {
+      /* ignore */
+    }
+  }, [headers]);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
     if (subTab === "integrations") loadIntegrationStatus();
+    if (subTab === "dripfeed") loadDripFeedSettings();
   }, [subTab]);
 
   return (
@@ -780,6 +993,16 @@ export function SettingsTab() {
             Enforce global bounds on runs and interval. Individual services may further restrict
             whether drip-feed is offered.
           </p>
+          <div className="mb-4">
+            <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+              <input
+                type="checkbox"
+                checked={dripFeedSettings.enabled}
+                onChange={(e) => setDripFeedSettings({ ...dripFeedSettings, enabled: e.target.checked })}
+              />
+              Enable Drip-Feed
+            </label>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-kenya-white/70 mb-1">Minimum Runs</label>
@@ -822,6 +1045,19 @@ export function SettingsTab() {
               />
             </div>
           </div>
+          <button
+            onClick={async () => {
+              await fetch("/api/admin/settings/drip-feed", {
+                method: "PATCH",
+                headers: { ...headers, "Content-Type": "application/json" },
+                body: JSON.stringify(dripFeedSettings),
+              });
+              loadDripFeedSettings();
+            }}
+            className="mt-4 px-3 py-1.5 bg-kenya-green text-kenya-black font-bold text-sm rounded-lg hover:bg-kenya-green/90 transition-colors"
+          >
+            Save Drip-Feed Settings
+          </button>
         </div>
       )}
 
