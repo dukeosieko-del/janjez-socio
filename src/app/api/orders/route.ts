@@ -9,6 +9,17 @@ import { SERVICE_CATALOG } from "@/lib/service-catalog";
 
 export const runtime = "nodejs";
 
+function validateDripFeedField(value: unknown, field: string): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    return `${field} must be an integer`;
+  }
+  if (value <= 0) {
+    return `${field} must be greater than 0`;
+  }
+  return null;
+}
+
 function calculateExpectedAmount(
   catalogCategoryId: string | undefined,
   category: string,
@@ -68,6 +79,8 @@ export async function POST(request: NextRequest) {
        payment_reference,
        refill_guarantee,
        quantity_source,
+       runs,
+       interval,
     } = body as {
       order_id?: string;
       category?: string;
@@ -80,6 +93,8 @@ export async function POST(request: NextRequest) {
       payment_reference?: string;
       refill_guarantee?: string | null;
       quantity_source?: "preset" | "custom";
+      runs?: number | null;
+      interval?: number | null;
     };
 
     const errors: string[] = [];
@@ -97,6 +112,12 @@ export async function POST(request: NextRequest) {
     if (amount_paid === undefined || isNaN(Number(amount_paid)) || Number(amount_paid) < 0) {
       errors.push("amount_paid must be a non-negative number");
     }
+
+    const runsErr = validateDripFeedField(runs, "runs");
+    if (runsErr) errors.push(runsErr);
+
+    const intervalErr = validateDripFeedField(interval, "interval");
+    if (intervalErr) errors.push(intervalErr);
 
     if (errors.length > 0) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
@@ -177,6 +198,8 @@ export async function POST(request: NextRequest) {
         status: "pending",
         payment_status: "paid",
         fulfillment_status: "pending",
+        runs: runs ?? null,
+        interval: interval ?? null,
       })
       .select("*")
       .single();

@@ -5,6 +5,7 @@ import {
   getProviderMultipleStatus,
   createProviderRefill,
   createProviderCancel,
+  getProviderBalance,
 } from "./provider";
 import type { ProviderService } from "./provider";
 
@@ -21,6 +22,7 @@ export async function syncProviderCatalog() {
   }
 
   const services = await fetchProviderServices();
+
   const { error } = await supabase.from("provider_services").upsert(
     services.map((s) => ({
       id: String(s.service),
@@ -32,6 +34,8 @@ export async function syncProviderCatalog() {
       max: parseInt(s.max, 10),
       refill: s.refill,
       cancel: s.cancel,
+      supports_drip_feed: s.dripfeed === true,
+      is_active: true,
       raw: s,
       fetched_at: new Date().toISOString(),
     })),
@@ -42,7 +46,26 @@ export async function syncProviderCatalog() {
     throw new Error(error.message);
   }
 
+  const providerIds = new Set(services.map((s) => String(s.service)));
+  await supabase
+    .from("provider_services")
+    .update({ is_active: false, fetched_at: new Date().toISOString() })
+    .not("id", "in", Array.from(providerIds));
+
   return { count: services.length };
+}
+
+export async function getProviderServices(): Promise<ProviderService[]> {
+  const supabase = createAdminClient();
+  if (!supabase) return [];
+
+  const { data } = await supabase
+    .from("provider_services")
+    .select("*")
+    .order("rate", { ascending: true });
+
+  if (!data) return [];
+  return data as unknown as ProviderService[];
 }
 
 export async function findCheapestProviderService(category: string, name: string): Promise<ProviderService | null> {
@@ -68,6 +91,7 @@ export async function findCheapestProviderService(category: string, name: string
       max: String(data[0].max),
       refill: data[0].refill,
       cancel: data[0].cancel,
+      dripfeed: data[0].supports_drip_feed,
     };
   }
 
@@ -81,6 +105,39 @@ export async function findCheapestProviderService(category: string, name: string
     .sort((a, b) => parseFloat(a.rate) - parseFloat(b.rate));
 
   return matched[0] || null;
+}
+
+export interface JanjezServiceWithProvider {
+  id: string;
+  name: string;
+  selling_price_ksh: number;
+  provider_service_id: string | null;
+  min_quantity: number;
+  max_quantity: number;
+  supports_drip_feed: boolean;
+  supports_refill: boolean;
+}
+
+export async function resolveJanjezService(skuId?: string | null, catalogCategoryId?: string | null): Promise<JanjezServiceWithProvider | null> {
+  const supabase = createAdminClient();
+  if (!supabase) return null;
+
+  let query = supabase
+    .from("janjez_services")
+    .select("id, name, selling_price_ksh, provider_service_id, min_quantity, max_quantity, supports_drip_feed, supports_refill")
+    .eq("is_active", true);
+
+  if (skuId) {
+    query = query.eq("slug", skuId);
+  } else if (catalogCategoryId) {
+    query = query.eq("category", catalogCategoryId);
+  } else {
+    return null;
+  }
+
+  const { data } = await query.single();
+  if (!data) return null;
+  return data as unknown as JanjezServiceWithProvider;
 }
 
 export async function fulfillOrder(orderId: string) {
@@ -107,7 +164,44 @@ export async function fulfillOrder(orderId: string) {
   const subcategory = order.subcategory || "";
   const sku = order.sku_id || order.service_name || "";
 
-  const providerService = await findCheapestProviderService(category, sku || subcategory);
+  let providerService: ProviderService | null = null;
+  let resolvedService: JanjezServiceWithProvider | null = null;
+  let quantity = order.quantity || 1;
+  let providerRate = 0;
+
+  const janjezService = await resolveJanjezService(order.sku_id, order.catalog_category_id);
+  if (janjezService && janjezService.provider_service_id) {
+    resolvedService = janjezService;
+    const { data: providerData } = await supabase
+      .from("provider_services")
+      .select("*")
+      .eq("id", janjezService.provider_service_id)
+      .single();
+
+    if (providerData) {
+      providerService = {
+        service: parseInt(providerData.id, 10),
+        name: providerData.name,
+        type: providerData.type,
+        category: providerData.category,
+        rate: String(providerData.rate),
+        min: String(providerData.min),
+        max: String(providerData.max),
+        refill: providerData.refill,
+        cancel: providerData.cancel,
+        dripfeed: providerData.supports_drip_feed,
+      };
+      providerRate = parseFloat(providerData.rate);
+      quantity = Math.min(
+        Math.max(order.quantity || 1, parseInt(providerData.min, 10)),
+        parseInt(providerData.max, 10)
+      );
+    }
+  }
+
+  if (!providerService) {
+    providerService = await findCheapestProviderService(category, sku || subcategory);
+  }
 
   if (!providerService) {
     await logFulfillment(supabase, order.id, "place", "failed", null, null, "No matching provider service found");
@@ -118,10 +212,9 @@ export async function fulfillOrder(orderId: string) {
     return { status: "failed", error: "No matching provider service" };
   }
 
-  const quantity = Math.min(
-    Math.max(order.quantity || 1, parseInt(providerService.min, 10)),
-    parseInt(providerService.max, 10)
-  );
+  if (!providerRate) {
+    providerRate = parseFloat(providerService.rate);
+  }
 
   let response: { order?: number; error?: string } = {};
   try {
@@ -129,6 +222,8 @@ export async function fulfillOrder(orderId: string) {
       service: providerService.service,
       link: order.link_submitted || "",
       quantity,
+      ...(order.runs != null ? { runs: order.runs } : {}),
+      ...(order.interval != null ? { interval: order.interval } : {}),
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Provider request failed";
@@ -147,7 +242,7 @@ export async function fulfillOrder(orderId: string) {
         provider_service_id: String(providerService.service),
         provider_order_id: String(response.order),
         provider_status: "pending",
-         provider_charge: (parseFloat(providerService.rate) * quantity) / 1000,
+        provider_charge: (providerRate * quantity) / 1000,
         provider_currency: "USD",
         fulfillment_status: "processing",
         fulfilled_at: new Date().toISOString(),
@@ -168,13 +263,25 @@ export async function fulfillOrder(orderId: string) {
   return { status: "failed", error: message };
 }
 
+function mapProviderStatus(status: string | null | undefined): "fulfilled" | "cancelled" | "processing" {
+  if (!status) return "processing";
+  const upper = status.trim();
+  if (upper === "Completed") return "fulfilled";
+  if (upper === "Cancelled" || upper === "Refunded") return "cancelled";
+  if (upper === "Partial") return "processing";
+  if (upper === "Pending" || upper === "In Progress" || upper === "Processing") return "processing";
+  return "processing";
+}
+
+export { mapProviderStatus };
+
 export async function syncOrderStatuses(orderIds?: string[]) {
   const supabase = createAdminClient();
   if (!supabase) return;
 
-   let query = supabase
-     .from("orders")
-     .select("id, order_id, user_id, provider_order_id, fulfillment_status, provider_status")
+  let query = supabase
+    .from("orders")
+    .select("id, order_id, user_id, provider_order_id, fulfillment_status, provider_status")
     .not("provider_order_id", "is", null);
 
   if (orderIds && orderIds.length > 0) {
@@ -194,38 +301,39 @@ export async function syncOrderStatuses(orderIds?: string[]) {
     const status = statuses[order.provider_order_id as string];
     if (!status) continue;
 
+    const mapped = mapProviderStatus(status.status);
+    const unknown = !["Completed", "Cancelled", "Refunded", "Partial", "Pending", "In Progress", "Processing"].includes(status.status || "");
+
     const updates: Record<string, unknown> = {
       provider_status: status.status || null,
       provider_start_count: status.start_count || null,
       provider_remains: status.remains || null,
       provider_charge: status.charge ? parseFloat(status.charge) : null,
       provider_currency: status.currency || "USD",
+      fulfillment_status: mapped,
     };
 
-     if (status.status === "Completed") {
-       updates.fulfillment_status = "fulfilled";
-     } else if (status.status === "Cancelled" || status.status === "Refunded") {
-       updates.fulfillment_status = "cancelled";
-     } else if (status.status === "Partial") {
-       updates.fulfillment_status = "processing";
-     } else {
-       updates.fulfillment_status = "processing";
-     }
+    const prevStatus = order.fulfillment_status;
+    const newStatus = updates.fulfillment_status as string;
+    if (prevStatus !== newStatus || status.status !== order.provider_status) {
+      if (unknown) {
+        console.warn(`Unknown provider status "${status.status}" for order ${order.id} (${order.order_id})`);
+      }
+      await supabase.from("notifications").insert({
+        user_id: order.user_id,
+        type: "order_update",
+        title: `Order ${order.order_id || order.id.slice(0, 8)} status updated`,
+        message: `Status changed from ${prevStatus || "pending"} to ${newStatus}. Provider: ${status.status || "unknown"}.`,
+        link: "/orders/all",
+      });
+    }
 
-     const prevStatus = order.fulfillment_status;
-     const newStatus = updates.fulfillment_status as string;
-     if (prevStatus !== newStatus || status.status !== order.provider_status) {
-       await supabase.from("notifications").insert({
-         user_id: order.user_id,
-         type: "order_update",
-         title: `Order ${order.order_id || order.id.slice(0, 8)} status updated`,
-         message: `Status changed from ${prevStatus || "pending"} to ${newStatus}. Provider: ${status.status || "unknown"}.`,
-         link: "/orders/all",
-       });
-     }
-
-     await supabase.from("orders").update(updates).eq("id", order.id);
-    await logFulfillment(supabase, order.id, "status", "synced", null, status);
+    await supabase.from("orders").update(updates).eq("id", order.id);
+    if (unknown) {
+      await logFulfillment(supabase, order.id, "status", "unknown_status", null, status, `Unknown provider status: ${status.status}`);
+    } else {
+      await logFulfillment(supabase, order.id, "status", "synced", null, status);
+    }
   }
 }
 

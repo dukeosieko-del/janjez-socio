@@ -28,6 +28,9 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
   const [quantity, setQuantity] = useState("");
   const [comments, setComments] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(defaultAnonymous);
+  const [dripFeed, setDripFeed] = useState(false);
+  const [runs, setRuns] = useState("");
+  const [interval, setInterval] = useState("");
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
@@ -59,6 +62,16 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     return "";
   }, [selectedService, quantityNum]);
 
+  const runsNum = useMemo(() => {
+    const num = parseInt(runs, 10);
+    return isNaN(num) ? 0 : num;
+  }, [runs]);
+
+  const intervalNum = useMemo(() => {
+    const num = parseInt(interval, 10);
+    return isNaN(num) ? 0 : num;
+  }, [interval]);
+
   const handleCategoryChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const cat = e.target.value;
     setSelectedCategory(cat);
@@ -77,6 +90,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
   const handlePlaceOrder = useCallback(async () => {
     if (!selectedService || !link || quantityNum <= 0 || quantityError) return;
+    if (dripFeed && (runsNum <= 0 || intervalNum <= 0)) return;
     if (!user) {
       onRequireAuth("login");
       return;
@@ -101,6 +115,8 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
         amountPaid: total,
         quantitySource,
         selectedSkuId: selectedService.serviceId,
+        runs: dripFeed ? runsNum : null,
+        interval: dripFeed ? intervalNum : null,
       });
 
       if (!result.ok) {
@@ -121,13 +137,14 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedCategory, quantity]);
+  }, [selectedService, link, quantityNum, quantityError, dripFeed, runsNum, intervalNum, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedCategory, quantity]);
 
   const isValid =
     selectedService &&
     link.trim().length > 0 &&
     quantityNum >= (selectedService?.min ?? 0) &&
-    quantityNum <= (selectedService?.max ?? 0);
+    quantityNum <= (selectedService?.max ?? 0) &&
+    (!dripFeed || (runsNum > 0 && intervalNum > 0));
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -248,6 +265,88 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
                 <p className="text-kenya-red text-sm mt-2">{quantityError}</p>
               )}
             </div>
+
+            {/* Drip Feed Toggle */}
+            <div className="border-t border-kenya-white/10 pt-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="drip-feed"
+                    checked={dripFeed}
+                    onChange={(e) => {
+                      setDripFeed(e.target.checked);
+                      if (!e.target.checked) {
+                        setRuns("");
+                        setInterval("");
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+                  />
+                  <label htmlFor="drip-feed" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
+                    🐛 Drip-feed schedule
+                  </label>
+                </div>
+                {dripFeed && (
+                  <span className="text-xs text-kenya-green bg-kenya-green/10 px-2 py-1 rounded">
+                    Enabled
+                  </span>
+                )}
+              </div>
+              {dripFeed && (
+                <p className="text-kenya-white/50 text-xs mt-2">
+                  Quantity is the TOTAL quantity delivered across the entire drip-feed schedule.
+                  The provider will split it evenly across the number of runs at the given interval.
+                </p>
+              )}
+            </div>
+
+            {/* Drip Feed Inputs */}
+            {dripFeed && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                    🔄 Runs
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={runs}
+                    onChange={(e) => setRuns(e.target.value)}
+                    placeholder="Number of delivery runs"
+                    className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:ring-1 transition-all ${
+                      dripFeed && runsNum <= 0
+                        ? "border-kenya-red focus:border-kenya-red focus:ring-kenya-red"
+                        : "border-kenya-white/20 focus:border-kenya-green focus:ring-kenya-green"
+                    }`}
+                  />
+                  {dripFeed && runsNum <= 0 && (
+                    <p className="text-kenya-red text-sm mt-2">Runs must be a positive integer</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                    ⏱ Interval (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={interval}
+                    onChange={(e) => setInterval(e.target.value)}
+                    placeholder="Interval between runs"
+                    className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:ring-1 transition-all ${
+                      dripFeed && intervalNum <= 0
+                        ? "border-kenya-red focus:border-kenya-red focus:ring-kenya-red"
+                        : "border-kenya-white/20 focus:border-kenya-green focus:ring-kenya-green"
+                    }`}
+                  />
+                  {dripFeed && intervalNum <= 0 && (
+                    <p className="text-kenya-red text-sm mt-2">Interval must be a positive integer</p>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Comments (conditional) */}
             {selectedService.requiresComments && (

@@ -23,6 +23,9 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [mpesaOpen, setMpesaOpen] = useState(false);
+  const [dripFeed, setDripFeed] = useState(false);
+  const [runs, setRuns] = useState("");
+  const [intervalMin, setIntervalMin] = useState("");
 
   const parsedAmount = useMemo(() => parseFloat(deliverable.price.replace(" Ksh", "") || "0"), [deliverable.price]);
   const quantityNum = useMemo(() => {
@@ -52,6 +55,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
   const handlePlaceOrder = useCallback(async () => {
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
+    if (dripFeed && (parseInt(runs, 10) <= 0 || parseInt(intervalMin, 10) <= 0)) return;
     if (!user) {
       if (onRequireAuth) {
         onRequireAuth("login");
@@ -71,7 +75,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     setOrderSuccess(false);
 
     try {
-      const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
+       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
         categoryId: platformId,
         serviceId: deliverable.name,
@@ -80,6 +84,8 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         amountPaid: total,
         quantitySource,
         selectedSkuId: deliverable.name,
+        runs: dripFeed ? parseInt(runs, 10) : null,
+        interval: dripFeed ? parseInt(intervalMin, 10) : null,
       });
 
       if (!result.ok) {
@@ -101,9 +107,13 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       setOrderError("Unexpected error while placing order.");
       setPlacing(false);
     }
-  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable.name]);
+  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable.name, dripFeed, runs, intervalMin]);
 
-  const isValid = link.trim().length > 0 && quantityNum >= qtyMin && quantityNum <= qtyMax;
+  const isValid =
+    link.trim().length > 0 &&
+    quantityNum >= qtyMin &&
+    quantityNum <= qtyMax &&
+    (!dripFeed || (parseInt(runs, 10) > 0 && parseInt(intervalMin, 10) > 0));
 
   return (
     <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
@@ -156,6 +166,64 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
           />
           {quantityError && <p className="text-kenya-red text-sm mt-2">{quantityError}</p>}
         </div>
+
+        <div className="border-t border-kenya-white/10 pt-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="drip-feed-ff"
+                checked={dripFeed}
+                onChange={(e) => {
+                  setDripFeed(e.target.checked);
+                  if (!e.target.checked) {
+                    setRuns("");
+                    setIntervalMin("");
+                  }
+                }}
+                className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+              />
+              <label htmlFor="drip-feed-ff" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
+                🐛 Drip-feed schedule
+              </label>
+            </div>
+            {dripFeed && <span className="text-xs text-kenya-green bg-kenya-green/10 px-2 py-1 rounded">Enabled</span>}
+          </div>
+          {dripFeed && (
+            <p className="text-kenya-white/50 text-xs mt-2">
+              Quantity is the TOTAL delivered across the schedule. The provider splits it across runs at the interval.
+            </p>
+          )}
+        </div>
+
+        {dripFeed && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-kenya-white/70 mb-2">🔄 Runs</label>
+              <input
+                type="number"
+                min={1}
+                value={runs}
+                onChange={(e) => setRuns(e.target.value)}
+                placeholder="Number of delivery runs"
+                className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:ring-1 focus:border-kenya-green focus:ring-kenya-green transition-all"
+              />
+              {parseInt(runs, 10) <= 0 && <p className="text-kenya-red text-sm mt-2">Runs must be a positive integer</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-kenya-white/70 mb-2">⏱ Interval (minutes)</label>
+              <input
+                type="number"
+                min={1}
+                value={intervalMin}
+                onChange={(e) => setIntervalMin(e.target.value)}
+                placeholder="Interval between runs"
+                className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:ring-1 focus:border-kenya-green focus:ring-kenya-green transition-all"
+              />
+              {parseInt(intervalMin, 10) <= 0 && <p className="text-kenya-red text-sm mt-2">Interval must be a positive integer</p>}
+            </div>
+          </>
+        )}
 
         <div className="flex items-center justify-between bg-kenya-black/60 rounded-xl px-5 py-4 border border-kenya-white/10">
           <div>

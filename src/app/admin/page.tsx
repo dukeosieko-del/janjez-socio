@@ -9,9 +9,11 @@ import {
   OrdersTab,
   LogsTab,
   LedgerTab,
+  ServicesTab,
+  SettingsTab,
 } from "@/components/admin/AdminTabs";
 
-type Tab = "overview" | "users" | "orders" | "logs" | "ledger";
+type Tab = "overview" | "users" | "orders" | "logs" | "ledger" | "services" | "settings";
 
 export default function AdminDashboardPage() {
   const { user, profile, loading } = useAuth();
@@ -52,8 +54,10 @@ export default function AdminDashboardPage() {
     { key: "overview", label: "Overview" },
     { key: "users", label: "Users" },
     { key: "orders", label: "Orders" },
+    { key: "services", label: "Services" },
     { key: "logs", label: "Activity Logs" },
     { key: "ledger", label: "Ledger" },
+    { key: "settings", label: "Settings" },
   ];
 
   return (
@@ -85,8 +89,10 @@ export default function AdminDashboardPage() {
             {tab === "overview" && <OverviewTab />}
             {tab === "users" && <UsersTab />}
             {tab === "orders" && <OrdersTab />}
+            {tab === "services" && <ServicesTab />}
             {tab === "logs" && <LogsTab />}
             {tab === "ledger" && <LedgerTab />}
+            {tab === "settings" && <SettingsTab />}
           </div>
         </main>
       </div>
