@@ -7,6 +7,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { JanjezService } from "@/lib/janjez-services";
+import { getPlatformAvatar } from "@/lib/platform-avatars";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -78,7 +79,7 @@ export default async function MicrocategoryPage({ params }: MicrocategoryPagePro
               <FulfillmentForm
                 platformId={service.category}
                 platformName={service.category}
-                platformIcon={`/icons/services/${service.category}.svg`}
+                platformIcon={getPlatformAvatar(service.category)}
                 subcategoryName={subcategoryName}
                 service={service}
               />

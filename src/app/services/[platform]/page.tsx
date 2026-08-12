@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { listJanjezServices } from "@/lib/janjez-services";
 import { JanjezService } from "@/lib/janjez-services";
+import { getPlatformAvatar } from "@/lib/platform-avatars";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
@@ -70,13 +71,16 @@ export default async function PlatformPage({ params }: PlatformPageProps) {
                 <span>/</span>
                 <span className="text-kenya-green font-medium capitalize">{platform.replace(/-/g, " ")}</span>
               </nav>
-              <div className="mb-8">
-                <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2 capitalize">{platform.replace(/-/g, " ")}</h1>
-                {hasSubcategories ? (
-                  <p className="text-kenya-white/60">{subcategories.length} categor{subcategories.length === 1 ? "y" : "ies"} available</p>
-                ) : (
-                  <p className="text-kenya-white/60">No services found for this platform.</p>
-                )}
+              <div className="mb-8 flex items-center gap-4">
+                <img src={getPlatformAvatar(platform)} alt={`${platform} logo`} className="w-10 h-10 object-contain" />
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white capitalize">{platform.replace(/-/g, " ")}</h1>
+                  {hasSubcategories ? (
+                    <p className="text-kenya-white/60">{subcategories.length} categor{subcategories.length === 1 ? "y" : "ies"} available</p>
+                  ) : (
+                    <p className="text-kenya-white/60">No services found for this platform.</p>
+                  )}
+                </div>
               </div>
 
               {!hasSubcategories ? (

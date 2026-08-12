@@ -7,6 +7,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listJanjezServices } from "@/lib/janjez-services";
 import { JanjezService } from "@/lib/janjez-services";
+import { getPlatformAvatar } from "@/lib/platform-avatars";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -72,7 +73,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
                 <FulfillmentForm
                   platformId={singleService.category}
                   platformName={singleService.category}
-                  platformIcon={`/icons/services/${singleService.category}.svg`}
+                  platformIcon={getPlatformAvatar(singleService.category)}
                   subcategoryName={subcategoryName}
                   service={singleService}
                 />

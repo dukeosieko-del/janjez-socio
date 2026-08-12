@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { listJanjezServices } from "@/lib/janjez-services";
+import { getPlatformAvatar } from "@/lib/platform-avatars";
 
 export const revalidate = 0;
 
@@ -27,7 +28,7 @@ async function getPlatforms(): Promise<PlatformCard[]> {
   return Array.from(platformMap.entries()).map(([id, { name, count }]) => ({
     id,
     name: name.charAt(0).toUpperCase() + name.slice(1),
-    icon: `/icons/services/${id}.svg`,
+    icon: getPlatformAvatar(id),
     href: `/services/${id}`,
     serviceCount: count,
   }));
