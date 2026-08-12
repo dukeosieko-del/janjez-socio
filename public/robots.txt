@@ -2,12 +2,15 @@ User-agent: *
 Disallow: /dashboard
 Disallow: /orders
 Disallow: /orders/all
+Disallow: /orders/track
+Disallow: /order
 Disallow: /wallet
 Disallow: /settings
 Disallow: /admin
 Disallow: /auth
 Disallow: /api
 Disallow: /pay
+Disallow: /order/anonymous/created
 Allow: /
 
 Sitemap: https://janjez.social/sitemap.xml

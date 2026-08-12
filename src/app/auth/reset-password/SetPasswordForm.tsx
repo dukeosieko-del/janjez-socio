@@ -3,8 +3,9 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?: () => void }) {
-  const [email, setEmail] = useState("");
+export default function SetPasswordForm({ token }: { token: string }) {
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -15,23 +16,28 @@ export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?:
     setError(null);
     setSuccess(false);
 
-    if (!email || !email.includes("@")) {
-      setError("Please enter a valid email address");
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
 
-    const res = await fetch("/api/auth/reset-password", {
+    const res = await fetch("/api/auth/set-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ token, password }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      setError(data?.error || "Failed to send reset link");
+      setError(data?.error || "Failed to reset password");
     } else {
       setSuccess(true);
       setTimeout(() => router.push("/auth/sign-in"), 2000);
@@ -48,27 +54,29 @@ export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?:
       )}
       {success && (
         <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-xl p-4">
-          <p className="text-kenya-green text-sm">Check your email for a password reset link.</p>
-          {onBackToSignIn && (
-            <button
-              type="button"
-              onClick={onBackToSignIn}
-              className="mt-2 text-xs text-kenya-green hover:underline"
-            >
-              Back to sign in
-            </button>
-          )}
+          <p className="text-kenya-green text-sm">Password updated! Redirecting to sign in…</p>
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium text-kenya-white/70 mb-2">Email</label>
+        <label className="block text-sm font-medium text-kenya-white/70 mb-2">New Password</label>
         <input
-          type="email"
+          type="password"
           required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter new password (min 6 characters)"
           className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
-          placeholder="you@example.com"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-kenya-white/70 mb-2">Confirm Password</label>
+        <input
+          type="password"
+          required
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirm new password"
+          className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
         />
       </div>
       <button
@@ -76,7 +84,7 @@ export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?:
         disabled={loading}
         className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {loading ? "Sending..." : "Send Reset Link"}
+        {loading ? "Updating…" : "Set New Password"}
       </button>
     </form>
   );

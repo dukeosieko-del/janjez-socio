@@ -6,7 +6,6 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { listJanjezServices } from "@/lib/janjez-services";
 import { JanjezService } from "@/lib/janjez-services";
-import ProtectedRoute from "@/lib/auth/protected-route";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
@@ -58,8 +57,7 @@ export default async function PlatformPage({ params }: PlatformPageProps) {
   const services = await getSubcategoryServices(platform, defaultSubSlug);
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen flex bg-kenya-black">
+    <div className="min-h-screen flex bg-kenya-black">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
           <AnnouncementBanner />
@@ -127,6 +125,5 @@ export default async function PlatformPage({ params }: PlatformPageProps) {
           <Footer />
         </div>
       </div>
-    </ProtectedRoute>
   );
 }

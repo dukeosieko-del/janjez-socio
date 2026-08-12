@@ -24,12 +24,12 @@ export async function middleware(request: Request) {
 
   const isAuthPage = pathname.startsWith("/auth/");
   const isAdminPage = pathname.startsWith("/admin");
+  const isPublicTracking = pathname.startsWith("/orders/track");
   const isProtectedPage =
     isAuthPage ||
     isAdminPage ||
     pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/services") ||
-    pathname.startsWith("/orders") ||
+    (pathname.startsWith("/orders") && !isPublicTracking) ||
     pathname.startsWith("/pay") ||
     pathname.startsWith("/wallet") ||
     pathname.startsWith("/settings");
@@ -96,7 +96,6 @@ function applySecurityHeaders(response: NextResponse, requestUrl?: string) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
-    "/services/:path*",
     "/auth/:path*",
     "/admin/:path*",
     "/orders/:path*",

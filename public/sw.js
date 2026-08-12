@@ -1,4 +1,4 @@
-const BUILD_ID = self.location.pathname.includes('/sw.js') ? 'v1' : 'v1';
+const BUILD_ID = 'v2';
 const CACHE_NAME = 'janjez-social-' + BUILD_ID;
 const STATIC_URLS = [
   '/',
@@ -39,7 +39,10 @@ self.addEventListener('fetch', event => {
       url.pathname.startsWith('/admin/') ||
       url.pathname.startsWith('/dashboard') ||
       url.pathname.startsWith('/orders') ||
-      url.pathname.startsWith('/services')) {
+      url.pathname.startsWith('/services') ||
+      url.pathname.startsWith('/pay') ||
+      url.pathname.startsWith('/wallet') ||
+      url.pathname.startsWith('/settings')) {
     event.respondWith(fetch(event.request));
     return;
   }

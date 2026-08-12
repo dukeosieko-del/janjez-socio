@@ -8,7 +8,6 @@ import { notFound } from "next/navigation";
 import { listJanjezServices } from "@/lib/janjez-services";
 import { JanjezService } from "@/lib/janjez-services";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
-import ProtectedRoute from "@/lib/auth/protected-route";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
@@ -49,8 +48,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
   const singleService = services.length === 1 ? services[0] : null;
 
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen flex bg-kenya-black">
+    <div className="min-h-screen flex bg-kenya-black">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
           <AnnouncementBanner />
@@ -101,8 +99,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
             </div>
           </main>
           <Footer />
-        </div>
       </div>
-    </ProtectedRoute>
+    </div>
   );
 }

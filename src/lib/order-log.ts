@@ -14,6 +14,41 @@ export interface OrderLogPayload {
   janjezServiceId?: string | null;
 }
 
+export interface AnonymousOrderPayload {
+  janjezServiceId: string;
+  link: string;
+  quantity: number;
+  phoneNumber: string;
+  runs?: number | null;
+  interval?: number | null;
+}
+
+export async function submitAnonymousOrder(payload: AnonymousOrderPayload) {
+  const quantitySource: "preset" | "custom" = /^\d+$/.test(String(payload.quantity)) ? "preset" : "custom";
+
+  const res = await fetch("/api/orders/anonymous", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      janjez_service_id: payload.janjezServiceId,
+      link_submitted: payload.link,
+      quantity: payload.quantity,
+      phone_number: payload.phoneNumber,
+      quantity_source: quantitySource,
+      runs: payload.runs ?? null,
+      interval: payload.interval ?? null,
+    }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    return { ok: false as const, error: data?.error || "Failed to start anonymous order." };
+  }
+
+  const data = await res.json();
+  return { ok: true as const, data };
+}
+
 function getCatalogItem(categoryId: string): ServiceCatalogItem | undefined {
   return SERVICE_CATALOG.find((c) => c.id === categoryId);
 }

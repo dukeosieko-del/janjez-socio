@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import MpesaModal from "@/components/MpesaModal";
-import { submitOrder } from "@/lib/order-log";
+import { submitOrder, submitAnonymousOrder } from "@/lib/order-log";
 import { JanjezService } from "@/lib/janjez-services";
 import { getDripFeedLimitsSync, type DripFeedLimits } from "@/lib/drip-feed-settings";
 import { calculateOrderCost } from "@/lib/pricing";
@@ -17,9 +17,10 @@ export interface FulfillmentProps {
   deliverable?: { name: string; price: string; note?: string; flag?: string; minQty?: number; maxQty?: number };
   service?: JanjezService;
   onRequireAuth?: (tab?: "login" | "register") => void;
+  allowAnonymous?: boolean;
 }
 
-export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable, service, onRequireAuth }: FulfillmentProps) {
+export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable, service, onRequireAuth, allowAnonymous = true }: FulfillmentProps) {
   const { user, walletBalance } = useAuth();
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -32,6 +33,9 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const [runs, setRuns] = useState("");
   const [intervalMin, setIntervalMin] = useState("");
   const [dripFeedLimits, setDripFeedLimits] = useState<DripFeedLimits>(getDripFeedLimitsSync);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [anonymousPlacing, setAnonymousPlacing] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/settings/drip-feed")
@@ -76,7 +80,56 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const handlePlaceOrder = useCallback(async () => {
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
     if (dripFeed && (parseInt(runs, 10) <= 0 || parseInt(intervalMin, 10) <= 0)) return;
+
     if (!user) {
+      if (isAnonymous) {
+        if (!phoneNumber || !/^\d{9,15}$/.test(phoneNumber.replace(/\s+/g, ""))) {
+          setOrderError("Please enter a valid phone number for anonymous checkout.");
+          return;
+        }
+        if (!service) {
+          setOrderError("Anonymous checkout requires a Janjez service. Please sign in or select a mapped service.");
+          return;
+        }
+
+        setAnonymousPlacing(true);
+        setPlacing(true);
+        setOrderError(null);
+
+        try {
+          const result = await submitAnonymousOrder({
+            janjezServiceId: service.id,
+            link,
+            quantity: quantityNum,
+            phoneNumber,
+            runs: dripFeed ? parseInt(runs, 10) : null,
+            interval: dripFeed ? parseInt(intervalMin, 10) : null,
+          });
+
+          if (!result.ok) {
+            setOrderError(result.error || "Failed to start anonymous checkout.");
+            setPlacing(false);
+            setAnonymousPlacing(false);
+            return;
+          }
+
+          setOrderSuccess(true);
+          setPlacing(false);
+          setAnonymousPlacing(false);
+          const orderId = result.data.order_id;
+          void orderId; // Order ID tracked via checkout reference
+          const checkoutId = result.data.checkoutRequestId;
+          setTimeout(() => {
+            window.location.href = checkoutId ? `/orders/track?ref=${checkoutId}` : "/order/anonymous/created";
+          }, 2000);
+        } catch {
+          setOrderError("Unexpected error while starting anonymous checkout.");
+          setPlacing(false);
+          setAnonymousPlacing(false);
+        }
+        return;
+      }
+
       if (onRequireAuth) {
         onRequireAuth("login");
       } else {
@@ -132,7 +185,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       setOrderError("Unexpected error while placing order.");
       setPlacing(false);
     }
-  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable, service, subcategoryName, onRequireAuth, dripFeed, runs, intervalMin]);
+  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable, service, subcategoryName, onRequireAuth, dripFeed, runs, intervalMin, isAnonymous, phoneNumber]);
 
   const isValid =
     link.trim().length > 0 &&
@@ -290,6 +343,55 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
           </div>
         )}
 
+        {!user && allowAnonymous && service && (
+          <div className="border-t border-kenya-white/10 pt-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="anonymous-checkout"
+                checked={isAnonymous}
+                onChange={(e) => {
+                  setIsAnonymous(e.target.checked);
+                  if (!e.target.checked) {
+                    setPhoneNumber("");
+                  }
+                }}
+                className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+              />
+              <label htmlFor="anonymous-checkout" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
+                Place order as guest (no account needed)
+              </label>
+            </div>
+
+            {isAnonymous && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                    Phone Number (for M-Pesa)
+                  </label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="07XXXXXXXX or 01XXXXXXXX"
+                    className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                  />
+                </div>
+                <div className="bg-kenya-green/5 border border-kenya-green/20 rounded-xl p-4 flex items-start gap-3">
+                  <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain mt-0.5" />
+                  <p className="text-kenya-white/80 text-xs">
+                    You will receive an M-Pesa STK push for KES {Math.max(50, total).toFixed(2)}.
+                    The exact order cost is KES {total.toFixed(2)}.
+                    The minimum M-Pesa amount is KSh 50.
+                    If the total is below KSh 50, you will pay KSh 50 and the
+                    order amount is deducted from the excess.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {orderError && (
           <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
             <p className="text-kenya-red text-sm">{orderError}</p>
@@ -304,10 +406,10 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
         <button
           onClick={handlePlaceOrder}
-          disabled={!isValid || placing}
+          disabled={!isValid || placing || anonymousPlacing}
           className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2"
         >
-          {placing ? "Placing Order…" : "Place Order"}
+          {placing || anonymousPlacing ? "Processing…" : !user && isAnonymous ? "Place & Pay (Guest)" : "Place Order"}
         </button>
       </div>
 

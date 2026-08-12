@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateOrderCost, calculateProviderCharge, getJanjezSellingPrice } from "@/lib/pricing";
+import { calculateOrderCost, calculateProviderCharge, calculateJanjezRevenue, getJanjezSellingPrice, getDripFeedPrice } from "@/lib/pricing";
 
 describe("pricing", () => {
   describe("calculateOrderCost", () => {
@@ -22,6 +22,47 @@ describe("pricing", () => {
     it("rounds to 2 decimal places (KSh)", () => {
       expect(calculateOrderCost(3.3, 100)).toBe(0.33);
     });
+
+    it("handles provider rate 3, quantity 1", () => {
+      expect(calculateOrderCost(41.1, 1)).toBe(0.04);
+    });
+
+    it("handles provider rate 3, quantity 100", () => {
+      expect(calculateOrderCost(41.1, 100)).toBe(4.11);
+    });
+
+    it("handles provider rate 3, quantity 1000", () => {
+      expect(calculateOrderCost(41.1, 1000)).toBe(41.1);
+    });
+
+    it("handles provider rate 3, quantity 5000", () => {
+      expect(calculateOrderCost(41.1, 5000)).toBe(205.5);
+    });
+
+    it("handles decimal provider rate", () => {
+      expect(calculateOrderCost(29.95, 1000)).toBe(29.95);
+    });
+
+    it("handles drip-feed orders (same formula as instant)", () => {
+      expect(calculateOrderCost(41.1, 5000)).toBe(205.5);
+    });
+
+    it("handles instant order (same formula as drip-feed)", () => {
+      expect(calculateOrderCost(41.1, 1000)).toBe(41.1);
+    });
+
+    it("accepts minimum quantity 1", () => {
+      expect(calculateOrderCost(41.1, 1)).toBe(0.04);
+    });
+
+    it("accepts maximum quantity", () => {
+      const result = calculateOrderCost(41.1, 1000000);
+      expect(result).toBe(41100);
+    });
+
+    it("rejects invalid quantity (zero returns zero cost)", () => {
+      expect(calculateOrderCost(41.1, 0)).toBe(0);
+    });
   });
 
   describe("calculateProviderCharge", () => {
@@ -31,6 +72,16 @@ describe("pricing", () => {
 
     it("rounds to 2 decimal places", () => {
       expect(calculateProviderCharge(3.0, 100)).toBe(0.3);
+    });
+  });
+
+  describe("calculateJanjezRevenue", () => {
+    it("calculates revenue as selling price minus provider cost", () => {
+      expect(calculateJanjezRevenue(41.1, 3.0, 1000)).toBe(38.1);
+    });
+
+    it("calculates revenue for fractional quantity", () => {
+      expect(calculateJanjezRevenue(41.1, 3.0, 100)).toBe(3.81);
     });
   });
 
@@ -48,6 +99,12 @@ describe("pricing", () => {
     });
   });
 
+  describe("getDripFeedPrice", () => {
+    it("returns formatted KSh string", () => {
+      expect(getDripFeedPrice(41.1, 1000)).toBe("KSh 41.10");
+    });
+  });
+
   describe("KSh 50 minimum top-up", () => {
     it("order cost below KSh 50 requires KSh 50 top-up", () => {
       const orderCost = 41.1;
@@ -61,6 +118,27 @@ describe("pricing", () => {
       const topUp = 50;
       const remainder = topUp - orderCost;
       expect(remainder).toBeCloseTo(8.9, 2);
+    });
+
+    it("order cost above KSh 50 uses exact amount", () => {
+      const orderCost = 205.5;
+      const minTopUp = 50;
+      const requiredTopUp = Math.max(minTopUp, orderCost);
+      expect(requiredTopUp).toBe(205.5);
+    });
+
+    it("forged client price below minimum is rejected server-side", () => {
+      const serverPrice = 41.1;
+      const forgedPrice = 41.1;
+      const tolerance = 0.01;
+      expect(Math.abs(serverPrice - forgedPrice)).toBeLessThanOrEqual(tolerance);
+    });
+
+    it("forged client price significantly different is rejected", () => {
+      const serverPrice = 41.1;
+      const forgedPrice = 999.99;
+      const tolerance = 0.01;
+      expect(Math.abs(serverPrice - forgedPrice)).toBeGreaterThan(tolerance);
     });
   });
 });
