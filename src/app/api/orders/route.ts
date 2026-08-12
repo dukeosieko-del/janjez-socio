@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
 import { ORDER_SERVICES } from "@/lib/data";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
+import { calculateOrderCost } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: "This service does not support drip-feed" }, { status: 400 });
         }
       }
-      expectedAmount = janjezService.selling_price_ksh * numQuantity * 0.95;
+      expectedAmount = calculateOrderCost(janjezService.selling_price_ksh, numQuantity);
     } else {
       expectedAmount = calculateExpectedAmount(
         catalog_category_id,

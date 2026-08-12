@@ -82,7 +82,6 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
 }
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
 
   const navItems = useMemo(() => {
@@ -110,20 +109,9 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
+      {/* Sidebar - desktop only */}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen bg-kenya-black border-r border-kenya-white/10 transition-transform duration-300 w-64 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
-      >
+        className={`fixed left-0 top-0 z-40 h-screen bg-kenya-black border-r border-kenya-white/10 transition-transform duration-300 w-64 hidden lg:block`}>
         <div className="flex flex-col h-full">
           {/* Logo area */}
           <div className="flex items-center justify-between p-4 border-b border-kenya-white/10">
@@ -133,14 +121,6 @@ export default function Sidebar() {
                 janjez<span className="text-kenya-green">.social</span>
               </span>
             </Link>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-kenya-white/10 transition-colors text-kenya-white/60 hover:text-kenya-white"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
 
           {/* Navigation */}
@@ -162,7 +142,6 @@ export default function Sidebar() {
             ) : (
               <Link
                 href="/services"
-                onClick={() => setIsOpen(false)}
                 className="flex items-center justify-center gap-2 w-full bg-kenya-green text-kenya-black font-bold text-sm py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
               >
                 🛒 Start Order
@@ -171,17 +150,6 @@ export default function Sidebar() {
           </div>
         </div>
       </aside>
-
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-30 lg:hidden w-12 h-12 bg-kenya-green text-kenya-black rounded-full shadow-lg flex items-center justify-center hover:bg-kenya-green/90 transition-colors"
-        aria-label="Open menu"
-      >
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
     </>
   );
 }

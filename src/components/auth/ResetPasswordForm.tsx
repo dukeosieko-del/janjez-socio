@@ -19,7 +19,7 @@ export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?:
 
     const supabase = createClient();
     if (!supabase) {
-      setError("Supabase not configured");
+      setError("Authentication service not available. Please try again later.");
       setLoading(false);
       return;
     }

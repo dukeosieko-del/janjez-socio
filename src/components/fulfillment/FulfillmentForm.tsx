@@ -7,6 +7,7 @@ import MpesaModal from "@/components/MpesaModal";
 import { submitOrder } from "@/lib/order-log";
 import { JanjezService } from "@/lib/janjez-services";
 import { getDripFeedLimitsSync, type DripFeedLimits } from "@/lib/drip-feed-settings";
+import { calculateOrderCost } from "@/lib/pricing";
 
 export interface FulfillmentProps {
   platformId: string;
@@ -26,6 +27,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [mpesaOpen, setMpesaOpen] = useState(false);
+  const [requiredAmount, setRequiredAmount] = useState(0);
   const [dripFeed, setDripFeed] = useState(false);
   const [runs, setRuns] = useState("");
   const [intervalMin, setIntervalMin] = useState("");
@@ -57,13 +59,10 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
   const subtotal = useMemo(() => {
     if (!ratePerUnit || quantityNum <= 0) return 0;
-    return ratePerUnit * quantityNum;
+    return calculateOrderCost(ratePerUnit, quantityNum);
   }, [ratePerUnit, quantityNum]);
 
-  const total = useMemo(() => {
-    if (subtotal <= 0) return 0;
-    return subtotal * 0.95;
-  }, [subtotal]);
+  const total = subtotal;
 
   const quantityError = useMemo(() => {
     if (quantityNum <= 0) return "";
@@ -88,6 +87,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
     if (total > walletBalance) {
       setMpesaOpen(true);
+      setRequiredAmount(total);
       return;
     }
 
@@ -279,7 +279,6 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
             <span className="text-kenya-white/40 text-xs">Wallet balance: KES {walletBalance != null ? walletBalance.toLocaleString() : "—"}</span>
           </div>
           <div className="flex items-center gap-3">
-            {total > 0 && <span className="text-xs bg-kenya-red text-white font-bold px-2 py-0.5 rounded">-5% Happy Hour</span>}
             <span className="text-2xl font-bold text-kenya-green">KES {total.toFixed(2)}</span>
           </div>
         </div>
@@ -287,7 +286,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         {total > walletBalance && total > 0 && (
           <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4 flex items-center gap-3">
             <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
-            <p className="text-kenya-white/80 text-sm">Insufficient wallet balance. Click Place Order to top up via M-Pesa.</p>
+            <p className="text-kenya-white/80 text-sm">Insufficient wallet balance. Top up via M-Pesa to complete this order.</p>
           </div>
         )}
 
@@ -312,7 +311,15 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         </button>
       </div>
 
-      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
+      <MpesaModal
+        isOpen={mpesaOpen}
+        onClose={() => setMpesaOpen(false)}
+        requiredAmount={requiredAmount}
+        onSuccess={() => {
+          setMpesaOpen(false);
+          handlePlaceOrder();
+        }}
+      />
     </div>
   );
 }

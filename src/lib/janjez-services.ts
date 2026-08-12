@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchProviderServices } from "@/lib/smm/provider";
+import { getJanjezSellingPrice } from "@/lib/pricing";
 
 export interface JanjezService {
   id: string;

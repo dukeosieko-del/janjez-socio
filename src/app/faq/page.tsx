@@ -13,8 +13,8 @@ export default function FaqPage() {
     { q: "Do you offer refill guarantees?", a: "Yes, many services come with refill guarantees ranging from 7 to 60 days. Check each service page for details." },
     { q: "Is my account safe?", a: "We use real-quality accounts and never ask for your password. Always keep your account public during fulfillment." },
     { q: "What payment methods do you accept?", a: "We accept M-Pesa directly, as well as wallet top-ups for faster checkout." },
-    { q: "Can I place an order without an account?", a: "Yes! Use the anonymous checkout option to place orders without signing up." },
-    { q: "What is Happy Hour?", a: "Happy Hour is our limited-time promotion offering -5% off all services. Watch the countdown timer in the header." },
+    { q: "Can I place an order without an account?", a: "All orders require a janjez.social account. Signing up takes seconds with email and phone number." },
+    { q: "What is Happy Hour?", a: "Happy Hour is our featured service selector. Click the Happy Hour button in the header to be taken to a random drip-feed service." },
   ];
   return (
     <div className="min-h-screen flex bg-kenya-black">

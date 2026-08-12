@@ -13,7 +13,7 @@ export async function middleware(request: Request) {
         { error: "Authentication service is temporarily unavailable. Please contact us at support@janjez.social or try again later." },
         { status: 500 }
       );
-      applySecurityHeaders(res);
+      applySecurityHeaders(res, request.url);
       return res;
     }
     return NextResponse.next();
@@ -24,11 +24,21 @@ export async function middleware(request: Request) {
 
   const isAuthPage = pathname.startsWith("/auth/");
   const isAdminPage = pathname.startsWith("/admin");
-  const isProtectedPage = isAuthPage || isAdminPage || pathname.startsWith("/dashboard") || pathname.startsWith("/services");
+  const isProtectedPage =
+    isAuthPage ||
+    isAdminPage ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/services") ||
+    pathname.startsWith("/orders") ||
+    pathname.startsWith("/pay") ||
+    pathname.startsWith("/wallet") ||
+    pathname.startsWith("/settings");
+
+  const redirectTo = `/auth/sign-in?next=${encodeURIComponent(pathname)}`;
 
   if (isProtectedPage && !user) {
-    const response = NextResponse.redirect(new URL("/auth/sign-in", request.url));
-    applySecurityHeaders(response);
+    const response = NextResponse.redirect(new URL(redirectTo, request.url));
+    applySecurityHeaders(response, request.url);
     return response;
   }
 
@@ -41,23 +51,33 @@ export async function middleware(request: Request) {
 
     if (profile?.role !== "admin") {
       const response = NextResponse.redirect(new URL("/dashboard", request.url));
-      applySecurityHeaders(response);
+      applySecurityHeaders(response, request.url);
       return response;
     }
   }
 
+  const returnTo = (() => {
+    try {
+      return new URL(request.url).searchParams.get("next") || "/services";
+    } catch {
+      return "/services";
+    }
+  })();
+
   if (isAuthPage && user) {
-    const response = NextResponse.redirect(new URL("/services", request.url));
-    applySecurityHeaders(response);
+    const response = NextResponse.redirect(new URL(returnTo, request.url));
+    applySecurityHeaders(response, request.url);
     return response;
   }
 
   const response = NextResponse.next();
-  applySecurityHeaders(response);
+  applySecurityHeaders(response, request.url);
   return response;
 }
 
-function applySecurityHeaders(response: NextResponse) {
+function applySecurityHeaders(response: NextResponse, requestUrl?: string) {
+  const pathname = requestUrl ? new URL(requestUrl).pathname : "";
+
   response.headers.set("Content-Security-Policy", CSP_HEADER);
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -67,8 +87,21 @@ function applySecurityHeaders(response: NextResponse) {
   response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains");
   response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+
+  if (!pathname.startsWith("/_next/static/")) {
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, private");
+  }
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/services/:path*", "/auth/:path*", "/admin/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/services/:path*",
+    "/auth/:path*",
+    "/admin/:path*",
+    "/orders/:path*",
+    "/pay",
+    "/wallet:path*",
+    "/settings:path*",
+  ],
 };

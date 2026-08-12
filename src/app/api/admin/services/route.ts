@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Validation failed", details: errors }, { status: 400 });
     }
 
+    let resolvedSellingPrice = Number(selling_price_ksh);
     if (provider_service_id) {
       const supabase = createAdminClient();
       if (supabase) {
@@ -75,7 +76,22 @@ export async function POST(request: NextRequest) {
         if (!providerExists) {
           return NextResponse.json({ error: "Referenced provider service not found" }, { status: 400 });
         }
+
+        if (!resolvedSellingPrice || resolvedSellingPrice <= 0) {
+          const { data: providerService } = await supabase
+            .from("provider_services")
+            .select("rate")
+            .eq("id", String(provider_service_id))
+            .single();
+          if (providerService && providerService.rate) {
+            resolvedSellingPrice = Math.round(Number(providerService.rate) * 13.7 * 100) / 100;
+          }
+        }
       }
+    }
+
+    if (resolvedSellingPrice <= 0) {
+      return NextResponse.json({ error: "selling_price_ksh must be a positive number or a provider_service_id must be provided to auto-derive price" }, { status: 400 });
     }
 
     const result = await createJanjezService({
@@ -84,7 +100,7 @@ export async function POST(request: NextRequest) {
       category: String(category),
       subcategory: typeof subcategory === "string" ? subcategory : undefined,
       description: typeof description === "string" ? description : undefined,
-      selling_price_ksh: Number(selling_price_ksh),
+      selling_price_ksh: resolvedSellingPrice,
       provider_service_id: provider_service_id ? String(provider_service_id) : null,
       min_quantity: Number(min_quantity),
       max_quantity: Number(max_quantity),

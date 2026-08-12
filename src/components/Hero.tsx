@@ -46,12 +46,12 @@ export default function Hero() {
             guarantee, 24/7 support.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/services"
               className="group inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:bg-kenya-green/90 transition-all hover:scale-105 shadow-lg shadow-kenya-green/20"
             >
-              🛒 Start New Order
+              &#x1F6D2; Start New Order
               <svg
                 className="h-5 w-5 group-hover:translate-x-1 transition-transform"
                 fill="none"
@@ -67,7 +67,7 @@ export default function Hero() {
               </svg>
             </Link>
             <Link
-              href="/order?mode=anonymous"
+              href="/pay"
               className="inline-flex items-center gap-2 bg-transparent text-kenya-white font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl border-2 border-kenya-white/30 hover:border-kenya-white hover:bg-kenya-white/5 transition-all hover:scale-105"
             >
               <svg
@@ -83,14 +83,7 @@ export default function Hero() {
                   d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.292-4.292M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              Order Anonymously
-            </Link>
-            <Link
-              href="/pay"
-              className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-xl border border-kenya-white/20 hover:bg-kenya-white/20 transition-all hover:scale-105"
-            >
-              <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />
-              Top Up via M-Pesa
+              Top Up Wallet
             </Link>
           </div>
 

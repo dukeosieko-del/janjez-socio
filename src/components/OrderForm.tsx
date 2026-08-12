@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { calculateOrderCost } from "@/lib/pricing";
 
 interface OrderFormProps {
   onRequireAuth: (tab?: "login" | "register") => void;
@@ -52,8 +53,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
   const total = useMemo(() => {
     if (!selectedService || quantityNum <= 0) return 0;
-    const discount = 0.95;
-    return selectedService.rate * quantityNum * discount;
+    return calculateOrderCost(selectedService.rate * 1000, quantityNum);
   }, [selectedService, quantityNum]);
 
   const quantityError = useMemo(() => {
@@ -370,30 +370,11 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
             {/* Total Charge */}
             <div className="flex items-center justify-between bg-kenya-black/60 rounded-xl px-5 py-4 border border-kenya-white/10">
               <span className="text-kenya-white/70 font-medium">Total Charge</span>
-              <div className="flex items-center gap-3">
-                {total > 0 && (
-                  <span className="text-xs bg-kenya-red text-white font-bold px-2 py-0.5 rounded">
-                    -5% Happy Hour
-                  </span>
-                )}
-                <span className="text-2xl font-bold text-kenya-green">
-                  KES {total.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            {/* Anonymous toggle */}
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="anonymous"
-                checked={isAnonymous}
-                onChange={(e) => setIsAnonymous(e.target.checked)}
-                className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
-              />
-              <label htmlFor="anonymous" className="text-sm text-kenya-white/70 cursor-pointer">
-                Place order anonymously (no account required)
-              </label>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl font-bold text-kenya-green">
+              KES {total.toFixed(2)}
+            </span>
+          </div>
             </div>
 
             {/* Submit */}
