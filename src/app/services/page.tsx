@@ -5,6 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { listJanjezServices } from "@/lib/janjez-services";
+import { PRIMARY_SOCIAL_CATEGORIES, isPrimaryCategory } from "@/lib/janjez-services";
+import { getPlatformAvatar, getPlatformLabel } from "@/lib/platform-avatars";
 
 export const revalidate = 0;
 
@@ -18,19 +20,32 @@ interface PlatformCard {
 
 async function getPlatforms(): Promise<PlatformCard[]> {
   const services = await listJanjezServices(true);
-  const platformMap = new Map<string, { name: string; count: number }>();
+  const counts: Record<string, number> = {};
+  let othersCount = 0;
   for (const svc of services) {
-    const existing = platformMap.get(svc.category) || { name: svc.category, count: 0 };
-    existing.count += 1;
-    platformMap.set(svc.category, existing);
+    if (isPrimaryCategory(svc.category)) {
+      counts[svc.category] = (counts[svc.category] || 0) + 1;
+    } else {
+      othersCount += 1;
+    }
   }
-  return Array.from(platformMap.entries()).map(([id, { name, count }]) => ({
-    id,
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    icon: `/icons/services/${id}.svg`,
-    href: `/services/${id}`,
-    serviceCount: count,
+  const platforms: PlatformCard[] = PRIMARY_SOCIAL_CATEGORIES.map((cat) => ({
+    id: cat,
+    name: getPlatformLabel(cat),
+    icon: getPlatformAvatar(cat),
+    href: `/services/${cat}`,
+    serviceCount: counts[cat] || 0,
   }));
+  if (othersCount > 0) {
+    platforms.push({
+      id: "others",
+      name: getPlatformLabel("others"),
+      icon: getPlatformAvatar("others"),
+      href: "/services/others",
+      serviceCount: othersCount,
+    });
+  }
+  return platforms;
 }
 
 export default async function ServicesPage() {

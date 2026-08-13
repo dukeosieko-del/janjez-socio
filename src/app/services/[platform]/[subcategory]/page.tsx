@@ -6,7 +6,14 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { listJanjezServices } from "@/lib/janjez-services";
-import { JanjezService } from "@/lib/janjez-services";
+import {
+  JanjezService,
+  getPlatformBucket,
+  getSubcategoryKey,
+  slugify,
+  getServiceDetailPath,
+} from "@/lib/janjez-services";
+import { getPlatformAvatar, getPlatformLabel } from "@/lib/platform-avatars";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -18,7 +25,7 @@ interface SubcategoryPageProps {
 
 export async function generateMetadata({ params }: SubcategoryPageProps): Promise<Metadata> {
   const { services, subcategoryName } = await getSubcategoryServices(params.platform, params.subcategory);
-  const platformName = params.platform.charAt(0).toUpperCase() + params.platform.slice(1).replace(/-/g, " ");
+  const platformName = getPlatformLabel(params.platform);
   const title = `${subcategoryName} ${platformName} Services | Janjez`;
   return {
     title,
@@ -29,12 +36,9 @@ export async function generateMetadata({ params }: SubcategoryPageProps): Promis
 
 async function getSubcategoryServices(platform: string, subcategorySlug: string): Promise<{ services: JanjezService[]; subcategoryName: string }> {
   const all = await listJanjezServices(true);
-  const filtered = all.filter((s) => s.category === platform);
-  const inSubcategory = filtered.filter((s) => {
-    const sub = s.subcategory || "General";
-    return sub.toLowerCase().replace(/\s+/g, "-") === subcategorySlug;
-  });
-  const subName = inSubcategory.length > 0 ? (inSubcategory[0].subcategory || "General") : subcategorySlug;
+  const filtered = all.filter((s) => getPlatformBucket(s.category) === platform);
+  const inSubcategory = filtered.filter((s) => slugify(getSubcategoryKey(s, platform)) === subcategorySlug);
+  const subName = inSubcategory.length > 0 ? getSubcategoryKey(inSubcategory[0], platform) : subcategorySlug;
   return { services: inSubcategory, subcategoryName: subName };
 }
 
@@ -59,7 +63,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
               <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
                 <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
                 <span>/</span>
-                <Link href={`/services/${params.platform}`} className="hover:text-kenya-green transition-colors capitalize">{params.platform.replace(/-/g, " ")}</Link>
+                <Link href={`/services/${params.platform}`} className="hover:text-kenya-green transition-colors capitalize">{getPlatformLabel(params.platform)}</Link>
                 <span>/</span>
                 <span className="text-kenya-green font-medium">{subcategoryName}</span>
               </nav>
@@ -72,7 +76,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
                 <FulfillmentForm
                   platformId={singleService.category}
                   platformName={singleService.category}
-                  platformIcon={`/icons/services/${singleService.category}.svg`}
+                  platformIcon={getPlatformAvatar(singleService.category)}
                   subcategoryName={subcategoryName}
                   service={singleService}
                 />
@@ -81,7 +85,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
                   {services.map((svc) => (
                     <Link
                       key={svc.id}
-                      href={`/services/${params.platform}/${params.subcategory}/${svc.slug}`}
+                      href={getServiceDetailPath(svc)}
                       className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
                     >
                       <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">

@@ -16,6 +16,8 @@ export const PLATFORM_AVATARS: Record<string, string> = {
   x: "/icons/services/x-icon.webp",
   twitter: "/icons/services/x-icon.webp",
   "x-twitter": "/icons/services/x-icon.webp",
+  // "Others" is a virtual container, not a mapped social-media platform.
+  others: "/janjez-logo.png",
   "google-maps-reviews": "/icons/services/google-reviews-icon.png",
   "google-maps": "/icons/services/google-reviews-icon.png",
   "google-reviews": "/icons/services/google-reviews-icon.png",
@@ -25,8 +27,28 @@ export const PLATFORM_AVATARS: Record<string, string> = {
 // Reuses an existing asset so rendering never 404s.
 export const DEFAULT_PLATFORM_AVATAR = "/janjez-logo.png";
 
+// Canonical display labels for the seven primary social categories (correct
+// brand casing). Used for grid cards, page headings, breadcrumbs, and SEO.
+export const PLATFORM_LABELS: Record<string, string> = {
+  youtube: "YouTube",
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  tiktok: "TikTok",
+  telegram: "Telegram",
+  x: "X",
+  others: "Others",
+};
+
 export function getPlatformAvatar(platform: string): string {
   if (!platform) return DEFAULT_PLATFORM_AVATAR;
   const key = platform.toLowerCase();
   return PLATFORM_AVATARS[key] ?? DEFAULT_PLATFORM_AVATAR;
+}
+
+export function getPlatformLabel(platform: string): string {
+  if (!platform) return "Service";
+  const key = platform.toLowerCase();
+  if (PLATFORM_LABELS[key]) return PLATFORM_LABELS[key];
+  return key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " ");
 }

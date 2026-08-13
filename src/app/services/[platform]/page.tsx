@@ -5,16 +5,27 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { listJanjezServices } from "@/lib/janjez-services";
-import { JanjezService } from "@/lib/janjez-services";
+import {
+  JanjezService,
+  getPlatformBucket,
+  getSubcategoryKey,
+  slugify,
+  getServiceDetailPath,
+} from "@/lib/janjez-services";
+import { getPlatformAvatar, getPlatformLabel } from "@/lib/platform-avatars";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
 
 export async function generateMetadata({ params }: { params: { platform: string } }): Promise<Metadata> {
-  const platformName = params.platform.charAt(0).toUpperCase() + params.platform.slice(1).replace(/-/g, " ");
+  const platformName = getPlatformLabel(params.platform);
+  const description =
+    params.platform === "others"
+      ? "Social media services across all platforms not listed above. Fast delivery, 30-day refill guarantee."
+      : `Buy ${platformName} followers, likes, views, and more. Fast delivery, 30-day refill guarantee.`;
   return {
     title: `${platformName} Services | Janjez`,
-    description: `Buy ${platformName} followers, likes, views, and more. Fast delivery, 30-day refill guarantee.`,
+    description,
     alternates: { canonical: `https://janjez.social/services/${params.platform}` },
   };
 }
@@ -25,13 +36,13 @@ interface PlatformPageProps {
 
 async function getSubcategories(platform: string): Promise<Array<{ name: string; count: number; slug: string }>> {
   const services = await listJanjezServices(true);
-  const filtered = services.filter((s) => s.category === platform);
+  const filtered = services.filter((s) => getPlatformBucket(s.category) === platform);
   const subMap = new Map<string, number>();
   for (const svc of filtered) {
-    const key = svc.subcategory || "General";
+    const key = getSubcategoryKey(svc, platform);
     subMap.set(key, (subMap.get(key) || 0) + 1);
   }
-  const result = Array.from(subMap.entries()).map(([name, count]) => ({ name, count, slug: name.toLowerCase().replace(/\s+/g, "-") }));
+  const result = Array.from(subMap.entries()).map(([name, count]) => ({ name, count, slug: slugify(name) }));
   if (filtered.length > 0 && result.length === 0) {
     result.push({ name: "All Services", count: filtered.length, slug: "all" });
   }
@@ -40,12 +51,9 @@ async function getSubcategories(platform: string): Promise<Array<{ name: string;
 
 async function getSubcategoryServices(platform: string, subcategorySlug?: string): Promise<JanjezService[]> {
   const services = await listJanjezServices(true);
-  const filtered = services.filter((s) => s.category === platform);
+  const filtered = services.filter((s) => getPlatformBucket(s.category) === platform);
   if (!subcategorySlug || subcategorySlug === "all") return filtered;
-  return filtered.filter((s) => {
-    const sub = s.subcategory || "General";
-    return sub.toLowerCase().replace(/\s+/g, "-") === subcategorySlug;
-  });
+  return filtered.filter((s) => slugify(getSubcategoryKey(s, platform)) === subcategorySlug);
 }
 
 export default async function PlatformPage({ params }: PlatformPageProps) {
@@ -68,15 +76,18 @@ export default async function PlatformPage({ params }: PlatformPageProps) {
               <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
                 <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
                 <span>/</span>
-                <span className="text-kenya-green font-medium capitalize">{platform.replace(/-/g, " ")}</span>
+                <span className="text-kenya-green font-medium capitalize">{getPlatformLabel(platform)}</span>
               </nav>
-              <div className="mb-8">
-                <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2 capitalize">{platform.replace(/-/g, " ")}</h1>
-                {hasSubcategories ? (
-                  <p className="text-kenya-white/60">{subcategories.length} categor{subcategories.length === 1 ? "y" : "ies"} available</p>
-                ) : (
-                  <p className="text-kenya-white/60">No services found for this platform.</p>
-                )}
+              <div className="mb-8 flex items-center gap-4">
+                <img src={getPlatformAvatar(platform)} alt={`${getPlatformLabel(platform)} logo`} className="w-12 h-12 object-contain" />
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white capitalize">{getPlatformLabel(platform)}</h1>
+                  {hasSubcategories ? (
+                    <p className="text-kenya-white/60">{subcategories.length} categor{subcategories.length === 1 ? "y" : "ies"} available</p>
+                  ) : (
+                    <p className="text-kenya-white/60">No services found for this platform.</p>
+                  )}
+                </div>
               </div>
 
               {!hasSubcategories ? (
@@ -105,7 +116,7 @@ export default async function PlatformPage({ params }: PlatformPageProps) {
                   {services.map((svc) => (
                     <Link
                       key={svc.id}
-                      href={`/services/${platform}/${subcategories[0]?.slug || "all"}/${svc.slug}`}
+                      href={getServiceDetailPath(svc)}
                       className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
                     >
                       <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">

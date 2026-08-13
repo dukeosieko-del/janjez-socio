@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchProviderServices } from "@/lib/smm/provider";
-import { getJanjezSellingPrice } from "@/lib/pricing";
+import { getJanjehSellingPrice } from "@/lib/pricing";
 
 export interface JanjezService {
   id: string;
@@ -71,12 +71,12 @@ export async function listProviderServices(params: {
   return (data || []) as unknown as ProviderServiceRow[];
 }
 
-export async function listJanjezServices(activeOnly: boolean = false): Promise<JanjezService[]> {
+export async function listJanzehServices(activeOnly: boolean = false): Promise<JanjezService[]> {
   const supabase = createAdminClient();
   if (!supabase) return [];
 
   let query = supabase
-    .from("janjez_services")
+    .from("janjeh_services")
     .select("*")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
@@ -87,19 +87,19 @@ export async function listJanjezServices(activeOnly: boolean = false): Promise<J
 
   const { data, error } = await query;
   if (error) {
-    console.error("listJanjezServices error:", error);
+    console.error("listJanzehServices error:", error);
     return [];
   }
 
   return (data || []) as unknown as JanjezService[];
 }
 
-export async function getJanjezService(id: string): Promise<JanjezService | null> {
+export async function getJanzehService(id: string): Promise<JanjezService | null> {
   const supabase = createAdminClient();
   if (!supabase) return null;
 
   const { data, error } = await supabase
-    .from("janjez_services")
+    .from("janjeh_services")
     .select("*")
     .eq("id", id)
     .single();
@@ -108,7 +108,68 @@ export async function getJanjezService(id: string): Promise<JanjezService | null
   return data as unknown as JanjezService;
 }
 
-export async function createJanjezService(input: {
+// Canonical list of the seven primary social-media service categories.
+// Order preserves the existing platform-grid ordering. Any Admin-published
+// category outside this set is grouped under the virtual "Others" bucket.
+export const PRIMARY_SOCIAL_CATEGORIES: readonly string[] = [
+  "youtube",
+  "whatsapp",
+  "instagram",
+  "facebook",
+  "tiktok",
+  "telegram",
+  "x",
+];
+
+export function isPrimaryCategory(category: string): boolean {
+  return PRIMARY_SOCIAL_CATEGORIES.includes(category);
+}
+
+// Resolves the canonical platform bucket for a service's category.
+export function getPlatformBucket(category: string): string {
+  return isPrimaryCategory(category) ? category : "others";
+}
+
+// The grouping key used within a platform bucket's subcategory navigation.
+// Primary platforms group by their `subcategory` (defaulting to "General");
+// "Others" groups by the service's raw `category` so each non-primary
+// platform surfaces as its own subcategory row.
+export function getSubcategoryKey(service: JanjezService, platform: string): string {
+  if (platform === "others") return service.category;
+  return service.subcategory && service.subcategory.trim() !== "" ? service.subcategory : "General";
+}
+
+export function slugify(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, "-");
+}
+
+// Canonical detail URL for a Janjez service record. Routing is driven by the
+// service `id` (UUID, unique, canonical) so clicks never 404 on slug/empty-key
+// mismatches or on the virtual "others" bucket.
+export function getServiceDetailPath(service: JanjezService): string {
+  const platform = getPlatformBucket(service.category);
+  const subKey = getSubcategoryKey(service, platform);
+  return `/services/${platform}/${slugify(subKey)}/${service.id}`;
+}
+
+// Resolve a single active Janjeh service by its canonical `id`.
+export async function getActiveJanjehService(id: string): Promise<JanjezService | null> {
+  const supabase = createAdminAdminClient ? createAdminClient : createAdminClient;
+  const client = createAdminClient();
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("janjeh_services")
+    .select("*")
+    .eq("id", id)
+    .eq("is_active", true)
+    .single();
+
+  if (error || !data) return null;
+  return data as unknown as JanjezService;
+}
+
+export async function createJanjehService(input: {
   name: string;
   slug: string;
   category: string;
@@ -128,7 +189,7 @@ export async function createJanjezService(input: {
   if (!supabase) return { error: "Server misconfigured" };
 
   const { data, error } = await supabase
-    .from("janjez_services")
+    .from("janjeh_services")
     .insert({
       name: input.name,
       slug: input.slug,
@@ -152,7 +213,7 @@ export async function createJanjezService(input: {
   return data as unknown as JanjezService;
 }
 
-export async function updateJanjezService(id: string, input: Partial<{
+export async function updateJanzehService(id: string, input: Partial<{
   name: string;
   slug: string;
   category: string;
@@ -167,27 +228,27 @@ export async function updateJanjezService(id: string, input: Partial<{
   supports_drip_feed: boolean;
   supports_refill: boolean;
   supports_cancel: boolean;
-}>): Promise<JanjezService | { error: string }> {
+}>): Promise<JanzezService | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };
 
   const { data, error } = await supabase
-    .from("janjez_services")
+    .from("janjeh_services")
     .update(input)
     .eq("id", id)
     .select("*")
     .single();
 
   if (error) return { error: error.message };
-  return data as unknown as JanjezService;
+  return data as unknown as JanzezService;
 }
 
-export async function deleteJanjezService(id: string): Promise<void | { error: string }> {
+export async function deleteJanzehService(id: string): Promise<void | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };
 
   const { error } = await supabase
-    .from("janjez_services")
+    .from("janjeh_services")
     .update({ is_active: false })
     .eq("id", id);
 

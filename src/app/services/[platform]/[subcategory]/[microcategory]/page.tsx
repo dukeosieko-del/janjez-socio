@@ -5,8 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { JanjezService } from "@/lib/janjez-services";
+import { getActiveJanjezService, getSubcategoryKey } from "@/lib/janjez-services";
+import { getPlatformAvatar, getPlatformLabel } from "@/lib/platform-avatars";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -17,9 +17,9 @@ interface MicrocategoryPageProps {
 }
 
 export async function generateMetadata({ params }: MicrocategoryPageProps): Promise<Metadata> {
-  const service = await getService(params.platform, params.subcategory, params.microcategory);
+  const service = await getActiveJanjezService(params.microcategory);
   if (!service) return { title: "Service Not Found | Janjez" };
-  const platformName = params.platform.charAt(0).toUpperCase() + params.platform.slice(1).replace(/-/g, " ");
+  const platformName = getPlatformLabel(params.platform);
   return {
     title: `${service.name} ${platformName} | Janjez`,
     description: service.description || `Buy ${service.name} for ${platformName}. Fast delivery with 30-day refill guarantee on Janjez.`,
@@ -27,30 +27,15 @@ export async function generateMetadata({ params }: MicrocategoryPageProps): Prom
   };
 }
 
-async function getService(platform: string, subcategorySlug: string, serviceSlug: string): Promise<JanjezService | null> {
-  const supabase = createAdminClient();
-  if (!supabase) return null;
-
-  const { data, error } = await supabase
-    .from("janjez_services")
-    .select("*")
-    .eq("category", platform)
-    .eq("slug", serviceSlug)
-    .eq("is_active", true)
-    .single();
-
-  if (error || !data) return null;
-  return data as unknown as JanjezService;
-}
-
 export default async function MicrocategoryPage({ params }: MicrocategoryPageProps) {
-  const service = await getService(params.platform, params.subcategory, params.microcategory);
+  const service = await getActiveJanjezService(params.microcategory);
 
   if (!service) {
     notFound();
   }
 
-  const subcategoryName = service.subcategory || "General";
+  const subcategoryName = getSubcategoryKey(service, params.platform);
+  const platformLabel = getPlatformLabel(params.platform);
 
   return (
     <div className="min-h-screen flex bg-kenya-black">
@@ -64,7 +49,7 @@ export default async function MicrocategoryPage({ params }: MicrocategoryPagePro
               <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
                 <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
                 <span>/</span>
-                <Link href={`/services/${params.platform}`} className="hover:text-kenya-green transition-colors capitalize">{params.platform.replace(/-/g, " ")}</Link>
+                <Link href={`/services/${params.platform}`} className="hover:text-kenya-green transition-colors capitalize">{platformLabel}</Link>
                 <span>/</span>
                 <Link href={`/services/${params.platform}/${params.subcategory}`} className="hover:text-kenya-green transition-colors">{subcategoryName}</Link>
                 <span>/</span>
@@ -78,7 +63,7 @@ export default async function MicrocategoryPage({ params }: MicrocategoryPagePro
               <FulfillmentForm
                 platformId={service.category}
                 platformName={service.category}
-                platformIcon={`/icons/services/${service.category}.svg`}
+                platformIcon={getPlatformAvatar(service.category)}
                 subcategoryName={subcategoryName}
                 service={service}
               />
