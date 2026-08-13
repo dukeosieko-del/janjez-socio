@@ -9,13 +9,15 @@ interface MpesaModalProps {
   isOpen: boolean;
   onClose: () => void;
   requiredAmount?: number;
+  serviceName?: string;
+  quantity?: number;
   onSuccess?: () => void;
 }
 
 const POLL_INTERVAL = 5000;
 const POLL_TIMEOUT = 120000;
 
-export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess }: MpesaModalProps) {
+export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceName, quantity, onSuccess }: MpesaModalProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"input" | "processing" | "success">("input");
@@ -24,6 +26,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
   const { session, walletBalance, refreshProfile } = useAuth();
   const minTopUp = 50;
+  const isCheckout = requiredAmount != null && requiredAmount > 0;
   const suggestedAmount = requiredAmount
     ? Math.max(minTopUp, Math.ceil((requiredAmount - Number(walletBalance || 0)) / 10) * 10)
     : minTopUp;
@@ -39,13 +42,14 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
   };
 
   const handleTopUp = async () => {
-    if (!phoneNumber || !amount) return;
+    if (!phoneNumber || (!isCheckout && !amount)) return;
     setError(null);
     setStep("processing");
 
-    const numAmount = Number(amount);
+    const numAmount = isCheckout ? requiredAmount : Number(amount);
+    if (!isCheckout && !amount) return;
     if (numAmount < minTopUp) {
-      setError(`Minimum top-up is KES ${minTopUp}`);
+      setError(isCheckout ? `Order total is below the KES ${minTopUp} minimum payment` : `Minimum top-up is KES ${minTopUp}`);
       setStep("input");
       return;
     }
@@ -163,36 +167,60 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                  Amount (KES)
-                </label>
-                <input
-                  type="number"
-                  placeholder={`Enter amount (minimum KES ${minTopUp})`}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min={minTopUp}
-                  defaultValue={suggestedAmount > 0 ? suggestedAmount : ""}
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
-                />
-              </div>
+              {isCheckout ? (
+                <div>
+                  <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                    Total Amount (KES)
+                  </label>
+                  <div className="flex items-center justify-between bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3">
+                    <span className="text-kenya-white/50 text-sm">Payable amount</span>
+                    <span className="text-kenya-white font-bold text-xl">KES {requiredAmount.toFixed(2)}</span>
+                  </div>
+                  {(serviceName || quantity != null) && (
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                      {serviceName && (
+                        <div className="flex justify-between"><span className="text-kenya-white/50">Service</span><span className="text-kenya-white">{serviceName}</span></div>
+                      )}
+                      {quantity != null && (
+                        <div className="flex justify-between"><span className="text-kenya-white/50">Quantity</span><span className="text-kenya-white">{quantity.toLocaleString()}</span></div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                      Amount (KES)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder={`Enter amount (minimum KES ${minTopUp})`}
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      min={minTopUp}
+                      defaultValue={suggestedAmount > 0 ? suggestedAmount : ""}
+                      className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-4 gap-2">
-                {[suggestedAmount, 100, 500, 1000].filter((v, i, a) => a.indexOf(v) === i).map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => setAmount(preset.toString())}
-                    className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                      amount === preset.toString()
-                        ? "bg-kenya-green text-kenya-black"
-                        : "bg-kenya-white/5 text-kenya-white/70 hover:bg-kenya-white/10"
-                    }`}
-                  >
-                    KES {preset.toLocaleString()}
-                  </button>
-                ))}
-              </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[suggestedAmount, 100, 500, 1000].filter((v, i, a) => a.indexOf(v) === i).map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => setAmount(preset.toString())}
+                        className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                          amount === preset.toString()
+                            ? "bg-kenya-green text-kenya-black"
+                            : "bg-kenya-white/5 text-kenya-white/70 hover:bg-kenya-white/10"
+                        }`}
+                      >
+                        KES {preset.toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
                 <div className="flex items-start gap-3">
@@ -200,9 +228,9 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1 1z" clipRule="evenodd" />
                   </svg>
                   <p className="text-xs text-green-400 leading-relaxed">
-                    You will receive an M-Pesa STK push on your phone. Enter your
-                    M-Pesa PIN to complete the payment. Funds will be added to your
-                    wallet instantly.
+                    {isCheckout
+                      ? `A fixed M-Pesa STK push for KES ${requiredAmount.toFixed(2)} will be sent to your phone. Enter your M-Pesa PIN to complete the payment. Your order will be processed once payment is confirmed.`
+                      : "You will receive an M-Pesa STK push on your phone. Enter your M-Pesa PIN to complete the payment. Funds will be added to your wallet instantly."}
                   </p>
                 </div>
               </div>
@@ -219,9 +247,9 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
               </div>
 
               <button
-                onClick={handleTopUp}
-                disabled={!phoneNumber || !amount || Number(amount) < minTopUp}
-                className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 flex items-center justify-center gap-2"
+                 onClick={handleTopUp}
+                 disabled={!phoneNumber || (!isCheckout && (!amount || Number(amount) < minTopUp))}
+                 className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 flex items-center justify-center gap-2"
               >
                 <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />
                 Pay with M-Pesa
@@ -252,7 +280,9 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
             </div>
             <h3 className="text-xl font-bold text-kenya-white mb-2">Payment Successful!</h3>
             <p className="text-kenya-white/60 text-sm mb-2">
-              KES {Number(amount).toLocaleString()} has been added to your wallet.
+              {isCheckout
+                ? `Payment of KES ${requiredAmount.toFixed(2)} received. Your order is being processed.`
+                : `KES ${Number(amount).toLocaleString()} has been added to your wallet.`}
             </p>
             <p className="text-kenya-green text-sm font-medium mb-6">
               Transaction ID: {txId}

@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import MpesaModal from "@/components/MpesaModal";
 import { submitOrder, submitAnonymousOrder } from "@/lib/order-log";
-import { JanjezService } from "@/lib/janjez-services";
+import { JanjezService } from "@/lib/janzeh-services"
 import { getDripFeedLimitsSync, type DripFeedLimits } from "@/lib/drip-feed-settings";
 import { calculateOrderCost } from "@/lib/pricing";
 
@@ -417,6 +417,8 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         isOpen={mpesaOpen}
         onClose={() => setMpesaOpen(false)}
         requiredAmount={requiredAmount}
+        serviceName={displayName}
+        quantity={quantityNum || undefined}
         onSuccess={() => {
           setMpesaOpen(false);
           handlePlaceOrder();

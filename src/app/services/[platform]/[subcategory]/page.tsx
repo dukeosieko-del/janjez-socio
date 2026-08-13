@@ -5,14 +5,14 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { listJanjezServices } from "@/lib/janjez-services";
+import { listJanjezServices } from "@/lib/janzeh-services"
 import {
   JanjezService,
   getPlatformBucket,
   getSubcategoryKey,
   slugify,
   getServiceDetailPath,
-} from "@/lib/janjez-services";
+} from "@/lib/janzeh-services"
 import { getPlatformAvatar, getPlatformLabel } from "@/lib/platform-avatars";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";

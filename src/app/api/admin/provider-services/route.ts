@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { listProviderServices } from "@/lib/janjez-services";
+import { listProviderServices } from "@/lib/janzeh-services"
 import { requireAdmin } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
 

@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { listJanjezServices, getJanjezService, createJanjezService, updateJanjezService, deleteJanjezService } from "@/lib/janjez-services";
+import { listJanjezServices, getJanjezService, createJanjezService, updateJanjezService, deleteJanjezService } from "@/lib/janzeh-services"
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";

@@ -5,7 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getActiveJanjezService, getSubcategoryKey } from "@/lib/janjez-services";
+import { getActiveJanjezService, getSubcategoryKey } from "@/lib/janzeh-services"
 import { getPlatformAvatar, getPlatformLabel } from "@/lib/platform-avatars";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";

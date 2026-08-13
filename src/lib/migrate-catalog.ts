@@ -13,7 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ORDER_SERVICES } from "@/lib/data";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { slugify } from "@/lib/service-routes";
-import { JanjezService } from "@/lib/janjez-services";
+import { JanjezService } from "@/lib/janzeh-services"
 
 interface ProviderServiceRow {
   id: string;

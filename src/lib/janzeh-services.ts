@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchProviderServices } from "@/lib/smm/provider";
-import { getJanjehSellingPrice } from "@/lib/pricing";
 
 export interface JanjezService {
   id: string;
@@ -71,7 +70,7 @@ export async function listProviderServices(params: {
   return (data || []) as unknown as ProviderServiceRow[];
 }
 
-export async function listJanzehServices(activeOnly: boolean = false): Promise<JanjezService[]> {
+export async function listJanjezServices(activeOnly: boolean = false): Promise<JanjezService[]> {
   const supabase = createAdminClient();
   if (!supabase) return [];
 
@@ -87,14 +86,14 @@ export async function listJanzehServices(activeOnly: boolean = false): Promise<J
 
   const { data, error } = await query;
   if (error) {
-    console.error("listJanzehServices error:", error);
+    console.error("listJanjezServices error:", error);
     return [];
   }
 
   return (data || []) as unknown as JanjezService[];
 }
 
-export async function getJanzehService(id: string): Promise<JanjezService | null> {
+export async function getJanjezService(id: string): Promise<JanjezService | null> {
   const supabase = createAdminClient();
   if (!supabase) return null;
 
@@ -143,7 +142,7 @@ export function slugify(text: string): string {
   return text.toLowerCase().replace(/\s+/g, "-");
 }
 
-// Canonical detail URL for a Janjez service record. Routing is driven by the
+// Canonical detail URL for a Janjeh service record. Routing is driven by the
 // service `id` (UUID, unique, canonical) so clicks never 404 on slug/empty-key
 // mismatches or on the virtual "others" bucket.
 export function getServiceDetailPath(service: JanjezService): string {
@@ -153,12 +152,11 @@ export function getServiceDetailPath(service: JanjezService): string {
 }
 
 // Resolve a single active Janjeh service by its canonical `id`.
-export async function getActiveJanjehService(id: string): Promise<JanjezService | null> {
-  const supabase = createAdminAdminClient ? createAdminClient : createAdminClient;
-  const client = createAdminClient();
-  if (!client) return null;
+export async function getActiveJanjezService(id: string): Promise<JanjezService | null> {
+  const supabase = createAdminClient();
+  if (!supabase) return null;
 
-  const { data, error } = await client
+  const { data, error } = await supabase
     .from("janjeh_services")
     .select("*")
     .eq("id", id)
@@ -169,7 +167,7 @@ export async function getActiveJanjehService(id: string): Promise<JanjezService 
   return data as unknown as JanjezService;
 }
 
-export async function createJanjehService(input: {
+export async function createJanjezService(input: {
   name: string;
   slug: string;
   category: string;
@@ -213,7 +211,7 @@ export async function createJanjehService(input: {
   return data as unknown as JanjezService;
 }
 
-export async function updateJanzehService(id: string, input: Partial<{
+export async function updateJanjezService(id: string, input: Partial<{
   name: string;
   slug: string;
   category: string;
@@ -228,7 +226,7 @@ export async function updateJanzehService(id: string, input: Partial<{
   supports_drip_feed: boolean;
   supports_refill: boolean;
   supports_cancel: boolean;
-}>): Promise<JanzezService | { error: string }> {
+}>): Promise<JanjezService | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };
 
@@ -240,10 +238,10 @@ export async function updateJanzehService(id: string, input: Partial<{
     .single();
 
   if (error) return { error: error.message };
-  return data as unknown as JanzezService;
+  return data as unknown as JanjezService;
 }
 
-export async function deleteJanzehService(id: string): Promise<void | { error: string }> {
+export async function deleteJanjezService(id: string): Promise<void | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };
 

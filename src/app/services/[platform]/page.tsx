@@ -4,14 +4,14 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
-import { listJanjezServices } from "@/lib/janjez-services";
+import { listJanjezServices } from "@/lib/janzeh-services"
 import {
   JanjezService,
   getPlatformBucket,
   getSubcategoryKey,
   slugify,
   getServiceDetailPath,
-} from "@/lib/janjez-services";
+} from "@/lib/janzeh-services"
 import { getPlatformAvatar, getPlatformLabel } from "@/lib/platform-avatars";
 import type { Metadata } from "next";
 
