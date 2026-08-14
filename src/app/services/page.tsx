@@ -4,22 +4,23 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo } from "react";
-import { SERVICE_CATALOG, type ServiceCatalogItem } from "@/lib/service-catalog";
-import { getPlatformSlug } from "@/lib/service-routes";
+import { TAXONOMY_PLATFORMS } from "@/lib/taxonomy";
+import { getCategoryIcon } from "@/lib/category-icons";
 import ProtectedRoute from "@/lib/auth/protected-route";
 
 export default function ServicesPage() {
   const platforms = useMemo(() => {
-    return SERVICE_CATALOG.map((item) => ({
+    return TAXONOMY_PLATFORMS.map((item) => ({
       id: item.id,
       name: item.name,
-      icon: item.icon,
+      icon: getCategoryIcon(item.id),
       category: item.id,
       description: `${item.subcategories.length} subcategories`,
-      href: `/services/${getPlatformSlug(item.id)}`,
+      href: `/services/${item.id}`,
       status: "active" as const,
-      modalSize: item.modalSize,
+      modalSize: item.id === "youtube" || item.id === "whatsapp" || item.id === "telegram" ? "large" : "small",
     }));
   }, []);
 
@@ -48,7 +49,7 @@ export default function ServicesPage() {
                     className="flex flex-col items-center gap-3 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-5 text-center hover:-translate-y-1 hover:border-kenya-white/20 transition-all"
                   >
                     <div className="w-12 h-12 flex items-center justify-center">
-                      <img src={platform.icon} alt={platform.name} className="w-10 h-10 object-contain" />
+                      <Image src={platform.icon} alt={platform.name} width={40} height={40} className="w-10 h-10 object-contain" />
                     </div>
                     <div>
                       <h3 className="text-kenya-white font-semibold text-base">{platform.name}</h3>

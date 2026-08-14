@@ -5,8 +5,8 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { findCatalogItemBySlug, findSubcategoryBySlug, slugify } from "@/lib/service-routes";
-import type { ServiceCatalogItem, Subcategory } from "@/lib/service-catalog";
+import { getTaxonomyPlatform, getTaxonomySubcategory } from "@/lib/taxonomy";
+import { getCategoryIcon } from "@/lib/category-icons";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 
 interface SubcategoryPageProps {
@@ -14,10 +14,10 @@ interface SubcategoryPageProps {
 }
 
 export default function SubcategoryPage({ params }: SubcategoryPageProps) {
-  const catalogItem = findCatalogItemBySlug(params.platform);
+  const catalogItem = getTaxonomyPlatform(params.platform);
   if (!catalogItem) notFound();
 
-  const subcategory = findSubcategoryBySlug(catalogItem, params.subcategory);
+  const subcategory = getTaxonomySubcategory(catalogItem.id, params.subcategory.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()));
   if (!subcategory) notFound();
 
   const singleDeliverable = subcategory.deliverables.length === 1 ? subcategory.deliverables[0] : null;
@@ -41,18 +41,13 @@ export default function SubcategoryPage({ params }: SubcategoryPageProps) {
             <div className="mb-8">
               <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">{subcategory.name}</h1>
               <p className="text-kenya-white/60">{subcategory.deliverables.length} deliverable{subcategory.deliverables.length !== 1 ? "s" : ""} available</p>
-              {subcategory.note && (
-                <div className="mt-3 bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3">
-                  <p className="text-kenya-white/50 text-xs italic">{subcategory.note}</p>
-                </div>
-              )}
             </div>
 
             {singleDeliverable ? (
               <FulfillmentForm
                 platformId={catalogItem.id}
                 platformName={catalogItem.name}
-                platformIcon={catalogItem.icon}
+                platformIcon={getCategoryIcon(catalogItem.id)}
                 subcategoryName={subcategory.name}
                 deliverable={singleDeliverable}
               />
@@ -61,7 +56,7 @@ export default function SubcategoryPage({ params }: SubcategoryPageProps) {
                 {subcategory.deliverables.map((del, idx) => (
                   <Link
                     key={del.name + idx}
-                    href={`/services/${params.platform}/${params.subcategory}/microcategory-${slugify(del.name)}`}
+                    href={`/services/${params.platform}/${params.subcategory}/microcategory-${del.name.toLowerCase().replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "")}`}
                     className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
                   >
                     <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">
@@ -69,7 +64,7 @@ export default function SubcategoryPage({ params }: SubcategoryPageProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-kenya-white font-semibold text-base truncate">{del.name}</p>
-                      <p className="text-kenya-green text-sm">{del.price}</p>
+                      <p className="text-kenya-white/50 text-xs">Deliverable</p>
                     </div>
                     <span className="text-kenya-white/40 text-xs">→</span>
                   </Link>

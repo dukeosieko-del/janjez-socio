@@ -142,6 +142,22 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
         <div>
           <label className="block text-sm font-medium text-kenya-white/70 mb-2">🔢 Quantity</label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {[100, 500, 1000, 2500, 5000].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setQuantity(String(preset))}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                  quantityNum === preset
+                    ? "bg-kenya-green text-kenya-black border-kenya-green"
+                    : "bg-kenya-white/5 text-kenya-white border-kenya-white/10 hover:border-kenya-white/20"
+                }`}
+              >
+                {preset.toLocaleString()}
+              </button>
+            ))}
+          </div>
           <input
             type="number"
             required
@@ -149,7 +165,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
             max={qtyMax}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            placeholder={`Enter quantity (${qtyMin.toLocaleString()} - ${qtyMax.toLocaleString()})`}
+            placeholder={`Custom quantity (${qtyMin.toLocaleString()} - ${qtyMax.toLocaleString()})`}
             className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:ring-1 transition-all ${
               quantityError ? "border-kenya-red focus:border-kenya-red focus:ring-kenya-red" : "border-kenya-white/20 focus:border-kenya-green focus:ring-kenya-green"
             }`}

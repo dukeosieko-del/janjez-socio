@@ -64,7 +64,7 @@ export default function ServiceCatalog() {
 
         <div className="mt-16 text-center">
           <Link
-            href="/order"
+            href="/full-catalogue"
             className="inline-flex items-center gap-3 bg-kenya-green text-kenya-black font-bold text-lg px-10 py-4 rounded-xl hover:bg-kenya-green/90 transition-all hover:scale-105 shadow-lg shadow-kenya-green/20"
           >
             🛒 View Full Catalog

@@ -7,15 +7,16 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useMemo } from "react";
-import { SERVICE_CATALOG, type ServiceCatalogItem } from "@/lib/service-catalog";
-import { getPlatformSlug, getSubcategorySlug, findCatalogItemBySlug } from "@/lib/service-routes";
+import { TAXONOMY_PLATFORMS, getTaxonomyPlatform } from "@/lib/taxonomy";
+import { getCategoryIcon } from "@/lib/category-icons";
+import { getPlatformSlug, slugify } from "@/lib/service-routes";
 
 interface PlatformPageProps {
   params: { platform: string };
 }
 
 export default function PlatformPage({ params }: PlatformPageProps) {
-  const catalogItem = useMemo(() => findCatalogItemBySlug(params.platform), [params.platform]);
+  const catalogItem = useMemo(() => getTaxonomyPlatform(params.platform), [params.platform]);
 
   if (!catalogItem) {
     return (
@@ -63,7 +64,7 @@ export default function PlatformPage({ params }: PlatformPageProps) {
 
             <div className="flex flex-col gap-4">
               {catalogItem.subcategories.map((sub, idx) => {
-                const subSlug = getSubcategorySlug(catalogItem.id, sub.name);
+                const subSlug = `sub-${slugify(sub.name)}`;
                 const href = `/services/${params.platform}/${subSlug}`;
 
                 return (

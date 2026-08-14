@@ -1,4 +1,4 @@
-import { SERVICE_CATALOG, type ServiceCatalogItem, type Subcategory } from "./service-catalog";
+import { getTaxonomyPlatform } from "@/lib/taxonomy";
 
 export interface DeliverableLike {
   name: string;
@@ -23,7 +23,7 @@ export function slugify(text: string) {
 }
 
 export function getSubcategorySlug(platformId: string, subcategoryName: string) {
-  const catalogItem = SERVICE_CATALOG.find((c) => c.id === platformId);
+  const catalogItem = getTaxonomyPlatform(platformId);
   const sub = catalogItem?.subcategories.find((s) => s.name === subcategoryName);
   if (sub && sub.deliverables.length === 1) {
     const deliverable = sub.deliverables[0];
@@ -32,12 +32,13 @@ export function getSubcategorySlug(platformId: string, subcategoryName: string) 
   return `sub-${slugify(subcategoryName)}`;
 }
 
-export function findCatalogItemBySlug(platformSlug: string): ServiceCatalogItem | undefined {
-  if (platformSlug === "x") return SERVICE_CATALOG.find((c) => c.id === "x");
-  return SERVICE_CATALOG.find((c) => c.id === platformSlug || getPlatformSlug(c.id) === platformSlug);
+export function findCatalogItemBySlug(platformSlug: string) {
+  if (platformSlug === "x") return getTaxonomyPlatform("x");
+  return getTaxonomyPlatform(platformSlug);
 }
 
-export function findSubcategoryBySlug(catalog: ServiceCatalogItem, subSlug: string): Subcategory | undefined {
+export function findSubcategoryBySlug(catalog: ReturnType<typeof getTaxonomyPlatform>, subSlug: string) {
+  if (!catalog) return undefined;
   return catalog.subcategories.find((sub) => {
     const candidate = getSubcategorySlug(catalog.id, sub.name);
     return candidate === subSlug;

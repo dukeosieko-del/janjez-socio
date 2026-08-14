@@ -7,6 +7,7 @@ import {
   createProviderCancel,
 } from "./provider";
 import type { ProviderService } from "./provider";
+import { normalizeProviderServices } from "./provider-normalizer";
 
 export interface ServiceMatch {
   providerService: ProviderService;
@@ -21,7 +22,9 @@ export async function syncProviderCatalog() {
   }
 
   const services = await fetchProviderServices();
-  const { error } = await supabase.from("provider_services").upsert(
+  const normalized = normalizeProviderServices(services);
+
+  const { error: providerError } = await supabase.from("provider_services").upsert(
     services.map((s) => ({
       id: String(s.service),
       name: s.name,
@@ -38,11 +41,44 @@ export async function syncProviderCatalog() {
     { onConflict: "id" }
   );
 
-  if (error) {
-    throw new Error(error.message);
+  if (providerError) {
+    throw new Error(providerError.message);
   }
 
-  return { count: services.length };
+  const { error: janjezError } = await supabase.from("janjez_services").upsert(
+    normalized.map((n) => ({
+      platform_id: n.platform_id,
+      platform_name: n.platform_name,
+      subcategory: n.subcategory,
+      deliverable_name: n.deliverable_name,
+      provider_service_id: n.provider_service_id,
+      selling_price_ksh: 0,
+      provider_rate: parseFloat(n.provider_rate),
+      min_quantity: n.min_quantity,
+      max_quantity: n.max_quantity,
+      display_order: 0,
+      published: false,
+      supports_drip_feed: false,
+      supports_refill: n.refill,
+      supports_cancel: n.cancel,
+      raw: {
+        provider_name: n.raw_name,
+        provider_category: n.raw_category,
+        provider_rate: n.provider_rate,
+        provider_min: n.min_quantity,
+        provider_max: n.max_quantity,
+      },
+    })),
+    {
+      onConflict: "platform_id, subcategory, deliverable_name",
+    }
+  );
+
+  if (janjezError) {
+    throw new Error(janjezError.message);
+  }
+
+  return { count: services.length, janjezCount: normalized.length };
 }
 
 export async function findCheapestProviderService(category: string, name: string): Promise<ProviderService | null> {
