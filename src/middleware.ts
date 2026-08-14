@@ -24,7 +24,7 @@ export async function middleware(request: Request) {
 
   const isAuthPage = pathname.startsWith("/auth/");
   const isAdminPage = pathname.startsWith("/admin");
-  const isProtectedPage = isAuthPage || isAdminPage || pathname.startsWith("/dashboard") || pathname.startsWith("/services");
+  const isProtectedPage = isAdminPage || pathname.startsWith("/dashboard") || pathname.startsWith("/services");
 
   if (isProtectedPage && !user) {
     const response = NextResponse.redirect(new URL("/auth/sign-in", request.url));
