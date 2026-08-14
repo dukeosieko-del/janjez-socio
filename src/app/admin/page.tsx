@@ -10,8 +10,9 @@ import {
   LogsTab,
   LedgerTab,
 } from "@/components/admin/AdminTabs";
+import ServiceManager from "@/components/admin/ServiceManager";
 
-type Tab = "overview" | "users" | "orders" | "logs" | "ledger";
+type Tab = "overview" | "users" | "orders" | "logs" | "ledger" | "services";
 
 export default function AdminDashboardPage() {
   const { user, profile, loading } = useAuth();
@@ -50,6 +51,7 @@ export default function AdminDashboardPage() {
 
   const tabItems: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
+    { key: "services", label: "Services" },
     { key: "users", label: "Users" },
     { key: "orders", label: "Orders" },
     { key: "logs", label: "Activity Logs" },
@@ -83,6 +85,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {tab === "overview" && <OverviewTab />}
+            {tab === "services" && <ServiceManager />}
             {tab === "users" && <UsersTab />}
             {tab === "orders" && <OrdersTab />}
             {tab === "logs" && <LogsTab />}
