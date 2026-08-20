@@ -11,17 +11,18 @@ import type { Metadata } from "next";
 
 export const revalidate = 0;
 
-export async function generateMetadata({ params }: { params: { platform: string } }): Promise<Metadata> {
-  const platformName = params.platform.charAt(0).toUpperCase() + params.platform.slice(1).replace(/-/g, " ");
+export async function generateMetadata({ params }: { params: Promise<{ platform: string }> }): Promise<Metadata> {
+  const { platform } = await params;
+  const platformName = platform.charAt(0).toUpperCase() + platform.slice(1).replace(/-/g, " ");
   return {
     title: `${platformName} Services | Janjez`,
     description: `Buy ${platformName} followers, likes, views, and more. Fast delivery, 30-day refill guarantee.`,
-    alternates: { canonical: `https://janjez.social/services/${params.platform}` },
+    alternates: { canonical: `https://janjez.social/services/${platform}` },
   };
 }
 
 interface PlatformPageProps {
-  params: { platform: string };
+  params: Promise<{ platform: string }>;
 }
 
 async function getSubcategories(platform: string): Promise<Array<{ name: string; count: number; slug: string }>> {
@@ -50,7 +51,7 @@ async function getSubcategoryServices(platform: string, subcategorySlug?: string
 }
 
 export default async function PlatformPage({ params }: PlatformPageProps) {
-  const platform = params.platform;
+  const { platform } = await params;
   const subcategories = await getSubcategories(platform);
   const hasSubcategories = subcategories.length > 0;
   const showSubcategoryList = hasSubcategories && subcategories.length > 1;
