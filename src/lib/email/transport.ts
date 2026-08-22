@@ -8,7 +8,8 @@ export interface MailTransportOptions {
 let client: SendMailClient | null = null;
 
 export function getMailClient(options: MailTransportOptions = {}) {
-  const url = options.url || process.env.ZEPTOMAIL_URL || "api.zeptomail.com";
+  const rawUrl = options.url || process.env.ZEPTOMAIL_URL || "https://api.zeptomail.com";
+  const url = rawUrl.replace(/\/$/, "") + "/";
   const token = options.token || process.env.ZEPTOMAIL_SENDMAIL_TOKEN;
 
   if (!token) {
