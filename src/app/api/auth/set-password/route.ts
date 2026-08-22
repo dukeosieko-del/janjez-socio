@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/server/rate-limiter";
+import { consumeResetToken, setPassword } from "@/lib/auth/reset-helpers";
 
 export const runtime = "nodejs";
 
@@ -25,32 +26,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
     }
 
-    const now = new Date().toISOString();
-
-    const { data: tokenData, error: tokenError } = await supabase
-      .from("password_reset_tokens")
-      .select("user_id, used, expires_at")
-      .eq("token", token)
-      .eq("used", false)
-      .gt("expires_at", now)
-      .single();
-
-    if (tokenError || !tokenData) {
+    const consumed = await consumeResetToken(token);
+    if (!consumed) {
       return NextResponse.json({ error: "Invalid or expired reset token" }, { status: 400 });
     }
 
-    const { error: updateError } = await supabase.auth.admin.updateUserById(tokenData.user_id, {
-      password,
-    });
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    const success = await setPassword(consumed.user_id, password);
+    if (!success) {
+      return NextResponse.json({ error: "Failed to update password" }, { status: 500 });
     }
-
-    await supabase
-      .from("password_reset_tokens")
-      .update({ used: true })
-      .eq("token", token);
 
     return NextResponse.json({ ok: true, message: "Password updated successfully" });
   } catch {

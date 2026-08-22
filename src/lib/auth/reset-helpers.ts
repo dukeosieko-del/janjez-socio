@@ -4,18 +4,17 @@ export async function consumeResetToken(token: string): Promise<{ user_id: strin
   const supabase = createAdminClient();
   if (!supabase) return null;
 
-  const now = new Date().toISOString();
-
-  const { data, error } = await supabase
+  const result = await supabase
     .from("password_reset_tokens")
-    .select("user_id, used, expires_at")
+    .update({ used: true })
     .eq("token", token)
     .eq("used", false)
-    .gt("expires_at", now)
+    .gt("expires_at", new Date().toISOString())
+    .select("user_id")
     .single();
 
-  if (error || !data) return null;
-  return { user_id: data.user_id };
+  if (result.error || !result.data) return null;
+  return { user_id: result.data.user_id as string };
 }
 
 export async function markTokenUsed(token: string): Promise<boolean> {
