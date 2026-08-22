@@ -14,17 +14,18 @@ import type { Metadata } from "next";
 export const revalidate = 0;
 
 interface MicrocategoryPageProps {
-  params: { platform: string; subcategory: string; microcategory: string };
+  params: Promise<{ platform: string; subcategory: string; microcategory: string }>;
 }
 
 export async function generateMetadata({ params }: MicrocategoryPageProps): Promise<Metadata> {
-  const service = await getService(params.platform, params.subcategory, params.microcategory);
+  const { platform, subcategory, microcategory } = await params;
+  const service = await getService(platform, subcategory, microcategory);
   if (!service) return { title: "Service Not Found | Janjez" };
-  const platformName = params.platform.charAt(0).toUpperCase() + params.platform.slice(1).replace(/-/g, " ");
+  const platformName = platform.charAt(0).toUpperCase() + platform.slice(1).replace(/-/g, " ");
   return {
     title: `${service.name} ${platformName} | Janjez`,
     description: service.description || `Buy ${service.name} for ${platformName}. Fast delivery with 30-day refill guarantee on Janjez.`,
-    alternates: { canonical: `https://janjez.social/services/${params.platform}/${params.subcategory}/${params.microcategory}` },
+    alternates: { canonical: `https://janjez.social/services/${platform}/${subcategory}/${microcategory}` },
   };
 }
 
@@ -45,7 +46,8 @@ async function getService(platform: string, subcategorySlug: string, serviceSlug
 }
 
 export default async function MicrocategoryPage({ params }: MicrocategoryPageProps) {
-  const service = await getService(params.platform, params.subcategory, params.microcategory);
+  const { platform, subcategory, microcategory } = await params;
+  const service = await getService(platform, subcategory, microcategory);
 
   if (!service) {
     notFound();
@@ -65,9 +67,9 @@ export default async function MicrocategoryPage({ params }: MicrocategoryPagePro
               <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
                 <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
                 <span>/</span>
-                <Link href={`/services/${params.platform}`} className="hover:text-kenya-green transition-colors capitalize">{params.platform.replace(/-/g, " ")}</Link>
+                <Link href={`/services/${platform}`} className="hover:text-kenya-green transition-colors capitalize">{platform.replace(/-/g, " ")}</Link>
                 <span>/</span>
-                <Link href={`/services/${params.platform}/${params.subcategory}`} className="hover:text-kenya-green transition-colors">{subcategoryName}</Link>
+                <Link href={`/services/${platform}/${subcategory}`} className="hover:text-kenya-green transition-colors">{subcategoryName}</Link>
                 <span>/</span>
                 <span className="text-kenya-green font-medium">{service.name}</span>
               </nav>

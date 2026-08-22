@@ -14,17 +14,18 @@ import type { Metadata } from "next";
 export const revalidate = 0;
 
 interface SubcategoryPageProps {
-  params: { platform: string; subcategory: string };
+  params: Promise<{ platform: string; subcategory: string }>;
 }
 
 export async function generateMetadata({ params }: SubcategoryPageProps): Promise<Metadata> {
-  const { services, subcategoryName } = await getSubcategoryServices(params.platform, params.subcategory);
-  const platformName = params.platform.charAt(0).toUpperCase() + params.platform.slice(1).replace(/-/g, " ");
+  const { platform, subcategory } = await params;
+  const { services, subcategoryName } = await getSubcategoryServices(platform, subcategory);
+  const platformName = platform.charAt(0).toUpperCase() + platform.slice(1).replace(/-/g, " ");
   const title = `${subcategoryName} ${platformName} Services | Janjez`;
   return {
     title,
     description: `Buy ${subcategoryName} for ${platformName}. Fast delivery with 30-day refill guarantee on Janjez.`,
-    alternates: { canonical: `https://janjez.social/services/${params.platform}/${params.subcategory}` },
+    alternates: { canonical: `https://janjez.social/services/${platform}/${subcategory}` },
   };
 }
 
@@ -40,7 +41,8 @@ async function getSubcategoryServices(platform: string, subcategorySlug: string)
 }
 
 export default async function SubcategoryPage({ params }: SubcategoryPageProps) {
-  const { services, subcategoryName } = await getSubcategoryServices(params.platform, params.subcategory);
+  const { platform, subcategory } = await params;
+  const { services, subcategoryName } = await getSubcategoryServices(platform, subcategory);
 
   if (services.length === 0) {
     notFound();
@@ -60,7 +62,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
               <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
                 <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
                 <span>/</span>
-                <Link href={`/services/${params.platform}`} className="hover:text-kenya-green transition-colors capitalize">{params.platform.replace(/-/g, " ")}</Link>
+                <Link href={`/services/${platform}`} className="hover:text-kenya-green transition-colors capitalize">{platform.replace(/-/g, " ")}</Link>
                 <span>/</span>
                 <span className="text-kenya-green font-medium">{subcategoryName}</span>
               </nav>
@@ -82,7 +84,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
                   {services.map((svc) => (
                     <Link
                       key={svc.id}
-                      href={`/services/${params.platform}/${params.subcategory}/${svc.slug}`}
+                      href={`/services/${platform}/${subcategory}/${svc.slug}`}
                       className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
                     >
                       <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">
