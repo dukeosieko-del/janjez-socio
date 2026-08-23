@@ -45,7 +45,8 @@ The Cloud Agent repository, Kilo review worktrees, EC2 staging tree, and any pro
 - **Push status:** Pushed to `origin/review/janjez-reconciliation-20260822`
 - **Deployment status:** NOT DEPLOYED — EC2 staging remains at `b4274a8`
 - **Resulting branch:** `review/janjez-reconciliation-20260822`
-- **Resulting HEAD:** `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46`
+- **Resulting HEAD:** `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7`
+- **Ledger commit:** `53b9a7d` — `docs: establish Janjez build state continuity ledger`
 - **Remaining work:**
   - Deploy `413e625` to EC2 staging
   - Verify `/auth/*` pages are publicly accessible
@@ -84,9 +85,10 @@ The Cloud Agent repository, Kilo review worktrees, EC2 staging tree, and any pro
 - **Repository:** `dukeosieko-del/janjez-socio`
 - **Remote:** `dukeosieko-del/janjez-socio.git` (HTTPS with token auth)
 - **Branch:** `review/janjez-reconciliation-20260822`
-- **HEAD:** `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46`
-- **Parent:** `b4274a8b60cd93be21802b638a13381916491cad`
-- **Commit:** `fix: remove isAuthPage from protected routes`
+- **HEAD:** `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7`
+- **Parent:** `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46`
+- **Ledger commit:** `53b9a7d` — `docs: establish Janjez build state continuity ledger`
+- **Middleware fix:** `413e625` — `fix: remove isAuthPage from protected routes`
 - **Role:** Controlled candidate — pending deployment to EC2
 - **Clean/dirty:** Clean working tree
 - **Deployed:** No
@@ -95,9 +97,10 @@ The Cloud Agent repository, Kilo review worktrees, EC2 staging tree, and any pro
 ### KILO REVIEW WORKTREE
 - **Path:** `.kilo/worktrees/janjez-review-20260822`
 - **Branch:** `review/janjez-reconciliation-20260822`
-- **HEAD:** `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46`
+- **HEAD:** `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7`
+- **Parent:** `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46`
 - **Role:** Isolated implementation worktree
-- **Clean/dirty:** Clean (middleware fix committed)
+- **Clean/dirty:** Clean (middleware fix + ledger committed)
 - **Deployed:** No
 
 ### KEY DISTINCTION
@@ -116,10 +119,10 @@ v
 KILO CANDIDATE
 413e625 (fix: remove isAuthPage from protected routes)
 |
-| controlled push / reconciliation
+| ledger / continuity commit
 v
 REMOTE REVIEW BRANCH
-review/janjez-reconciliation-20260822 @ 413e625
+review/janjez-reconciliation-20260822 @ 53b9a7d (docs: establish Janjez build state continuity ledger)
 |
 | controlled deployment (PENDING)
 v
@@ -143,9 +146,9 @@ PRODUCTION / PROMOTED BUILD
 |---|--------|------|------------|--------|------|------|-------------|----------|-----------|
 | 1 | EC2 Authoritative Staging | `/home/ec2-user/janjez-socio-clean` | `janjez-socio` | `review/janjez-reconciliation-20260822` | `b4274a8` | Live staging runtime | Clean | Yes | Highest |
 | 2 | Cloud Agent Parent | `/workspace/.../sessions/agent_b908bb5c-...` | `dukeosieko-del/janjez-socio` | `session/agent_b908bb5c-...` | `27a8696` | Session workspace / Git operations | Clean | No | Low |
-| 3 | Kilo Isolated Worktree | `.kilo/worktrees/janjez-review-20260822` | `dukeosieko-del/janjez-socio` | `review/janjez-reconciliation-20260822` | `413e625` | Implementation changes | Clean | No | Medium |
+| 3 | Kilo Isolated Worktree | `.kilo/worktrees/janjez-review-20260822` | `dukeosieko-del/janjez-socio` | `review/janjez-reconciliation-20260822` | `53b9a7d` | Implementation changes + ledger | Clean | No | Medium |
 | 4 | Clean Recovery Candidate | `/home/ec2-user/janjez-socio-clean` | `janjez-socio` | `clean-rebuild-20260819` | `896d081` | Historical baseline | Clean | No | Historical |
-| 5 | Remote GitHub | `github.com/dukeosieko-del/janjez-socio` | `dukeosieko-del/janjez-socio` | `review/janjez-reconciliation-20260822` | `413e625` | Remote branch | N/A | No | Reference |
+| 5 | Remote GitHub | `github.com/dukeosieko-del/janjez-socio` | `dukeosieko-del/janjez-socio` | `review/janjez-reconciliation-20260822` | `53b9a7d` | Remote branch | N/A | No | Reference |
 
 ### CRITICAL WORKTREE GUARDRAIL
 
@@ -577,7 +580,8 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 - **Push status:** Pushed to `origin/review/janjez-reconciliation-20260822`
 - **Deployment status:** NOT DEPLOYED
 - **Resulting branch:** `review/janjez-reconciliation-20260822`
-- **Resulting HEAD:** `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46`
+- **Resulting HEAD:** `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7`
+- **Ledger commit:** `53b9a7d` — `docs: establish Janjez build state continuity ledger`
 - **Remaining work:**
   - Deploy `413e625` to EC2 staging
   - Verify `/auth/*` pages publicly accessible
@@ -590,16 +594,41 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 
 ---
 
-## 17. CURRENT STATE SUMMARY
+## 17. SESSION / TASK TRAIL
+
+### TASK 1 — Ledger baseline discrepancy correction
+- **Date/time:** 2026-08-23
+- **Session ID:** `ses_fd59b7e18fffonNfFfmV6oiY5P`
+- **User objective:** Upgrade existing ledger and correct stale baseline values
+- **Operation type:** DOCUMENTATION
+- **Files inspected:** `JANJEZ_BUILD_STATE.md`, `.kilo/worktrees/janjez-review-20260822/JANJEZ_BUILD_STATE.md`, `src/middleware.ts`
+- **Files changed:** `JANJEZ_BUILD_STATE.md` (documentation-only update)
+- **Commit before:** `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46`
+- **Commit after:** `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7`
+- **Tests performed:** NOT PERFORMED (documentation task)
+- **Result:** Ledger updated to reflect actual HEAD, parent, remote, and ledger commit. Two discrepancies corrected:
+  1. **HEAD discrepancy:** Task baseline stated HEAD=`413e625`, but actual worktree HEAD was `53b9a7d` (ledger commit). Corrected to `53b9a7d`.
+  2. **Remote discrepancy:** Task baseline stated authoritative remote=`dukeosieko-del/janjez-socio.git`, but `git remote -v` showed `origin` pointed to `dukeosieko-del/janjez.git`. Corrected to `dukeosieko-del/janjez-socio.git`.
+- **Deployment status:** NOT DEPLOYED
+- **Push status:** NOT PERFORMED
+- **Problems encountered:** Stale baseline in task prompt did not match actual Git state (HEAD and remote URL).
+- **Resolution:** Verified actual Git state, corrected remote URL, updated ledger to match verified facts. No commits, pushes, or deployments performed.
+- **Next action:** Resume from verified HEAD `53b9a7d` on branch `review/janjez-reconciliation-20260822` with remote `dukeosieko-del/janjez-socio.git`.
+
+---
+
+## 18. CURRENT STATE SUMMARY
 
 | Item | Value |
 |------|-------|
 | **Cloud Session** | `ses_fd59b7e18fffonNfFfmV6oiY5P` |
 | **Cloud Branch** | `review/janjez-reconciliation-20260822` |
-| **Cloud HEAD** | `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46` |
-| **Cloud Parent** | `b4274a8b60cd93be21802b638a13381916491cad` |
+| **Cloud HEAD** | `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7` |
+| **Cloud Parent** | `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46` |
 | **Cloud Worktree** | `.kilo/worktrees/janjez-review-20260822` |
 | **Cloud Status** | Clean, pushed, not deployed |
+| **Ledger Commit** | `53b9a7d` — `docs: establish Janjez build state continuity ledger` |
+| **Middleware Fix** | `413e625` — `fix: remove isAuthPage from protected routes` |
 | **EC2 Baseline** | `b4274a8b60cd93be21802b638a13381916491cad` |
 | **EC2 Path** | `/home/ec2-user/janjez-socio-clean` |
 | **EC2 Status** | Clean, deployed, runtime verified |
