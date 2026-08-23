@@ -26,7 +26,6 @@ export async function middleware(request: Request) {
   const isAdminPage = pathname.startsWith("/admin");
   const isPublicTracking = pathname.startsWith("/orders/track");
   const isProtectedPage =
-    isAuthPage ||
     isAdminPage ||
     pathname.startsWith("/dashboard") ||
     (pathname.startsWith("/orders") && !isPublicTracking) ||
