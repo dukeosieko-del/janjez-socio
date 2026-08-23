@@ -615,6 +615,27 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 - **Resolution:** Verified actual Git state, corrected remote URL, updated ledger to match verified facts. No commits, pushes, or deployments performed.
 - **Next action:** Resume from verified HEAD `53b9a7d` on branch `review/janjez-reconciliation-20260822` with remote `dukeosieko-del/janjez-socio.git`.
 
+### TASK 2 — Staging deployment attempt (BLOCKED)
+- **Date/time:** 2026-08-23
+- **Session ID:** `ses_fd59b7e18fffonNfFfmV6oiY5P`
+- **User objective:** Deploy auth fix 413e625 to EC2 staging and prepare live mail trace
+- **Operation type:** DEPLOY (blocked)
+- **Files inspected:** `JANJEZ_BUILD_STATE.md`, `ec2-deploy.sh`, `SECURITY.md`, local git state
+- **Files changed:** None
+- **Commit before:** `b30b66276b7db8c5e758791515e2cf0154d8afb0`
+- **Commit after:** N/A — no commit created
+- **Tests performed:** NOT PERFORMED
+- **Result:** BLOCKED — EC2 unreachable from Cloud Agent
+- **Deployment status:** NOT DEPLOYED — EC2 staging remains at `b4274a8`
+- **Push status:** N/A
+- **Problems encountered:**
+  1. SSH to `ec2-user@13.48.195.81` timed out during banner exchange
+  2. No SSH agent loaded; no `~/.ssh` directory present in Cloud Agent
+  3. `ec2-deploy.sh` exists in worktree but is a fresh-deploy script, not the clean-staging workflow
+  4. `SECURITY.md` warns of compromised RSA private key; key rotation likely required
+- **Resolution:** Cannot proceed without EC2 access credentials. Deployment blocked pending credential restoration.
+- **Next action:** Restore EC2 SSH access (new key pair, security group ingress, or tunnel) and re-attempt deployment of `413e625`.
+
 ---
 
 ## 18. CURRENT STATE SUMMARY
@@ -623,11 +644,11 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 |------|-------|
 | **Cloud Session** | `ses_fd59b7e18fffonNfFfmV6oiY5P` |
 | **Cloud Branch** | `review/janjez-reconciliation-20260822` |
-| **Cloud HEAD** | `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7` |
-| **Cloud Parent** | `413e625d95d3dbfd0e048c1f87b6fe5eabd4ab46` |
+| **Cloud HEAD** | `b30b66276b7db8c5e758791515e2cf0154d8afb0` |
+| **Cloud Parent** | `53b9a7df2fceb0bdf6fb996b9cba3f9dab7fbea7` |
 | **Cloud Worktree** | `.kilo/worktrees/janjez-review-20260822` |
 | **Cloud Status** | Clean, pushed, not deployed |
-| **Ledger Commit** | `53b9a7d` — `docs: establish Janjez build state continuity ledger` |
+| **Ledger Commit** | `b30b662` — `docs: update Janjez build state ledger` |
 | **Middleware Fix** | `413e625` — `fix: remove isAuthPage from protected routes` |
 | **EC2 Baseline** | `b4274a8b60cd93be21802b638a13381916491cad` |
 | **EC2 Path** | `/home/ec2-user/janjez-socio-clean` |
