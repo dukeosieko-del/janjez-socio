@@ -799,3 +799,32 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - P3: PM2 has 8 restarts — stability investigation pending
 - **Next action:** Commit quality/E2E changes, finalize build state.
 
+
+### 2026-08-25 — MILESTONE 4: Standalone Deployment Packaging Fix
+- **Task:** Fix incomplete Next.js standalone deployment causing client-side runtime failures
+- **Operation type:** DEPLOYMENT FIX
+- **Files changed:** package.json (added postbuild script)
+- **Root cause:** Next.js `output: "standalone"` build created `.next/standalone/server.js` but did NOT copy:
+  - `.next/static/` (52 JS chunks, ~2.2MB) into `.next/standalone/.next/static/`
+  - `public/` (35 files) into `.next/standalone/public/`
+- **Impact:** Client-side JS entirely missing from deployed runtime. All interactive features failed:
+  - Dropdowns, modals (sign-in/sign-up), client-side routing, hydration
+  - Images failed because `public/` was absent from standalone directory
+- **Permanent fix:** Added `postbuild` script to `package.json`:
+  ```
+  "postbuild": "cp -r public .next/standalone/public/ && cp -r .next/static .next/standalone/.next/static"
+  ```
+  This ensures every `npm run build` automatically packages all required assets into the standalone output.
+- **Verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 116 warnings
+  - JS chunks: 52 files present in `.next/standalone/.next/static/chunks/`
+  - CSS chunks: 1 file present
+  - Public assets: 35 files present in `.next/standalone/public/`
+  - Staging JS HTTP 200: verified
+  - Staging images HTTP 200: verified
+  - Staging CSS HTTP 200: verified
+  - PM2 error log: no new errors after restart
+- **Build ID:** `Rm8hVAJqki4aQwCl9Wzb9`
+- **Next action:** Commit standalone deployment fix.

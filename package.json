@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "postbuild": "cp -r public .next/standalone/public/ && cp -r .next/static .next/standalone/.next/static"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
