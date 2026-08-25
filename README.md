@@ -4,6 +4,18 @@ Pata Clout Chapchap — Social media growth services platform built with Next.js
 
 Production site: https://janjez.social
 
+## Build State
+
+**Before making any changes, read `JANJEZ_BUILD_STATE.md` for the current operational state, session history, roadmap, and guardrails.**
+
+This file is the authoritative source of truth for the Janjez build/reconciliation process. It records:
+- Current branch, HEAD, and working tree state
+- PM2/nginx/deployment status
+- Supabase project status
+- Service architecture status
+- Known blockers and outstanding work
+- Session history and handoff information
+
 ## Repo
 
 This repository is the single source of truth for the production site.  
