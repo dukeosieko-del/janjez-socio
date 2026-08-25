@@ -18,6 +18,11 @@ export interface JanjezService {
   supports_drip_feed: boolean;
   supports_refill: boolean;
   supports_cancel: boolean;
+  show_sidebar: boolean;
+  show_landing: boolean;
+  show_guarded: boolean;
+  show_anonymous: boolean;
+  show_catalogue: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -71,7 +76,7 @@ export async function listProviderServices(params: {
   return (data || []) as unknown as ProviderServiceRow[];
 }
 
-export async function listJanjezServices(activeOnly: boolean = false): Promise<JanjezService[]> {
+export async function listJanjezServices(activeOnly: boolean = false, placement?: keyof Pick<JanjezService, "show_sidebar" | "show_landing" | "show_guarded" | "show_anonymous" | "show_catalogue">): Promise<JanjezService[]> {
   const supabase = createAdminClient();
   if (!supabase) return [];
 
@@ -83,6 +88,10 @@ export async function listJanjezServices(activeOnly: boolean = false): Promise<J
 
   if (activeOnly) {
     query = query.eq("is_active", true);
+  }
+
+  if (placement) {
+    query = query.eq(placement, true);
   }
 
   const { data, error } = await query;
@@ -123,6 +132,11 @@ export async function createJanjezService(input: {
   supports_drip_feed?: boolean;
   supports_refill?: boolean;
   supports_cancel?: boolean;
+  show_sidebar?: boolean;
+  show_landing?: boolean;
+  show_guarded?: boolean;
+  show_anonymous?: boolean;
+  show_catalogue?: boolean;
 }): Promise<JanjezService | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };
@@ -144,6 +158,11 @@ export async function createJanjezService(input: {
       supports_drip_feed: input.supports_drip_feed ?? false,
       supports_refill: input.supports_refill ?? false,
       supports_cancel: input.supports_cancel ?? false,
+      show_sidebar: input.show_sidebar ?? false,
+      show_landing: input.show_landing ?? false,
+      show_guarded: input.show_guarded ?? true,
+      show_anonymous: input.show_anonymous ?? true,
+      show_catalogue: input.show_catalogue ?? true,
     })
     .select("*")
     .single();
@@ -167,6 +186,11 @@ export async function updateJanjezService(id: string, input: Partial<{
   supports_drip_feed: boolean;
   supports_refill: boolean;
   supports_cancel: boolean;
+  show_sidebar: boolean;
+  show_landing: boolean;
+  show_guarded: boolean;
+  show_anonymous: boolean;
+  show_catalogue: boolean;
 }>): Promise<JanjezService | { error: string }> {
   const supabase = createAdminClient();
   if (!supabase) return { error: "Server misconfigured" };

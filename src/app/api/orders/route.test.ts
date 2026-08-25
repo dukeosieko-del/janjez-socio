@@ -124,7 +124,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       catalog_category_id: "youtube",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 42.75,
+      amount_paid: 45.00,
       quantity_source: "preset",
       runs: "abc",
       interval: 60,
@@ -144,7 +144,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       catalog_category_id: "youtube",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 42.75,
+      amount_paid: 45.00,
       quantity_source: "preset",
       runs: 0,
       interval: 60,
@@ -164,7 +164,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       catalog_category_id: "youtube",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 42.75,
+      amount_paid: 45.00,
       quantity_source: "preset",
       runs: 2,
       interval: -5,
@@ -184,7 +184,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       catalog_category_id: "youtube",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 42.75,
+      amount_paid: 45.00,
       quantity_source: "preset",
       runs: 2.5,
       interval: 60,
@@ -237,7 +237,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       catalog_category_id: "youtube",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 42.75,
+      amount_paid: 45.00,
       quantity_source: "preset",
       runs: 2,
       interval: 1,
@@ -285,7 +285,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       catalog_category_id: "youtube",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 42.75,
+      amount_paid: 45.00,
       quantity_source: "preset",
     });
     const res = await POST(req);
@@ -324,7 +324,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       catalog_category_id: "youtube",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 42.75,
+      amount_paid: 45.00,
       quantity_source: "preset",
       runs: 2,
       interval: 60,
@@ -334,7 +334,7 @@ describe("POST /api/orders - drip-feed validation", () => {
     expect(res.status).toBe(201);
     expect(mockAdminClient.rpc).toHaveBeenCalledWith("debit_wallet", {
       p_user_id: "user-123",
-      p_amount: 42.75,
+      p_amount: 45.00,
     });
   });
 });

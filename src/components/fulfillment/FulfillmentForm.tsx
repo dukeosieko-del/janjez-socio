@@ -159,6 +159,9 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         quantitySource,
         selectedSkuId: deliverable?.name || service?.slug,
         janjezServiceId: service?.id || null,
+        categoryName: platformId.charAt(0).toUpperCase() + platformId.slice(1).replace(/-/g, " "),
+        subcategoryName: deliverable?.name || service?.name || subcategoryName,
+        refillGuarantee: service?.supports_refill ? "standard" : "none",
         runs: dripFeed ? parseInt(runs, 10) : null,
         interval: dripFeed ? parseInt(intervalMin, 10) : null,
       });

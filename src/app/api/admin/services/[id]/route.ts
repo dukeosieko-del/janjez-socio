@@ -60,11 +60,11 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updates: Record<string, unknown> = {};
-    for (const key of ["name", "slug", "category", "subcategory", "description", "selling_price_ksh", "min_quantity", "max_quantity", "is_active", "display_order", "supports_drip_feed", "supports_refill", "supports_cancel"]) {
+    for (const key of ["name", "slug", "category", "subcategory", "description", "selling_price_ksh", "min_quantity", "max_quantity", "is_active", "display_order", "supports_drip_feed", "supports_refill", "supports_cancel", "show_sidebar", "show_landing", "show_guarded", "show_anonymous", "show_catalogue"]) {
       if (key in body && body[key] !== undefined) {
         if (key === "selling_price_ksh" || key === "min_quantity" || key === "max_quantity" || key === "display_order") {
           updates[key] = Number(body[key]);
-        } else if (key === "is_active" || key === "supports_drip_feed" || key === "supports_refill" || key === "supports_cancel") {
+        } else if (key === "is_active" || key === "supports_drip_feed" || key === "supports_refill" || key === "supports_cancel" || key === "show_sidebar" || key === "show_landing" || key === "show_guarded" || key === "show_anonymous" || key === "show_catalogue") {
           updates[key] = Boolean(body[key]);
         } else {
           updates[key] = body[key];

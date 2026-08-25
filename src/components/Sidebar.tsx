@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { SIDEBAR_ITEMS, type SidebarItem } from "@/lib/data";
+import type { SidebarItem } from "@/lib/data";
 import { useAuth } from "./AuthContext";
 
 function SidebarIcon({ icon, label }: { icon: string; label: string }) {
@@ -83,13 +83,33 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
 
 export default function Sidebar() {
   const { user, signOut } = useAuth();
+  const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/services/sidebar")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then((data) => {
+        if (!cancelled) {
+          setSidebarItems(data.items || []);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const expandableItems = useMemo(() => sidebarItems.filter((item) => item.children && item.children.length > 0), [sidebarItems]);
 
   const navItems = useMemo(() => {
     const baseItems = [
       { label: "New Order", href: "/services", icon: "🛒", active: true },
       { label: "Blog & News", href: "/blog", icon: "💬" },
     ];
-    const expandableItems = SIDEBAR_ITEMS.filter((item) => item.children && item.children.length > 0);
 
     if (user) {
       return [
@@ -105,7 +125,7 @@ export default function Sidebar() {
       { label: "Sign In", href: "/auth/sign-in#", icon: "🔑", trigger: "login" as const },
       ...expandableItems,
     ];
-  }, [user]);
+  }, [user, expandableItems]);
 
   return (
     <>
@@ -125,7 +145,10 @@ export default function Sidebar() {
 
           {/* Navigation */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {navItems.map((item, idx) => (
+            {loading && (
+              <p className="text-kenya-white/40 text-xs px-3 py-2">Loading menu…</p>
+            )}
+            {!loading && navItems.map((item, idx) => (
               <SidebarNavItem key={item.label + idx} item={item} />
             ))}
           </nav>
@@ -137,14 +160,14 @@ export default function Sidebar() {
                 onClick={() => signOut()}
                 className="flex items-center justify-center gap-2 w-full bg-kenya-red/10 text-kenya-red font-bold text-sm py-3 rounded-xl hover:bg-kenya-red/20 transition-colors border border-kenya-red/20"
               >
-                🚪 Sign Out
+                Sign Out
               </button>
             ) : (
               <Link
                 href="/services"
                 className="flex items-center justify-center gap-2 w-full bg-kenya-green text-kenya-black font-bold text-sm py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
               >
-                🛒 Start Order
+                Start Order
               </Link>
             )}
           </div>

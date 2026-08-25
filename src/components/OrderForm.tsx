@@ -2,9 +2,34 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
-import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
+import { getServiceCatalogue, getServicesByCategory, getServiceById } from "@/lib/service-queries";
 import { submitOrder } from "@/lib/order-log";
 import { calculateOrderCost } from "@/lib/pricing";
+
+interface ServiceCatalogueItem {
+  id: string;
+  serviceId: string;
+  categoryId: string;
+  name: string;
+  description: string;
+  rate: number;
+  min: number;
+  max: number;
+  refill: string;
+  requiresLink: boolean;
+  requiresComments: boolean;
+  speed: string;
+  startTime: string;
+  notice: string;
+  monetizable: boolean;
+  slug: string;
+  subcategory: string | null;
+  provider_service_id: string | null;
+  supports_drip_feed: boolean;
+  supports_refill: boolean;
+  supports_cancel: boolean;
+  display_order: number;
+}
 
 interface OrderFormProps {
   onRequireAuth: (tab?: "login" | "register") => void;
@@ -17,12 +42,31 @@ interface OrderFormProps {
 
 export default function OrderForm({ onRequireAuth, onInsufficientBalance, serviceId, categoryId, defaultAnonymous = false, janjezServiceId }: OrderFormProps) {
   const { user, walletBalance } = useAuth();
+  const [catalogue, setCatalogue] = useState<ServiceCatalogueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useMemo(() => {
+    let cancelled = false;
+    setLoading(true);
+    getServiceCatalogue("show_guarded")
+      .then((services) => {
+        if (!cancelled) {
+          setCatalogue(services as ServiceCatalogueItem[]);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   const initialCategory = useMemo(() => {
     if (categoryId) return categoryId;
-    if (!serviceId) return "";
-    const service = ORDER_SERVICES.find((s) => s.id === serviceId);
+    if (!serviceId || catalogue.length === 0) return "";
+    const service = catalogue.find((s) => s.id === serviceId);
     return service ? service.categoryId : "";
-  }, [serviceId, categoryId]);
+  }, [serviceId, categoryId, catalogue]);
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedServiceId, setSelectedServiceId] = useState(serviceId || "");
@@ -39,12 +83,12 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
   const categoryServices = useMemo(() => {
     if (!selectedCategory) return [];
-    return getServicesByCategory(selectedCategory);
-  }, [selectedCategory]);
+    return getServicesByCategory(catalogue, selectedCategory);
+  }, [selectedCategory, catalogue]);
 
   const selectedService = useMemo(() => {
-    return ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null;
-  }, [selectedServiceId]);
+    return getServiceById(catalogue, selectedServiceId) || null;
+  }, [selectedServiceId, catalogue]);
 
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
@@ -53,7 +97,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
   const total = useMemo(() => {
     if (!selectedService || quantityNum <= 0) return 0;
-    return calculateOrderCost(selectedService.rate * 1000, quantityNum);
+    return calculateOrderCost(selectedService.rate, quantityNum);
   }, [selectedService, quantityNum]);
 
   const quantityError = useMemo(() => {
@@ -109,7 +153,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     try {
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
-        categoryId: selectedCategory,
+        categoryId: selectedService.categoryId,
         serviceId: selectedService.name,
         quantity: quantityNum,
         link,
@@ -117,6 +161,9 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
         quantitySource,
         selectedSkuId: selectedService.serviceId,
         janjezServiceId: janjezServiceId || null,
+        categoryName: selectedService.categoryId.charAt(0).toUpperCase() + selectedService.categoryId.slice(1).replace(/-/g, " "),
+        subcategoryName: selectedService.name,
+        refillGuarantee: selectedService.refill === "No refill" ? "none" : "standard",
         runs: dripFeed ? runsNum : null,
         interval: dripFeed ? intervalNum : null,
       });
@@ -139,7 +186,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, dripFeed, runsNum, intervalNum, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedCategory, quantity]);
+  }, [selectedService, link, quantityNum, quantityError, dripFeed, runsNum, intervalNum, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedService?.categoryId, selectedService?.name, selectedService?.serviceId, quantity, janjezServiceId]);
 
   const isValid =
     selectedService &&
@@ -150,32 +197,45 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
   return (
     <div className="max-w-4xl mx-auto">
+      {loading && (
+        <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 mb-6 text-kenya-white/60 text-sm">
+          Loading services…
+        </div>
+      )}
+
+      {!loading && catalogue.length === 0 && (
+        <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 mb-6 text-kenya-white/60 text-sm">
+          No services available right now. Please check back later.
+        </div>
+      )}
+
       {/* Category Selection */}
-      <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 mb-6">
-        <label className="block text-sm font-semibold text-kenya-white/70 mb-3 uppercase tracking-wider">
-          Select Category
-        </label>
-        <select
-          value={selectedCategory}
-          onChange={handleCategoryChange}
-          className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all appearance-none cursor-pointer"
-        >
-          <option value="" className="bg-kenya-black text-kenya-white/50">
-            -- Choose a platform --
-          </option>
-          {ORDER_SERVICES.length > 0 &&
-            [...new Set(ORDER_SERVICES.map((s) => s.categoryId))].map((catId) => (
+      {!loading && catalogue.length > 0 && (
+        <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 mb-6">
+          <label className="block text-sm font-semibold text-kenya-white/70 mb-3 uppercase tracking-wider">
+            Select Category
+          </label>
+          <select
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all appearance-none cursor-pointer"
+          >
+            <option value="" className="bg-kenya-black text-kenya-white/50">
+              -- Choose a platform --
+            </option>
+            {[...new Set(catalogue.map((s) => s.categoryId))].map((catId) => (
               <option key={catId} value={catId} className="bg-kenya-black text-kenya-white">
                 {catId
                   .replace(/-/g, " ")
                   .replace(/\b\w/g, (l) => l.toUpperCase())}
               </option>
             ))}
-        </select>
-      </div>
+          </select>
+        </div>
+      )}
 
       {/* Service Selection */}
-      {selectedCategory && (
+      {!loading && selectedCategory && (
         <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6 mb-6">
           <label className="block text-sm font-semibold text-kenya-white/70 mb-3 uppercase tracking-wider">
             Select Service
@@ -209,11 +269,11 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
           <p className="text-kenya-white/70 text-sm mb-4">{selectedService.description}</p>
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 bg-kenya-black/60 text-kenya-white text-xs px-3 py-1.5 rounded-lg border border-kenya-white/10">
-              ⚡ Rate: KES {selectedService.rate.toFixed(2)} / 1k
+              Rate: KES {selectedService.rate.toFixed(2)} / 1k
             </span>
             {selectedService.refill !== "No refill" && (
               <span className="inline-flex items-center gap-1.5 bg-kenya-green/20 text-kenya-green text-xs px-3 py-1.5 rounded-lg border border-kenya-green/30">
-                🔄 {selectedService.refill}
+                {selectedService.refill}
               </span>
             )}
             <span className="inline-flex items-center gap-1.5 bg-kenya-black/60 text-kenya-white/60 text-xs px-3 py-1.5 rounded-lg border border-kenya-white/10">
@@ -232,7 +292,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
             {/* Link Input */}
             <div>
               <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                🔗 Link / Username
+                Link / Username
               </label>
               <input
                 type="url"
@@ -247,7 +307,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
             {/* Quantity Input */}
             <div>
               <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                🔢 Quantity
+                Quantity
               </label>
               <input
                 type="number"
@@ -286,7 +346,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
                     className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
                   />
                   <label htmlFor="drip-feed" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
-                    🐛 Drip-feed schedule
+                    Drip-feed schedule
                   </label>
                 </div>
                 {dripFeed && (
@@ -308,7 +368,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
               <>
                 <div>
                   <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                    🔄 Runs
+                    Runs
                   </label>
                   <input
                     type="number"
@@ -329,7 +389,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
                 <div>
                   <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                    ⏱ Interval (minutes)
+                    Interval (minutes)
                   </label>
                   <input
                     type="number"
@@ -354,7 +414,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
             {selectedService.requiresComments && (
               <div>
                 <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                  💬 Custom Comments / Text
+                  Custom Comments / Text
                 </label>
                 <textarea
                   required
@@ -395,7 +455,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
               disabled={!isValid || placing}
               className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2"
             >
-              {placing ? "Placing Order…" : "🛒 Place Order"}
+              {placing ? "Placing Order…" : "Place Order"}
             </button>
           </div>
         </div>

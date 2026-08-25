@@ -392,6 +392,11 @@ interface JanjezServiceShape {
   supports_drip_feed: boolean;
   supports_refill: boolean;
   supports_cancel: boolean;
+  show_sidebar: boolean;
+  show_landing: boolean;
+  show_guarded: boolean;
+  show_anonymous: boolean;
+  show_catalogue: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -467,7 +472,7 @@ export function ServicesTab() {
 
   const handleCreateNew = () => {
     setEditId(null);
-    setForm({ is_active: true, display_order: 0, supports_drip_feed: false, supports_refill: false, supports_cancel: false });
+    setForm({ is_active: true, display_order: 0, supports_drip_feed: false, supports_refill: false, supports_cancel: false, show_sidebar: false, show_landing: false, show_guarded: true, show_anonymous: true, show_catalogue: true });
     setShowForm(true);
     setFormError(null);
     setFormSuccess(false);
@@ -494,6 +499,11 @@ export function ServicesTab() {
       supports_drip_feed: Boolean(form.supports_drip_feed),
       supports_refill: Boolean(form.supports_refill),
       supports_cancel: Boolean(form.supports_cancel),
+      show_sidebar: Boolean(form.show_sidebar),
+      show_landing: Boolean(form.show_landing),
+      show_guarded: Boolean(form.show_guarded),
+      show_anonymous: Boolean(form.show_anonymous),
+      show_catalogue: Boolean(form.show_catalogue),
     };
 
     try {
@@ -550,6 +560,11 @@ export function ServicesTab() {
     s.supports_drip_feed ? "Yes" : "No",
     s.supports_cancel ? "Yes" : "No",
     s.provider_service_id ? String(s.provider_service_id) : <span className="text-kenya-red">UNMAPPED</span>,
+    s.show_sidebar ? "Yes" : "No",
+    s.show_landing ? "Yes" : "No",
+    s.show_guarded ? "Yes" : "No",
+    s.show_anonymous ? "Yes" : "No",
+    s.show_catalogue ? "Yes" : "No",
     s.is_active ? "Published" : "Draft",
     s.display_order,
     new Date(s.created_at).toLocaleDateString(),
@@ -792,7 +807,7 @@ export function ServicesTab() {
                     </div>
                   </div>
 
-                  <div className="flex gap-4">
+                  <div className="flex flex-wrap gap-4">
                     <label className="flex items-center gap-2 text-sm text-kenya-white/70">
                       <input
                         type="checkbox"
@@ -819,6 +834,52 @@ export function ServicesTab() {
                     </label>
                   </div>
 
+                  <div className="border-t border-kenya-white/10 pt-4">
+                    <p className="text-sm font-medium text-kenya-white/70 mb-2">Placement</p>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                        <input
+                          type="checkbox"
+                          checked={form.show_sidebar || false}
+                          onChange={(e) => setForm({ ...form, show_sidebar: e.target.checked })}
+                        />
+                        Sidebar
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                        <input
+                          type="checkbox"
+                          checked={form.show_landing || false}
+                          onChange={(e) => setForm({ ...form, show_landing: e.target.checked })}
+                        />
+                        Landing / Public
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                        <input
+                          type="checkbox"
+                          checked={form.show_guarded ?? true}
+                          onChange={(e) => setForm({ ...form, show_guarded: e.target.checked })}
+                        />
+                        Guarded / Authenticated
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                        <input
+                          type="checkbox"
+                          checked={form.show_anonymous ?? true}
+                          onChange={(e) => setForm({ ...form, show_anonymous: e.target.checked })}
+                        />
+                        Anonymous
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-kenya-white/70">
+                        <input
+                          type="checkbox"
+                          checked={form.show_catalogue ?? true}
+                          onChange={(e) => setForm({ ...form, show_catalogue: e.target.checked })}
+                        />
+                        Full Catalogue
+                      </label>
+                    </div>
+                  </div>
+
                   {formError && <p className="text-kenya-red text-sm">{formError}</p>}
                   {formSuccess && <p className="text-kenya-green text-sm">Service saved successfully.</p>}
                   <div className="flex gap-3 pt-2">
@@ -842,7 +903,7 @@ export function ServicesTab() {
           )}
 
           <DataTable
-            headers={["Name", "Category", "Subcategory", "Price", "Min-Max", "Drip", "Cancel", "Provider Service", "Status", "Order", "Created", "Actions"]}
+            headers={["Name", "Category", "Subcategory", "Price", "Min-Max", "Drip", "Cancel", "Provider", "Sidebar", "Landing", "Guarded", "Anon", "Catalogue", "Status", "Order", "Created", "Actions"]}
             rows={janjezRows}
           />
           {janjezServices.length === 0 && <p className="text-kenya-white/50 text-sm mt-4">No Janjez services configured. Create one to get started.</p>}

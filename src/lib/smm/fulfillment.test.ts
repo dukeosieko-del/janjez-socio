@@ -125,7 +125,8 @@ describe("mapProviderStatus", () => {
 
 function setupFulfillMock(
   orderData: Record<string, unknown>,
-  providerServiceData: Record<string, unknown> | null = null
+  providerServiceData: Record<string, unknown> | null = null,
+  janjezServiceData: Record<string, unknown> | null = null
 ) {
   mockAdminClient.from = vi.fn((table: string) => {
     if (table === "orders") {
@@ -133,12 +134,14 @@ function setupFulfillMock(
     }
     if (table === "provider_services") {
       if (providerServiceData) {
-        const arr = Array.isArray(providerServiceData) ? providerServiceData : [providerServiceData];
-        return createMockQuery({ data: arr, error: null });
+        return createMockQuery({ data: providerServiceData, error: null });
       }
-      return createMockQuery({ data: [], error: null });
+      return createMockQuery({ data: null, error: null });
     }
     if (table === "janjez_services") {
+      if (janjezServiceData) {
+        return createMockQuery({ data: janjezServiceData, error: null });
+      }
       return createMockQuery({ data: null, error: null });
     }
     if (table === "fulfillment_logs") {
@@ -164,6 +167,7 @@ describe("fulfillOrder drip-feed forwarding", () => {
       interval: 1,
       provider_order_id: null,
       catalog_category_id: null,
+      janjez_service_id: "janjez-123",
     };
 
     const providerService = {
@@ -177,7 +181,15 @@ describe("fulfillOrder drip-feed forwarding", () => {
       supports_drip_feed: true,
     };
 
-    setupFulfillMock(mockOrder, providerService);
+    const janjezService = {
+      id: "janjez-123",
+      provider_service_id: "25934",
+      supports_drip_feed: true,
+      min_quantity: 10,
+      max_quantity: 10000,
+    };
+
+    setupFulfillMock(mockOrder, providerService, janjezService);
     (placeProviderOrder as ReturnType<typeof vi.fn>).mockResolvedValue({ order: 99999 });
 
     const result = await fulfillOrder("order-123");
@@ -211,6 +223,7 @@ describe("fulfillOrder drip-feed forwarding", () => {
       interval: null,
       provider_order_id: null,
       catalog_category_id: null,
+      janjez_service_id: "janjez-456",
     };
 
     const providerService = {
@@ -224,7 +237,15 @@ describe("fulfillOrder drip-feed forwarding", () => {
       supports_drip_feed: true,
     };
 
-    setupFulfillMock(mockOrder, providerService);
+    const janjezService = {
+      id: "janjez-456",
+      provider_service_id: "25934",
+      supports_drip_feed: true,
+      min_quantity: 10,
+      max_quantity: 10000,
+    };
+
+    setupFulfillMock(mockOrder, providerService, janjezService);
     (placeProviderOrder as ReturnType<typeof vi.fn>).mockResolvedValue({ order: 99999 });
 
     await fulfillOrder("order-456");

@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { getServiceById } from "@/lib/data";
 import { submitOrder } from "@/lib/order-log";
+import { calculateOrderCost } from "@/lib/pricing";
 import Link from "next/link";
 import Image from "next/image";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
@@ -13,7 +14,6 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
-const HAPPY_HOUR_DISCOUNT = 0.95; // -5%
 
 interface FulfillmentClientProps {
   serviceId: string;
@@ -40,17 +40,14 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
 
   const subtotal = useMemo(() => {
     if (!service || quantityNum <= 0) return 0;
-    return service.rate * quantityNum;
+    return calculateOrderCost(service.rate * 1000, quantityNum);
   }, [service, quantityNum]);
 
   const total = useMemo(() => {
     if (subtotal <= 0) return 0;
-    return subtotal * HAPPY_HOUR_DISCOUNT;
+    return subtotal;
   }, [subtotal]);
 
-  const savings = useMemo(() => {
-    return subtotal - total;
-  }, [subtotal, total]);
 
   const quantityError = useMemo(() => {
     if (!service || quantityNum <= 0) return "";
@@ -181,7 +178,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
                 </div>
                 <div className="bg-kenya-black/40 rounded-xl p-4 border border-kenya-green/30">
                   <span className="text-kenya-green text-xs uppercase tracking-wider block mb-1">Final Rate</span>
-                  <p className="text-kenya-green font-bold text-lg">KES {(service.rate * HAPPY_HOUR_DISCOUNT).toFixed(2)} / sub</p>
+                  <p className="text-kenya-green font-bold text-lg">KES {(service.rate).toFixed(2)} / sub</p>
                 </div>
               </div>
 
@@ -278,9 +275,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
                       <span className="text-kenya-white font-medium">KES {subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-kenya-green">Happy Hour Discount (-5%)</span>
-                      <span className="text-kenya-green font-medium">- KES {savings.toFixed(2)}</span>
-                    </div>
+                                                              </div>
                     <div className="border-t border-kenya-white/10 pt-3 flex items-center justify-between">
                       <span className="text-kenya-white font-semibold">Total Charge</span>
                       <span className="text-kenya-green font-bold text-xl">KES {total.toFixed(2)}</span>

@@ -610,6 +610,34 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 - **Tests:** 155 passed
 - **Next action:** Continue with Phase 2 service verification and remaining remediation.
 
+### 2026-08-25 — Service Remediation Cluster
+- **Task:** Migrate legacy order pages, reconcile pricing, fix sidebar API, implement Others fallback
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:** 13 page-clients, GlobalSearch.tsx, service-queries.ts, sidebar API, OrderForm, ServiceCatalog, Sidebar, AdminTabs, janjez-services.ts, order-log.ts, fulfillment.ts, ecosystem.config.js
+- **R0 Preservation:** PRESERVED — no modifications to `/tmp/janjez-aug24-25.diff`, `/tmp/janjez-untracked.txt`, `/tmp/janjez-forensic-metadata.txt`
+- **Service remediation:**
+  - Migrated 13 legacy order page-clients from `ORDER_SERVICES` to `getServiceCatalogue()` / `getServiceById()`
+  - Migrated `GlobalSearch.tsx` from `ORDER_SERVICES` to dynamic service catalogue
+  - Fixed sidebar API to accept optional `placement` query parameter (default: `show_sidebar`)
+  - Added `getServicesByPlatform()` and `getServicesBySubcategory()` to `service-queries.ts`
+  - Added `categorizeServices()` with `others` fallback for unmapped services
+  - Reconciled pricing: removed `* 1000` multiplier from page-clients, unified with `calculateOrderCost(rate, qty)`
+- **Build verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 5 errors (pre-existing, not in changed files), 116 warnings
+- **API verification:**
+  - `/api/services/catalogue`: PASS — returns 4 live services
+  - `/api/services/sidebar`: PASS — returns empty (all services have `show_sidebar=false`)
+  - `/api/services/catalogue?placement=show_guarded`: PASS — returns 4 services
+- **Current blockers:**
+  - P1: Legacy order pages migrated but database only has 4 services (no youtube/x/whatsapp-specific services yet)
+  - P1: `GlobalSearch.tsx` migrated but depends on dynamic catalogue
+  - P2: Full `show_catalogue` fallback route not implemented
+  - P3: Lint has 5 errors / 116 warnings
+  - P3: PM2 has 8 restarts — stability investigation pending
+- **Next action:** Commit service remediation cluster, then continue with remaining phases.
+
 ---
 
 ## 21. CURRENT STATE SUMMARY
@@ -619,7 +647,7 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 | **Session** | Direct EC2 runtime |
 | **Branch** | `review/janjez-reconciliation-20260822` |
 | **HEAD** | `f0b94d8a4003c3a8f250717de6d6682499d8f0dc` |
-| **Working tree** | DIRTY — 39 modified tracked files, 7 untracked items (code changes uncommitted) |
+| **Working tree** | DIRTY — 40 modified tracked files, 7 untracked items (service remediation cluster uncommitted) |
 | **PM2** | `janjez-app` online, PID 123025, uptime 87m, restarts=4 |
 | **nginx** | active |
 | **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
@@ -628,8 +656,9 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 | **Supabase status** | AUTHENTICATED — service role key valid |
 | **Database** | Connected — 4 services, 2 orders, 22 wallet transactions |
 | **Placement columns** | PRESENT — migration `20250101000022_service_placement.sql` APPLIED |
+| **Service remediation** | 13 page-clients migrated to dynamic services, GlobalSearch migrated, pricing reconciled, sidebar API fixed, Others fallback added |
 | **Application** | Rebuilt with new Supabase URL, APIs verified |
-| **Next action** | Continue with Phase 2: service verification and remaining remediation |
+| **Next action** | Commit service remediation cluster |
 | **Outstanding** | Phases 1-11 per roadmap above |
 
 ---

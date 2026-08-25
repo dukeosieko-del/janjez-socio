@@ -12,6 +12,9 @@ export interface OrderLogPayload {
   runs?: number | null;
   interval?: number | null;
   janjezServiceId?: string | null;
+  categoryName?: string | null;
+  subcategoryName?: string | null;
+  refillGuarantee?: string | null;
 }
 
 export interface AnonymousOrderPayload {
@@ -117,10 +120,10 @@ async function getSessionToken(): Promise<string | null> {
 }
 
 export async function submitOrder(payload: OrderLogPayload) {
-  const categoryName = resolveCategoryName(payload.categoryId);
-  const subcategoryName = resolveSubcategoryName(payload.categoryId, payload.serviceId);
-  const skuId = resolveSkuId(payload.categoryId, payload.serviceId);
-  const refillGuarantee = resolveRefillGuarantee(payload.categoryId, payload.serviceId);
+  const categoryName = payload.categoryName ?? resolveCategoryName(payload.categoryId);
+  const subcategoryName = payload.subcategoryName ?? resolveSubcategoryName(payload.categoryId, payload.serviceId);
+  const skuId = payload.selectedSkuId ?? resolveSkuId(payload.categoryId, payload.serviceId);
+  const refillGuarantee = payload.refillGuarantee ?? resolveRefillGuarantee(payload.categoryId, payload.serviceId);
 
   if (requiresSkuSelection(payload.categoryId) && !payload.selectedSkuId) {
     return { ok: false as const, error: "Please select a service package before continuing." };

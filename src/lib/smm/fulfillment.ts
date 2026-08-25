@@ -220,16 +220,12 @@ export async function fulfillOrder(orderId: string) {
   }
 
   if (!providerService) {
-    providerService = await findCheapestProviderService(category, sku || subcategory);
-  }
-
-  if (!providerService) {
-    await logFulfillment(supabase, order.id, "place", "failed", null, null, "No matching provider service found");
+    await logFulfillment(supabase, order.id, "place", "failed", null, null, "No provider mapping found for this service. Assign a provider_service_id to the Janjez service.");
     await supabase
       .from("orders")
-      .update({ fulfillment_status: "failed", fulfillment_error: "No matching provider service found" })
+      .update({ fulfillment_status: "failed", fulfillment_error: "No provider mapping found for this service. Contact support." })
       .eq("id", order.id);
-    return { status: "failed", error: "No matching provider service" };
+    return { status: "failed", error: "No provider mapping found for this service" };
   }
 
   if (!providerRate) {

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { PLATFORMS, ORDER_SERVICES } from "@/lib/data";
+import { PLATFORMS } from "@/lib/data";
+import { getServiceCatalogue } from "@/lib/service-queries";
 
 interface SearchResult {
   id: string;
@@ -17,6 +18,21 @@ interface SearchResult {
 export default function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [services, setServices] = useState<SearchResult[]>([]);
+
+  useEffect(() => {
+    getServiceCatalogue().then((data) => {
+      const serviceResults: SearchResult[] = data.map((s) => ({
+        id: s.id,
+        name: s.name,
+        description: `KES ${s.rate.toFixed(2)}/1k • Min: ${s.min} • Max: ${s.max.toLocaleString()}`,
+        href: `/order?service=${s.id}`,
+        icon: "📦",
+        type: "service" as const,
+      }));
+      setServices(serviceResults);
+    }).catch(() => setServices([]));
+  }, []);
 
   const handleSearch = (value: string) => {
     setQuery(value);
@@ -34,16 +50,7 @@ export default function GlobalSearch() {
       type: "platform" as const,
     }));
 
-    const serviceResults: SearchResult[] = ORDER_SERVICES.map((s) => ({
-      id: s.id,
-      name: s.name,
-      description: `KES ${s.rate.toFixed(2)}/1k • Min: ${s.min} • Max: ${s.max.toLocaleString()}`,
-      href: `/order?service=${s.id}`,
-      icon: "📦",
-      type: "service" as const,
-    }));
-
-    const all = [...platformResults, ...serviceResults];
+    const all = [...platformResults, ...services];
     const filtered = all.filter(
       (r) =>
         r.name.toLowerCase().includes(q) ||

@@ -28,12 +28,13 @@ function calculateExpectedAmount(
   skuId: string | null | undefined,
   quantity: number
 ): number {
+  console.warn("[orders] Legacy pricing path used without janjez_service_id. Migrate callers to use janjez_service_id for authoritative pricing.");
   if (skuId && catalogCategoryId) {
     const service = ORDER_SERVICES.find(
       (s) => s.categoryId === catalogCategoryId && (s.serviceId === skuId || s.id === skuId)
     );
     if (service) {
-      return service.rate * quantity * 0.95;
+      return service.rate * quantity;
     }
   }
 
@@ -48,7 +49,7 @@ function calculateExpectedAmount(
         const priceMatch = deliverable.price.match(/([\d,.]+)/);
         if (priceMatch) {
           const rate = parseFloat(priceMatch[1].replace(/,/g, ""));
-          return rate * quantity * 0.95;
+          return rate * quantity;
         }
       }
     }
