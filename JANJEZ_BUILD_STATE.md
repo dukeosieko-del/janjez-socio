@@ -83,6 +83,7 @@ The Cloud Agent repository, Kilo review worktrees, EC2 staging tree, and any pro
   - P2: Full `show_catalogue` fallback route not implemented
   - P3: Lint has 5 errors / 91 warnings
   - P3: PM2 has 4 restarts — stability investigation pending
+- **State documentation commit:** `58a5a4f` — `docs: update build state ledger and README for current EC2 session`
 - **Next action:** Obtain correct active Supabase project reference and valid credentials for `rousjavuooduvicaobuv` (or correct project), then proceed with Phase 1 verification.
 
 ---
@@ -583,11 +584,12 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 |------|-------|
 | **Session** | Direct EC2 runtime |
 | **Branch** | `review/janjez-reconciliation-20260822` |
-| **HEAD** | `2a3107b0a2f7a3d2b77e77b845cc40f3cd3c2d6b` |
-| **Working tree** | DIRTY — 39 modified, 7 untracked |
+| **HEAD** | `58a5a4f4cb10955c3b09c9ea4c204a8fae084432` |
+| **Working tree** | DIRTY — 39 modified tracked files, 7 untracked items (code changes uncommitted) |
 | **PM2** | `janjez-app` online, PID 123025, uptime 87m, restarts=4 |
 | **nginx** | active |
 | **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
+| **Ledger commit** | `58a5a4f` — `docs: update build state ledger and README for current EC2 session` |
 | **Supabase hostname** | `snkgkcdnmhqaejpqftxn.supabase.co` (NXDOMAIN) |
 | **Supabase candidate** | `rousjavuooduvicaobuv.supabase.co` (resolves, creds invalid) |
 | **Preservation** | `/tmp/janjez-aug24-25.diff`, `/tmp/janjez-untracked.txt`, `/tmp/janjez-forensic-metadata.txt` |
