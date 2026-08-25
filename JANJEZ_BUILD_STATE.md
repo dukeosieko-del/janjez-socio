@@ -638,6 +638,31 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - P3: PM2 has 8 restarts — stability investigation pending
 - **Next action:** Commit service remediation cluster, then continue with remaining phases.
 
+### 2026-08-25 — Service Completeness (show_catalogue + Others)
+- **Task:** Implement show_catalogue fallback and Others fallback routes
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:** src/app/services/page.tsx, src/app/services/[platform]/page.tsx, src/app/services/[platform]/[subcategory]/page.tsx, src/lib/service-queries.ts
+- **Service completeness:**
+  - Modified `/services` pages to filter by `show_catalogue=true` by default
+  - Modified `/services/[platform]` and `/services/[platform]/[subcategory]` to respect `show_catalogue`
+  - Added `Others` fallback for unmapped services via `categorizeServices()`
+  - `/services/others` route handles services that don't match known platforms
+- **Build verification:**
+  - Build: PASS
+  - Tests: 155 passed
+- **API verification:**
+  - `/api/services/catalogue`: PASS — returns 4 live services
+  - `/api/services/catalogue?placement=show_catalogue`: PASS — returns 4 services
+  - `/services`: PASS — 200, platform listing
+  - `/services/others`: PASS — 200, Others fallback
+- **Current blockers:**
+  - P1: Database only has 4 services (no youtube/x/whatsapp-specific services yet)
+  - P1: `GlobalSearch.tsx` migrated but depends on dynamic catalogue
+  - P2: Full `show_catalogue` fallback route implemented
+  - P3: Lint has 5 errors / 116 warnings
+  - P3: PM2 has 8 restarts — stability investigation pending
+- **Next action:** Commit service completeness changes, then move to MILESTONE 3 (lint fixes, E2E validation).
+
 ---
 
 ## 21. CURRENT STATE SUMMARY
@@ -647,8 +672,8 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 | **Session** | Direct EC2 runtime |
 | **Branch** | `review/janjez-reconciliation-20260822` |
 | **HEAD** | `0818978ebef3a51f3af54a228c2e267f91872f5a` |
-| **Working tree** | CLEAN — service remediation cluster committed |
-| **PM2** | `janjez-app` online, PID 123025, uptime 87m, restarts=4 |
+| **Working tree** | DIRTY — service completeness changes uncommitted |
+| **PM2** | `janjez-app` online, PID 165388, uptime 37m, restarts=8 |
 | **nginx** | active |
 | **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
 | **Ledger commit** | `0818978` — `feat: migrate legacy order pages to dynamic services, reconcile pricing, fix sidebar API` |
@@ -657,8 +682,9 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 | **Database** | Connected — 4 services, 2 orders, 22 wallet transactions |
 | **Placement columns** | PRESENT — migration `20250101000022_service_placement.sql` APPLIED |
 | **Service remediation** | 13 page-clients migrated to dynamic services, GlobalSearch migrated, pricing reconciled, sidebar API fixed, Others fallback added |
+| **Service completeness** | show_catalogue fallback implemented, Others fallback implemented |
 | **Application** | Rebuilt with new Supabase URL, APIs verified |
-| **Next action** | Continue with remaining phases: Others fallback routes, show_catalogue fallback, lint errors, PM2 stability |
+| **Next action** | Commit service completeness, then move to MILESTONE 3 (lint fixes, E2E validation) |
 | **Outstanding** | Phases 1-11 per roadmap above |
 
 ---

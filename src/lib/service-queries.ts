@@ -86,12 +86,12 @@ const KNOWN_PLATFORMS = [
   "x",
 ];
 
-export function categorizeServices(services: Array<{ categoryId: string; id: string; name: string }>): Record<string, Array<{ categoryId: string; id: string; name: string }>> {
-  const categorized: Record<string, Array<{ categoryId: string; id: string; name: string }>> = {};
-  const others: Array<{ categoryId: string; id: string; name: string }> = [];
+export function categorizeServices(services: Array<{ category: string; id: string; name: string }>): Record<string, Array<{ category: string; id: string; name: string }>> {
+  const categorized: Record<string, Array<{ category: string; id: string; name: string }>> = {};
+  const others: Array<{ category: string; id: string; name: string }> = [];
 
   for (const svc of services) {
-    const catLower = svc.categoryId.toLowerCase();
+    const catLower = svc.category.toLowerCase();
     const matched = KNOWN_PLATFORMS.find((p) => catLower.includes(p));
     if (matched) {
       if (!categorized[matched]) categorized[matched] = [];

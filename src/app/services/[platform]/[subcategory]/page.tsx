@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: SubcategoryPageProps): Promis
 }
 
 async function getSubcategoryServices(platform: string, subcategorySlug: string): Promise<{ services: JanjezService[]; subcategoryName: string }> {
-  const all = await listJanjezServices(true);
+  const all = await listJanjezServices(true, "show_catalogue");
   const filtered = all.filter((s) => s.category === platform);
   const inSubcategory = filtered.filter((s) => {
     const sub = s.subcategory || "General";

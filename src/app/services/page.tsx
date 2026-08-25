@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { listJanjezServices } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
+import { categorizeServices } from "@/lib/service-queries";
 
 export const revalidate = 0;
 
@@ -18,20 +19,31 @@ interface PlatformCard {
 }
 
 async function getPlatforms(): Promise<PlatformCard[]> {
-  const services = await listJanjezServices(true);
-  const platformMap = new Map<string, { name: string; count: number }>();
-  for (const svc of services) {
-    const existing = platformMap.get(svc.category) || { name: svc.category, count: 0 };
-    existing.count += 1;
-    platformMap.set(svc.category, existing);
+  const services = await listJanjezServices(true, "show_catalogue");
+  const categorized = categorizeServices(services);
+  const platforms: PlatformCard[] = [];
+
+  for (const [id, svcs] of Object.entries(categorized)) {
+    if (id === "others") {
+      platforms.push({
+        id: "others",
+        name: "Others",
+        icon: getPlatformAvatar("others"),
+        href: "/services/others",
+        serviceCount: svcs.length,
+      });
+    } else {
+      platforms.push({
+        id,
+        name: id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, " "),
+        icon: getPlatformAvatar(id),
+        href: `/services/${id}`,
+        serviceCount: svcs.length,
+      });
+    }
   }
-  return Array.from(platformMap.entries()).map(([id, { name, count }]) => ({
-    id,
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    icon: getPlatformAvatar(id),
-    href: `/services/${id}`,
-    serviceCount: count,
-  }));
+
+  return platforms.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export default async function ServicesPage() {
