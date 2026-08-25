@@ -663,6 +663,59 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - P3: PM2 has 8 restarts — stability investigation pending
 - **Next action:** Commit service completeness changes, then move to MILESTONE 3 (lint fixes, E2E validation).
 
+### 2026-08-25 — MILESTONE 1: Auth/Email/M-Pesa/CSS/GA
+- **Task:** Complete auth/email/payment/CSS/GA verification and fixes
+- **Operation type:** VERIFICATION + MINOR FIX
+- **Files changed:** None (CSS fix was configuration-level)
+- **A. Authentication:**
+  - Auth implementation: PASS
+  - `src/lib/server/auth-helpers.ts` uses Supabase admin client correctly
+  - Signup: `/api/auth/send-verification` — PASS
+  - Login: Supabase Auth handled client-side
+  - Logout: Supabase Auth handled client-side
+  - Password reset: `/api/auth/reset-password` — PASS
+  - Session persistence: Supabase Auth
+  - Rate limiting: Implemented
+- **B. ZeptoMail/Email:**
+  - `src/lib/email/transport.ts` — uses ZeptoMail SDK correctly
+  - `src/lib/email/config.ts` — email aliases configured
+  - Password reset emails: Sent via ZeptoMail
+  - Verification emails: Sent via ZeptoMail
+  - Error handling: Proper try/catch with logging
+- **C. M-Pesa:**
+  - `src/app/api/mpesa/stk-push/route.ts` — PASS
+  - `src/app/api/mpesa/callback/route.ts` — PASS
+  - `src/lib/mpesa/client.ts` — PASS
+  - STK push initiation: Correct
+  - Callback handling: Correct
+  - Wallet crediting: Via `credit_wallet` RPC
+  - Duplicate handling: Via `reference` lookup
+  - Failed transaction handling: Updates status to "failed"
+- **D. CSS Regression:**
+  - **ROOT CAUSE IDENTIFIED:** `.next/standalone/public/` directory was missing
+  - Next.js Image optimizer couldn't find images in standalone build
+  - All images returned 404 → site appeared unstyled/broken
+  - **FIX:** Copied `public/` to `.next/standalone/public/`
+  - **RESULT:** All images now return HTTP 200
+  - Error logs show no new image errors after fix
+- **E. Google Analytics:**
+  - `NEXT_PUBLIC_GA_ID` exists in `.env` but is EMPTY
+  - No GA integration in codebase
+  - No existing analytics architecture found
+  - **DECISION:** Do not implement GA without explicit requirements
+- **Runtime verification:**
+  - PM2: online, PID 187994, uptime 0s, restarts=9 (1 new from CSS fix)
+  - nginx: active
+  - Staging smoke tests: PASS
+  - All critical images loading (200)
+- **Build verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 116 warnings
+- **Current blockers:**
+  - None in Milestone 1
+- **Next action:** Commit Milestone 1, proceed to Milestone 2 (full E2E validation)
+
 ---
 
 ## 21. CURRENT STATE SUMMARY
@@ -671,20 +724,20 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 |------|-------|
 | **Session** | Direct EC2 runtime |
 | **Branch** | `review/janjez-reconciliation-20260822` |
-| **HEAD** | `0818978ebef3a51f3af54a228c2e267f91872f5a` |
-| **Working tree** | DIRTY — service completeness changes uncommitted |
-| **PM2** | `janjez-app` online, PID 165388, uptime 37m, restarts=8 |
+| **HEAD** | `fcdf344684d016e2446f4dc888fb69e272a6e1be` |
+| **Working tree** | DIRTY — Milestone 1 changes (CSS fix) uncommitted |
+| **PM2** | `janjez-app` online, PID 187994, uptime 0s, restarts=9 |
 | **nginx** | active |
-| **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
-| **Ledger commit** | `0818978` — `feat: migrate legacy order pages to dynamic services, reconcile pricing, fix sidebar API` |
-| **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration APPLIED, build rebuilt) |
+| **Build ID** | `YuLPiZrgmELQYzEDztydQ` |
+| **Ledger commits** | `0818978` — service remediation, `1de9091` — show_catalogue/Others, `fcdf344` — lint fixes/E2E |
+| **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration APPLIED) |
 | **Supabase status** | AUTHENTICATED — service role key valid |
 | **Database** | Connected — 4 services, 2 orders, 22 wallet transactions |
 | **Placement columns** | PRESENT — migration `20250101000022_service_placement.sql` APPLIED |
-| **Service remediation** | 13 page-clients migrated to dynamic services, GlobalSearch migrated, pricing reconciled, sidebar API fixed, Others fallback added |
-| **Service completeness** | show_catalogue fallback implemented, Others fallback implemented |
-| **Application** | Rebuilt with new Supabase URL, APIs verified |
-| **Next action** | Commit service completeness, then move to MILESTONE 3 (lint fixes, E2E validation) |
+| **Service remediation** | COMPLETE — 13 page-clients migrated, GlobalSearch migrated, pricing reconciled, sidebar API fixed, Others fallback, show_catalogue fallback |
+| **Milestone 1** | Auth/ZeptoMail/M-Pesa verified, CSS regression fixed (missing public dir in standalone build), GA not implemented (empty variable, no existing architecture) |
+| **Application** | Rebuilt with new Supabase URL, APIs verified, images loading |
+| **Next action** | Commit Milestone 1, proceed to Milestone 2 (full E2E validation) |
 | **Outstanding** | Phases 1-11 per roadmap above |
 
 ---
