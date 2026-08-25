@@ -589,13 +589,16 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - `wallet_transactions`: EXISTS (22 transactions)
   - Placement columns: **ALL 5 PRESENT** with correct defaults
   - Service data: 4 active services, 0 inactive, no NULL flags, no all-false records
+- **Application build:**
+  - Standalone build rebuilt with corrected Supabase URL
+  - Old URL `snkgkcdnmhqaejpqftxn.supabase.co` removed from build bundle
+  - New URL `rousjavuooduvicaobuv.supabase.co` baked into server.js
 - **API verification:**
-  - Direct REST API: PASS (columns readable)
-  - Application APIs (`/api/services/catalogue`, `/api/services/sidebar`): **BLOCKED**
-  - Blocker: PM2 still runs old process with stale `NEXT_PUBLIC_SUPABASE_URL` (`snkgkcdnmhqaejpqftxn.supabase.co`)
-  - `.env` updated but PM2 environment not refreshed
+  - `/api/services/catalogue`: **PASS** — returns 4 live services
+  - `/api/services/sidebar`: **PASS** — returns empty (all services have `show_sidebar=false`)
+  - PM2 restarted with updated environment
+  - Application now connected to live Janjez database
 - **Current blockers:**
-  - P0: PM2 restart required to pick up new `.env` Supabase URL
   - P1: 13 legacy order pages still depend on static `ORDER_SERVICES`
   - P1: `GlobalSearch.tsx` depends on static `ORDER_SERVICES` + `PLATFORMS`
   - P1: Client/server pricing mismatch (OrderForm vs page-clients vs order API)
@@ -603,9 +606,9 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - P2: `Others` fallback not implemented
   - P2: Full `show_catalogue` fallback route not implemented
   - P3: Lint has 5 errors / 91 warnings
-  - P3: PM2 has 4 restarts — stability investigation pending
+  - P3: PM2 has 8 restarts — stability investigation pending
 - **Tests:** 155 passed
-- **Next action:** Restart PM2 to pick up new `.env`, then verify application APIs against live database.
+- **Next action:** Continue with Phase 2 service verification and remaining remediation.
 
 ---
 
@@ -621,13 +624,12 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 | **nginx** | active |
 | **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
 | **Ledger commit** | `f0b94d8` — `docs: record Supabase authentication success and migration status` |
-| **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration APPLIED) |
+| **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration APPLIED, build rebuilt) |
 | **Supabase status** | AUTHENTICATED — service role key valid |
 | **Database** | Connected — 4 services, 2 orders, 22 wallet transactions |
 | **Placement columns** | PRESENT — migration `20250101000022_service_placement.sql` APPLIED |
-| **PM2 env** | Stale — needs restart to pick up new `.env` Supabase URL |
-| **Preservation** | `/tmp/janjez-aug24-25.diff`, `/tmp/janjez-untracked.txt`, `/tmp/janjez-forensic-metadata.txt` |
-| **Next action** | Restart PM2 to pick up new `.env`, then verify application APIs |
+| **Application** | Rebuilt with new Supabase URL, APIs verified |
+| **Next action** | Continue with Phase 2: service verification and remaining remediation |
 | **Outstanding** | Phases 1-11 per roadmap above |
 
 ---
