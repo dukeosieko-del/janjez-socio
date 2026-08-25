@@ -88,7 +88,6 @@ export default function Sidebar() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetch("/api/services/sidebar")
       .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
       .then((data) => {

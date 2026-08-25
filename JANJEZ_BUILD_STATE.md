@@ -690,3 +690,33 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 ---
 
 *This document is the authoritative operational record for Janjez. Update it after every substantive task. Do not overwrite previous entries.*
+
+### 2026-08-25 — MILESTONE 3: Quality + Full E2E
+- **Task:** Fix lint errors, run E2E verification, validate pricing and service completeness
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:** OrderForm.tsx, ServiceCatalog.tsx, Sidebar.tsx
+- **Lint fixes:**
+  - Fixed 5 pre-existing lint errors in OrderForm.tsx, ServiceCatalog.tsx, Sidebar.tsx
+  - Replaced useMemo with useEffect for data fetching in OrderForm
+  - Removed redundant setLoading(true) calls in ServiceCatalog and Sidebar
+- **E2E verification:**
+  - `/api/services/catalogue`: PASS — 4 services
+  - `/api/services/sidebar`: PASS — empty (show_sidebar=false)
+  - `/api/services/catalogue?placement=show_guarded`: PASS — 4 services
+  - `/api/services/catalogue?placement=show_anonymous`: PASS — 4 services
+  - `/api/services/catalogue?placement=show_landing`: PASS — empty (show_landing=false)
+  - `/services`: PASS — 200, platform listing
+  - `/services/others`: PASS — 200, Others fallback
+  - Pricing: PASS — unified calculateOrderCost(rate, qty) across all consumers
+  - Static ORDER_SERVICES: 1 remaining legacy fallback in orders API (acceptable)
+- **Build verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 116 warnings
+- **Current blockers:**
+  - P1: Database only has 4 services (no youtube/x/whatsapp-specific services yet)
+  - P2: Full show_catalogue fallback route implemented
+  - P3: Lint 0 errors / 116 warnings (warnings are pre-existing)
+  - P3: PM2 has 8 restarts — stability investigation pending
+- **Next action:** Commit quality/E2E changes, finalize build state.
+

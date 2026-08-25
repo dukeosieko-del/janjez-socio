@@ -19,7 +19,6 @@ export default function ServiceCatalog() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetch("/api/services/catalogue?placement=show_landing&active=true")
       .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
       .then((data) => {

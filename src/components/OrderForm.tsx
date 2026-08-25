@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { getServiceCatalogue, getServicesByCategory, getServiceById } from "@/lib/service-queries";
 import { submitOrder } from "@/lib/order-log";
@@ -45,9 +45,8 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
   const [catalogue, setCatalogue] = useState<ServiceCatalogueItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useMemo(() => {
+  useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     getServiceCatalogue("show_guarded")
       .then((services) => {
         if (!cancelled) {
