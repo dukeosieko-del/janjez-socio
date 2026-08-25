@@ -567,14 +567,35 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - `/tmp/janjez-aug24-25.diff` — tracked diff
   - `/tmp/janjez-untracked.txt` — untracked manifest
   - `/tmp/janjez-forensic-metadata.txt` — metadata
+- **State documentation commits:**
+  - `58a5a4f` — `docs: update build state ledger and README for current EC2 session`
+  - `b520d22` — `docs: record current EC2 session state and Supabase investigation`
 - **Supabase investigation:**
-  - Old project `snkgkcdnmhqaejpqftxn.supabase.co` → NXDOMAIN
-  - Candidate `rousjavuooduvicaobuv.supabase.co` → resolves but credentials invalid (HTTP 401)
-  - Root cause: STALE/INVALID SUPABASE HOSTNAME
-- **Current HEAD:** `2a3107b0a2f7a3d2b77e77b845cc40f3cd3c2d6b`
-- **Working tree:** DIRTY (39 modified, 7 untracked)
-- **Build ID:** `IUEGeQlUlTzuLQhfA-Km6`
-- **Next action:** Obtain correct Supabase project reference and credentials, then proceed with Phase 1 verification.
+  - Old project `snkgkcdnmhqaejpqftxn.supabase.co` → **NXDOMAIN** (dead/stale)
+  - Candidate `rousjavuooduvicaobuv.supabase.co` → **RESOLVES** and **AUTHENTICATES** with reconstructed `.env` credentials
+  - Root cause: **STALE/INVALID SUPABASE HOSTNAME** — confidence HIGH
+  - `.env` manually reconstructed with valid candidate credentials
+- **Database verification:**
+  - Connection: PASS
+  - `janjez_services`: EXISTS (4 services)
+  - `provider_services`: EXISTS
+  - `orders`: EXISTS (2 orders)
+  - `wallet_transactions`: EXISTS (22 transactions)
+  - Placement columns: **ALL 5 MISSING** (`show_sidebar`, `show_landing`, `show_guarded`, `show_anonymous`, `show_catalogue`)
+  - Migration `20250101000022_service_placement.sql`: **NOT APPLIED**
+  - RLS: UNVERIFIABLE via REST API
+- **Current blockers:**
+  - P0: Migration NOT applied — placement columns missing from `janjez_services`
+  - P1: 13 legacy order pages still depend on static `ORDER_SERVICES`
+  - P1: `GlobalSearch.tsx` depends on static `ORDER_SERVICES` + `PLATFORMS`
+  - P1: Client/server pricing mismatch (OrderForm vs page-clients vs order API)
+  - P2: Sidebar API hardcodes `"show_sidebar"` instead of accepting placement parameter
+  - P2: `Others` fallback not implemented
+  - P2: Full `show_catalogue` fallback route not implemented
+  - P3: Lint has 5 errors / 91 warnings
+  - P3: PM2 has 4 restarts — stability investigation pending
+- **Tests:** 155 passed
+- **Next action:** Apply migration `20250101000022_service_placement.sql` to restore placement columns, then continue with Phase 2 service verification.
 
 ---
 
@@ -584,16 +605,18 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 |------|-------|
 | **Session** | Direct EC2 runtime |
 | **Branch** | `review/janjez-reconciliation-20260822` |
-| **HEAD** | `58a5a4f4cb10955c3b09c9ea4c204a8fae084432` |
+| **HEAD** | `b520d227cbd7c9c6acb337e6eb9172756497ec10` |
 | **Working tree** | DIRTY — 39 modified tracked files, 7 untracked items (code changes uncommitted) |
 | **PM2** | `janjez-app` online, PID 123025, uptime 87m, restarts=4 |
 | **nginx** | active |
 | **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
-| **Ledger commit** | `58a5a4f` — `docs: update build state ledger and README for current EC2 session` |
-| **Supabase hostname** | `snkgkcdnmhqaejpqftxn.supabase.co` (NXDOMAIN) |
-| **Supabase candidate** | `rousjavuooduvicaobuv.supabase.co` (resolves, creds invalid) |
+| **Ledger commit** | `b520d22` — `docs: record current EC2 session state and Supabase investigation` |
+| **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration NOT applied) |
+| **Supabase status** | AUTHENTICATED — service role key valid |
+| **Database** | Connected — 4 services, 2 orders, 22 wallet transactions |
+| **Placement columns** | MISSING — migration `20250101000022_service_placement.sql` NOT applied |
 | **Preservation** | `/tmp/janjez-aug24-25.diff`, `/tmp/janjez-untracked.txt`, `/tmp/janjez-forensic-metadata.txt` |
-| **Next action** | Obtain correct Supabase project reference and valid credentials |
+| **Next action** | Apply migration `20250101000022_service_placement.sql` to restore placement columns |
 | **Outstanding** | Phases 1-11 per roadmap above |
 
 ---
