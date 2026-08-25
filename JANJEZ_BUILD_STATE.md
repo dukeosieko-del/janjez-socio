@@ -646,19 +646,19 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 |------|-------|
 | **Session** | Direct EC2 runtime |
 | **Branch** | `review/janjez-reconciliation-20260822` |
-| **HEAD** | `f0b94d8a4003c3a8f250717de6d6682499d8f0dc` |
-| **Working tree** | DIRTY — 40 modified tracked files, 7 untracked items (service remediation cluster uncommitted) |
+| **HEAD** | `0818978ebef3a51f3af54a228c2e267f91872f5a` |
+| **Working tree** | CLEAN — service remediation cluster committed |
 | **PM2** | `janjez-app` online, PID 123025, uptime 87m, restarts=4 |
 | **nginx** | active |
 | **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
-| **Ledger commit** | `f0b94d8` — `docs: record Supabase authentication success and migration status` |
+| **Ledger commit** | `0818978` — `feat: migrate legacy order pages to dynamic services, reconcile pricing, fix sidebar API` |
 | **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration APPLIED, build rebuilt) |
 | **Supabase status** | AUTHENTICATED — service role key valid |
 | **Database** | Connected — 4 services, 2 orders, 22 wallet transactions |
 | **Placement columns** | PRESENT — migration `20250101000022_service_placement.sql` APPLIED |
 | **Service remediation** | 13 page-clients migrated to dynamic services, GlobalSearch migrated, pricing reconciled, sidebar API fixed, Others fallback added |
 | **Application** | Rebuilt with new Supabase URL, APIs verified |
-| **Next action** | Commit service remediation cluster |
+| **Next action** | Continue with remaining phases: Others fallback routes, show_catalogue fallback, lint errors, PM2 stability |
 | **Outstanding** | Phases 1-11 per roadmap above |
 
 ---
