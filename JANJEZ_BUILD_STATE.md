@@ -570,22 +570,32 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 - **State documentation commits:**
   - `58a5a4f` — `docs: update build state ledger and README for current EC2 session`
   - `b520d22` — `docs: record current EC2 session state and Supabase investigation`
+  - `f0b94d8` — `docs: record Supabase authentication success and migration status`
 - **Supabase investigation:**
   - Old project `snkgkcdnmhqaejpqftxn.supabase.co` → **NXDOMAIN** (dead/stale)
-  - Candidate `rousjavuooduvicaobuv.supabase.co` → **RESOLVES** and **AUTHENTICATES** with reconstructed `.env` credentials
+  - Candidate `rousjavuooduvicaobuv.supabase.co` → **CONNECTED** and **AUTHENTICATED**
   - Root cause: **STALE/INVALID SUPABASE HOSTNAME** — confidence HIGH
   - `.env` manually reconstructed with valid candidate credentials
+- **Migration application:**
+  - Migration `20250101000022_service_placement.sql`: **APPLIED** (manual execution via Supabase Dashboard)
+  - All 5 placement columns now exist on `public.janjez_services`
+  - 5 partial indexes created
+  - Existing 4 service records preserved
 - **Database verification:**
   - Connection: PASS
   - `janjez_services`: EXISTS (4 services)
   - `provider_services`: EXISTS
   - `orders`: EXISTS (2 orders)
   - `wallet_transactions`: EXISTS (22 transactions)
-  - Placement columns: **ALL 5 MISSING** (`show_sidebar`, `show_landing`, `show_guarded`, `show_anonymous`, `show_catalogue`)
-  - Migration `20250101000022_service_placement.sql`: **NOT APPLIED**
-  - RLS: UNVERIFIABLE via REST API
+  - Placement columns: **ALL 5 PRESENT** with correct defaults
+  - Service data: 4 active services, 0 inactive, no NULL flags, no all-false records
+- **API verification:**
+  - Direct REST API: PASS (columns readable)
+  - Application APIs (`/api/services/catalogue`, `/api/services/sidebar`): **BLOCKED**
+  - Blocker: PM2 still runs old process with stale `NEXT_PUBLIC_SUPABASE_URL` (`snkgkcdnmhqaejpqftxn.supabase.co`)
+  - `.env` updated but PM2 environment not refreshed
 - **Current blockers:**
-  - P0: Migration NOT applied — placement columns missing from `janjez_services`
+  - P0: PM2 restart required to pick up new `.env` Supabase URL
   - P1: 13 legacy order pages still depend on static `ORDER_SERVICES`
   - P1: `GlobalSearch.tsx` depends on static `ORDER_SERVICES` + `PLATFORMS`
   - P1: Client/server pricing mismatch (OrderForm vs page-clients vs order API)
@@ -595,7 +605,7 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - P3: Lint has 5 errors / 91 warnings
   - P3: PM2 has 4 restarts — stability investigation pending
 - **Tests:** 155 passed
-- **Next action:** Apply migration `20250101000022_service_placement.sql` to restore placement columns, then continue with Phase 2 service verification.
+- **Next action:** Restart PM2 to pick up new `.env`, then verify application APIs against live database.
 
 ---
 
@@ -605,18 +615,19 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 |------|-------|
 | **Session** | Direct EC2 runtime |
 | **Branch** | `review/janjez-reconciliation-20260822` |
-| **HEAD** | `b520d227cbd7c9c6acb337e6eb9172756497ec10` |
+| **HEAD** | `f0b94d8a4003c3a8f250717de6d6682499d8f0dc` |
 | **Working tree** | DIRTY — 39 modified tracked files, 7 untracked items (code changes uncommitted) |
 | **PM2** | `janjez-app` online, PID 123025, uptime 87m, restarts=4 |
 | **nginx** | active |
 | **Build ID** | `IUEGeQlUlTzuLQhfA-Km6` |
-| **Ledger commit** | `b520d22` — `docs: record current EC2 session state and Supabase investigation` |
-| **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration NOT applied) |
+| **Ledger commit** | `f0b94d8` — `docs: record Supabase authentication success and migration status` |
+| **Supabase hostname** | `rousjavuooduvicaobuv.supabase.co` (CONNECTED, migration APPLIED) |
 | **Supabase status** | AUTHENTICATED — service role key valid |
 | **Database** | Connected — 4 services, 2 orders, 22 wallet transactions |
-| **Placement columns** | MISSING — migration `20250101000022_service_placement.sql` NOT applied |
+| **Placement columns** | PRESENT — migration `20250101000022_service_placement.sql` APPLIED |
+| **PM2 env** | Stale — needs restart to pick up new `.env` Supabase URL |
 | **Preservation** | `/tmp/janjez-aug24-25.diff`, `/tmp/janjez-untracked.txt`, `/tmp/janjez-forensic-metadata.txt` |
-| **Next action** | Apply migration `20250101000022_service_placement.sql` to restore placement columns |
+| **Next action** | Restart PM2 to pick up new `.env`, then verify application APIs |
 | **Outstanding** | Phases 1-11 per roadmap above |
 
 ---
