@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 
 interface LandingService {
@@ -25,17 +26,31 @@ export default function ServiceCatalog() {
         if (!cancelled) {
           const services = (data.services || []) as LandingService[];
           const platformMap = new Map<string, { id: string; name: string; icon: string; href: string; description: string; count: number }>();
+          for (const platform of KNOWN_PLATFORMS) {
+            platformMap.set(platform, {
+              id: platform,
+              name: platform.charAt(0).toUpperCase() + platform.slice(1).replace(/-/g, " "),
+              icon: getPlatformAvatar(platform),
+              href: `/services/${platform}`,
+              description: "",
+              count: 0,
+            });
+          }
           for (const svc of services) {
-            const existing = platformMap.get(svc.category) || {
-              id: svc.category,
-              name: svc.category.charAt(0).toUpperCase() + svc.category.slice(1),
-              icon: getPlatformAvatar(svc.category),
-              href: `/services/${svc.category}`,
+            const catLower = svc.category.toLowerCase();
+            const matched = KNOWN_PLATFORMS.find((p) => catLower.includes(p));
+            const key = matched || svc.category;
+            const existing = platformMap.get(key) || {
+              id: key,
+              name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
+              icon: getPlatformAvatar(key),
+              href: `/services/${key}`,
               description: svc.name,
               count: 0,
             };
             existing.count += 1;
-            platformMap.set(svc.category, existing);
+            if (!existing.description) existing.description = svc.name;
+            platformMap.set(key, existing);
           }
           setPlatforms(Array.from(platformMap.values()));
           setLoading(false);

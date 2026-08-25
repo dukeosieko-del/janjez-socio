@@ -75,7 +75,7 @@ export function getServicesBySubcategory(services: Array<{ categoryId: string; s
   });
 }
 
-const KNOWN_PLATFORMS = [
+export const KNOWN_PLATFORMS = [
   "youtube",
   "whatsapp",
   "instagram",

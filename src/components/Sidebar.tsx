@@ -135,7 +135,7 @@ export default function Sidebar() {
           {/* Logo area */}
           <div className="flex items-center justify-between p-4 border-b border-kenya-white/10">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/janjez-logo.png" alt="janjez.social" width={32} height={32} className="w-8 h-8 object-contain" />
+              <Image src="/janjez-logo.png" alt="janjez.social" width={28} height={32} quality={90} className="w-7 h-8 object-contain" />
               <span className="text-lg font-bold text-kenya-white">
                 janjez<span className="text-kenya-green">.social</span>
               </span>

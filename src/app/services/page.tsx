@@ -4,6 +4,8 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { SERVICES_CATEGORIES } from "@/lib/services-data";
+import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 import { listJanjezServices } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 import { categorizeServices } from "@/lib/service-queries";
@@ -23,24 +25,37 @@ async function getPlatforms(): Promise<PlatformCard[]> {
   const categorized = categorizeServices(services);
   const platforms: PlatformCard[] = [];
 
-  for (const [id, svcs] of Object.entries(categorized)) {
-    if (id === "others") {
-      platforms.push({
-        id: "others",
-        name: "Others",
-        icon: getPlatformAvatar("others"),
-        href: "/services/others",
-        serviceCount: svcs.length,
-      });
-    } else {
-      platforms.push({
-        id,
-        name: id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, " "),
-        icon: getPlatformAvatar(id),
-        href: `/services/${id}`,
-        serviceCount: svcs.length,
-      });
-    }
+  for (const platform of KNOWN_PLATFORMS) {
+    const svcs = categorized[platform] || [];
+    platforms.push({
+      id: platform,
+      name: platform.charAt(0).toUpperCase() + platform.slice(1).replace(/-/g, " "),
+      icon: getPlatformAvatar(platform),
+      href: `/services/${platform}`,
+      serviceCount: svcs.length,
+    });
+  }
+
+  const dbOnly = Object.keys(categorized).filter((id) => !KNOWN_PLATFORMS.includes(id as typeof KNOWN_PLATFORMS[number]) && id !== "others");
+  for (const id of dbOnly) {
+    const svcs = categorized[id];
+    platforms.push({
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1).replace(/-/g, " "),
+      icon: getPlatformAvatar(id),
+      href: `/services/${id}`,
+      serviceCount: svcs.length,
+    });
+  }
+
+  if (categorized.others && categorized.others.length > 0) {
+    platforms.push({
+      id: "others",
+      name: "Others",
+      icon: getPlatformAvatar("others"),
+      href: "/services/others",
+      serviceCount: categorized.others.length,
+    });
   }
 
   return platforms.sort((a, b) => a.name.localeCompare(b.name));
