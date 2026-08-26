@@ -57,7 +57,7 @@ export default function HappyHourButton() {
       onClick={handleClick}
       disabled={loading}
       className="inline-flex items-center gap-2 bg-kenya-red/10 text-kenya-red font-bold text-sm px-4 py-2 rounded-xl hover:bg-kenya-red/20 transition-all border border-kenya-red/30 disabled:opacity-50"
-      aria-label="Happy Hour - get a random drip-feed service"
+      aria-label="Happy Hour - get a random discounted service"
     >
       {loading ? (
         <span className="w-4 h-4 border-2 border-kenya-red border-t-transparent rounded-full animate-spin" />

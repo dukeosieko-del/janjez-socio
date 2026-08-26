@@ -415,6 +415,23 @@ export function ServicesTab() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState(false);
   const [form, setForm] = useState<Partial<JanjezServiceShape>>({});
+  const [subcategoryOptions, setSubcategoryOptions] = useState<string[]>([]);
+  const [customSubcategory, setCustomSubcategory] = useState("");
+
+  useEffect(() => {
+    if (!form.category) {
+      setSubcategoryOptions([]);
+      return;
+    }
+    const cat = form.category.toLowerCase();
+    const subs = new Set<string>();
+    for (const svc of janjezServices) {
+      if (svc.category && svc.category.toLowerCase() === cat && svc.subcategory) {
+        subs.add(svc.subcategory);
+      }
+    }
+    setSubcategoryOptions(Array.from(subs).sort());
+  }, [form.category, janjezServices]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -691,7 +708,11 @@ export function ServicesTab() {
                        <select
                          required
                          value={form.category || ""}
-                         onChange={(e) => setForm({ ...form, category: e.target.value })}
+                         onChange={(e) => {
+  const cat = e.target.value;
+  setForm({ ...form, category: cat, subcategory: "" });
+  setCustomSubcategory("");
+}}
                          className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
                        >
                          <option value="">-- Select a platform --</option>
@@ -703,16 +724,51 @@ export function ServicesTab() {
                          <option value="others">Others</option>
                        </select>
                      </div>
-                     <div>
-                       <label className="block text-sm font-medium text-kenya-white/70 mb-1">Subcategory</label>
-                       <input
-                         type="text"
-                         value={form.subcategory || ""}
-                         onChange={(e) => setForm({ ...form, subcategory: e.target.value || null })}
-                         placeholder="e.g. Group Members, Likes, Views"
-                         className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green"
-                       />
-                     </div>
+                      <div>
+                        <label className="block text-sm font-medium text-kenya-white/70 mb-1">Subcategory</label>
+                        {subcategoryOptions.length > 0 || customSubcategory ? (
+                          <>
+                            <select
+                              value={customSubcategory ? "__custom__" : (form.subcategory || "")}
+                              onChange={(e) => {
+                                if (e.target.value === "__custom__") {
+                                  setCustomSubcategory(form.subcategory || "");
+                                } else {
+                                  setCustomSubcategory("");
+                                  setForm({ ...form, subcategory: e.target.value || null });
+                                }
+                              }}
+                              className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green mb-2"
+                            >
+                              <option value="">-- Select a subcategory --</option>
+                              {subcategoryOptions.map((sub) => (
+                                <option key={sub} value={sub}>{sub}</option>
+                              ))}
+                              <option value="__custom__">Custom...</option>
+                            </select>
+                            {customSubcategory && (
+                              <input
+                                type="text"
+                                value={customSubcategory}
+                                onChange={(e) => {
+                                  setCustomSubcategory(e.target.value);
+                                  setForm({ ...form, subcategory: e.target.value || null });
+                                }}
+                                placeholder="Enter custom subcategory"
+                                className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green"
+                              />
+                            )}
+                          </>
+                        ) : (
+                          <input
+                            type="text"
+                            value={form.subcategory || ""}
+                            onChange={(e) => setForm({ ...form, subcategory: e.target.value || null })}
+                            placeholder="e.g. Group Members, Likes, Views"
+                            className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green"
+                          />
+                        )}
+                      </div>
                    </div>
 
                   <div>

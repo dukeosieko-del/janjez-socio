@@ -9,6 +9,7 @@ import { JanjezService } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 import { PLATFORMS } from "@/lib/data";
 import { KNOWN_PLATFORMS } from "@/lib/service-queries";
+import { normalizeSlug } from "@/lib/janzez-services";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
@@ -53,7 +54,7 @@ async function getSubcategories(platform: string): Promise<Array<{ name: string;
     const key = svc.subcategory || "General";
     subMap.set(key, (subMap.get(key) || 0) + 1);
   }
-  const result = Array.from(subMap.entries()).map(([name, count]) => ({ name, count, slug: name.toLowerCase().replace(/\s+/g, "-") }));
+  const result = Array.from(subMap.entries()).map(([name, count]) => ({ name, count, slug: normalizeSlug(name) }));
   if (filtered.length > 0 && result.length === 0) {
     result.push({ name: "All Services", count: filtered.length, slug: "all" });
   }
@@ -132,7 +133,7 @@ export default async function PlatformPage({ params }: PlatformPageProps) {
                   {services.map((svc) => (
                     <Link
                       key={svc.id}
-                      href={`/services/${platform}/${subcategories[0]?.slug || "all"}/${svc.slug}`}
+                      href={`/services/${platform}/${subcategories[0]?.slug || "all"}/${normalizeSlug(svc.slug)}`}
                       className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
                     >
                       <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">

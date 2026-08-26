@@ -9,6 +9,7 @@ import { listJanjezServices } from "@/lib/janjez-services";
 import { JanjezService } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 import { isKnownPlatform, matchPlatform } from "@/lib/service-queries";
+import { normalizeSlug } from "@/lib/janzez-services";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -37,7 +38,7 @@ async function getSubcategoryServices(platform: string, subcategorySlug: string)
     : all.filter((s) => !isKnownPlatform(s.category) && !matchPlatform(s.category));
   const inSubcategory = filtered.filter((s) => {
     const sub = s.subcategory || "General";
-    return sub.toLowerCase().replace(/\s+/g, "-") === subcategorySlug;
+    return normalizeSlug(sub) === subcategorySlug;
   });
   const subName = inSubcategory.length > 0 ? (inSubcategory[0].subcategory || "General") : subcategorySlug;
   return { services: inSubcategory, subcategoryName: subName };
@@ -87,7 +88,7 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
                   {services.map((svc) => (
                     <Link
                       key={svc.id}
-                      href={`/services/${platform}/${subcategory}/${svc.slug}`}
+                      href={`/services/${platform}/${subcategory}/${normalizeSlug(svc.slug)}`}
                       className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
                     >
                       <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">

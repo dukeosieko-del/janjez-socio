@@ -276,14 +276,14 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
                   className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
                 />
                 <label htmlFor="drip-feed-ff" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
-                  Drip-feed schedule
+                  Schedule delivery
                 </label>
               </div>
               {dripFeed && <span className="text-xs text-kenya-green bg-kenya-green/10 px-2 py-1 rounded">Enabled</span>}
             </div>
             {dripFeed && (
               <p className="text-kenya-white/50 text-xs mt-2">
-                Quantity is the TOTAL delivered across the schedule. The provider splits it across runs at the interval.
+                Your total quantity will be delivered gradually over the scheduled period.
               </p>
             )}
             {dripFeed && (

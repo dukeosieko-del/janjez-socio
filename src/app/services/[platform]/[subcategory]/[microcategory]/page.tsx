@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { JanjezService } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 import { matchPlatform } from "@/lib/service-queries";
+import { normalizeSlug } from "@/lib/janzez-services";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -34,12 +35,24 @@ async function getService(platform: string, subcategorySlug: string, serviceSlug
   const supabase = createAdminClient();
   if (!supabase) return null;
 
-  const { data, error } = await supabase
+  const normalizedSlug = normalizeSlug(serviceSlug);
+  let { data, error } = await supabase
     .from("janjez_services")
     .select("*")
     .eq("slug", serviceSlug)
     .eq("is_active", true)
     .maybeSingle();
+
+  if (!data && normalizedSlug !== serviceSlug) {
+    const fallback = await supabase
+      .from("janjez_services")
+      .select("*")
+      .eq("slug", normalizedSlug)
+      .eq("is_active", true)
+      .maybeSingle();
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error || !data) return null;
 

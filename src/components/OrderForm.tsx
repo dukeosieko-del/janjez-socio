@@ -312,9 +312,6 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
         <div className="bg-kenya-green/10 border border-kenya-green/30 rounded-2xl p-6 mb-6">
           <div className="flex items-start justify-between mb-3">
             <h3 className="text-lg font-bold text-kenya-white">{selectedService.name}</h3>
-            <span className="bg-kenya-black/60 text-kenya-green text-xs font-mono px-3 py-1 rounded-lg border border-kenya-green/30">
-              #{selectedService.serviceId}
-            </span>
           </div>
           <p className="text-kenya-white/70 text-sm mb-4">{selectedService.description}</p>
           <div className="flex flex-wrap items-center gap-3">
@@ -396,7 +393,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
                     className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
                   />
                   <label htmlFor="drip-feed" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
-                    Drip-feed schedule
+                    Schedule delivery
                   </label>
                 </div>
                 {dripFeed && (
@@ -407,8 +404,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
               </div>
               {dripFeed && (
                 <p className="text-kenya-white/50 text-xs mt-2">
-                  Quantity is the TOTAL quantity delivered across the entire drip-feed schedule.
-                  The provider will split it evenly across the number of runs at the given interval.
+                  Your total quantity will be delivered gradually across the scheduled runs.
                 </p>
               )}
             </div>

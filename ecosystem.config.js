@@ -5,9 +5,9 @@ module.exports = {
 
     name: "janjez-app",
 
-    script: "node",
+    script: "npm",
 
-    args: ".next/standalone/server.js",
+    args: "start",
 
     instances: 1,
 

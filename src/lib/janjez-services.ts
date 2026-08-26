@@ -218,6 +218,16 @@ export async function deleteJanjezService(id: string): Promise<void | { error: s
   if (error) return { error: error.message };
 }
 
+export function normalizeSlug(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "") || "service";
+}
+
 export async function getProviderCatalogFresh(): Promise<ProviderServiceRow[]> {
   const services = await fetchProviderServices();
   return services.map((s) => ({
