@@ -1575,5 +1575,96 @@ AUTH STATUS:
 - P2: Middleware deprecation warning (non-blocking)
 - P3: Logo source asset is 233x270 JPEG
 
-### Next action
+### Next action (original)
 Push commit `5534c50` to remote and deploy to Vercel Preview for browser-level E2E validation of all 8 platforms and guest checkout flow.
+
+---
+
+## 4. SESSION 2026-08-26 — Vercel Preview E2E validation and follow-up fixes
+
+### Vercel Preview deployment
+- **Deployment URL:** `https://janjez-socio-f32gsu57i-dukeosieko-dels-projects.vercel.app`
+- **Deployment status:** Ready
+- **Build ID:** Latest preview build from commit `47f70f5`
+- **Commit:** `47f70f5` — fix: normalize slugs in platform routes, hide drip-feed IDs, fix anonymous API
+- **Environment:** Vercel Preview (not production)
+
+### E2E validation results
+
+**Service taxonomy (all 8 platforms):**
+- `/services/youtube` → 200 ✓
+- `/services/whatsapp` → 200 ✓
+- `/services/instagram` → 200 ✓
+- `/services/facebook` → 200 ✓
+- `/services/tiktok` → 200 ✓
+- `/services/telegram` → 200 ✓
+- `/services/google-maps-reviews` → 200 ✓
+- `/services/x` → 200 ✓
+
+**X/Twitter funnel:**
+- `/services/x` → 200 ✓
+- `/services/x/twitter` → 200 ✓
+- `/services/x/twitter/speed-500khr-instant-twitter-x-tweet` → 200 ✓
+- No 404s ✓
+- No stale malformed service URLs ✓
+
+**Facebook funnel (generic mapping verification):**
+- `/services/facebook` → 200 ✓
+- `/services/facebook/facebook-page-followers-cheap-slow-server/facebook` → 200 ✓
+
+**Payment/info leakage:**
+- No visible `provider` terminology in customer UI ✓
+- No visible `drip-feed` terminology in customer UI ✓
+- No visible `fulfillment` terminology in customer UI ✓
+- HTML `id`/`for` attributes sanitized (no internal terminology) ✓
+- Backend `provider_service_id` and `supports_drip_feed` preserved internally ✓
+
+**Guest checkout:**
+- "Place order as guest" checkbox present ✓
+- Phone number input present ✓
+- No false "Insufficient wallet balance" error for guests ✓
+
+**Authenticated API:**
+- `/api/orders` returns 401 Unauthorized without auth ✓
+
+**Additional fixes applied after initial commit:**
+
+1. **Platform page `getSubcategoryServices` slug matching:**
+   - Fixed `sub.toLowerCase().replace(/\s+/g, "-")` to use `normalizeSlug(sub)`
+   - This was causing empty service lists for platforms with special characters in subcategories (e.g., Facebook with 🚀 emoji)
+
+2. **HTML id/for attribute sanitization:**
+   - Changed `id="drip-feed-ff"` → `id="schedule-delivery-ff"` in `FulfillmentForm.tsx`
+   - Changed `htmlFor="drip-feed-ff"` → `htmlFor="schedule-delivery-ff"` in `FulfillmentForm.tsx`
+   - Changed `id="drip-feed"` → `id="schedule-delivery"` in `OrderForm.tsx`
+   - Changed `htmlFor="drip-feed"` → `htmlFor="schedule-delivery"` in `OrderForm.tsx`
+
+3. **Anonymous order API parameter fix:**
+   - Fixed `resolveJanjezService(janzez_service_id, null, null)` → `resolveJanjezService(null, null, janjez_service_id)`
+   - The service ID was being passed as `skuId` (slug lookup) instead of `janjezServiceId` (ID lookup)
+   - This caused 404 "Service not found or not available" for all anonymous orders
+
+### Files changed (additional)
+- `src/app/services/[platform]/page.tsx` — fix `getSubcategoryServices` slug matching
+- `src/components/OrderForm.tsx` — sanitize HTML id/for attributes
+- `src/components/fulfillment/FulfillmentForm.tsx` — sanitize HTML id/for attributes
+- `src/app/api/orders/anonymous/route.ts` — fix service ID parameter order
+
+### Git
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **Starting HEAD:** `348246b538529399ade513e2d6ba7ef465385d0f`
+- **Final HEAD:** `47f70f5` (pending push)
+- **Commits:**
+  - `5534c50` — fix: resolve service taxonomy 404, payment info leak, and guest ordering
+  - `e336df5` — docs: update build state with browser-level investigation findings
+  - `47f70f5` — fix: normalize slugs in platform routes, hide drip-feed IDs, fix anonymous API
+- **Working tree:** Clean
+
+### Remaining blockers
+- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+- P2: Middleware deprecation warning (non-blocking)
+- P3: Logo source asset is 233x270 JPEG
+- P4: Anonymous order API returns 500 on Vercel Preview (Supabase insert failure — likely environment config, not code bug)
+
+### Next action
+Push commit `47f70f5` to remote. The anonymous order API 500 on Vercel should be investigated separately (check Vercel environment variables for Supabase credentials). Do not deploy to production yet.
