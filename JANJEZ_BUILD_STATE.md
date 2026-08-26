@@ -1095,3 +1095,55 @@ CURRENT STATE SUMMARY:
 - Tests: 156 passed
 - Lint: 0 errors
 - Build: PASS
+
+### 2026-08-26 — MILESTONE 12: Auth/Email E2E Verification — Read-Only Comparison
+- **Task:** Verify ZeptoMail configuration and investigate auth issues
+- **Operation type:** READ-ONLY INVESTIGATION (no code changes)
+- **Files inspected:** `src/lib/email/transport.ts`, `src/lib/email/config.ts`, `.env`, `ecosystem.config.js`, `public/sw.js`, `public/manifest.json`, git history
+- **Findings:**
+
+  **Problem A — Staging email send failure (TM_4001):**
+  - Current `transport.ts` is functionally identical to former production version
+  - Only change: URL normalization (commit 05e87d1) adds `https://` and trailing slash — this is a bug fix, not a regression
+  - From address: `noreply@janjez.social` (from `.env` `ZEPTOMAIL_FROM_EMAIL`)
+  - `NEXT_PUBLIC_SITE_URL` in staging: `https://staging.janjez.social` (from `ecosystem.config.js`)
+  - Old production `ecosystem.config.js` did NOT set `NEXT_PUBLIC_SITE_URL`
+  - Token is read from `.env` correctly
+  - **Root cause determination:** `TM_4001 Access Denied` is a ZeptoMail authentication error, NOT a code/config bug. The token is invalid, expired, revoked, or not authorized for the from address/account. The former production build likely used a different (valid) token. The current `.env` token does not have permission to send from `noreply@janjez.social` or is for a different ZeptoMail account.
+  - **Required action:** Obtain valid ZeptoMail Send Mail token from project owner/dashboard. Verify token is for correct account and `noreply@janjez.social` is verified sender in that account.
+
+  **Problem B — Production reset-link APK behavior:**
+  - Email delivery works on production (proves ZeptoMail was valid at that time)
+  - Clicking reset link triggers APK download/interception
+  - No APK files, download handlers, or app-link intent filters exist in current codebase
+  - No nginx rules for APK/download
+  - Service worker does not intercept auth routes
+  - Reset link uses request origin (correctly routes to production domain)
+  - **Assessment:** This is a separate issue from email sending. Likely caused by:
+    - Previous service worker version with different intercept behavior
+    - Browser/device-level app association (Android intent filters)
+    - Previous nginx configuration (no longer present)
+    - PWA manifest triggering "open in app" behavior
+  - **Current code:** Reset link correctly opens `/auth/reset-password?token=...` as a browser page
+
+- **Verification:**
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - Build: PASS
+- **Build ID:** `kZsyboDWFz7yL5pFlNWwr`
+- **No code changes made**
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `cebb6f092b5b4bec96c2c97511e5fe4532338c01`
+- Working tree: MODIFIED (3 files changed from previous session)
+- PM2: `janjez-app` online
+- Tests: 156 passed
+- Lint: 0 errors
+- Build: PASS
+
+AUTH STATUS SUMMARY:
+- **Problem A (Staging email):** BLOCKED — ZeptoMail token invalid (TM_4001). Not a code bug.
+- **Problem B (Production reset link):** Email sends, but reset-link behavior triggers APK/interception. Likely client-side/browser-level issue from previous configuration. Current code correctly handles reset links as browser pages.
+- **Domain/origin safety:** CONFIRMED — reset URLs use request origin correctly
+- **APK isolation:** CONFIRMED — no APK links in auth flows
