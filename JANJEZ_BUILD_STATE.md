@@ -1188,3 +1188,89 @@ VERCEL READINESS SUMMARY:
 - **Blockers resolved:** P0 (standalone output), P0 (postbuild), P3 (localhost fallback)
 - **Remaining external blockers:** P1 (ZeptoMail credential), P2 (middleware deprecation warning)
 - **Deployment:** NOT PERFORMED — requires valid ZeptoMail token and explicit Vercel project setup
+
+### 2026-08-26 — MILESTONE 14: Vercel Validation Deployment
+- **Task:** Deploy JANJEZ to Vercel as parallel validation environment and run E2E
+- **Operation type:** DEPLOYMENT + VERIFICATION
+- **Vercel project:** dukeosieko-dels-projects/janjez-socio
+- **Validation URL:** https://janjez-socio-pkf4hvumi-dukeosieko-dels-projects.vercel.app
+- **Deployment status:** SUCCESS — Preview deployment ready
+- **SSO protection:** Disabled for validation deployment
+- **Environment variables configured:**
+  - NEXT_PUBLIC_SUPABASE_URL
+  - NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - SUPABASE_SERVICE_ROLE_KEY
+  - ZEPTOMAIL_URL
+  - ZEPTOMAIL_SENDMAIL_TOKEN
+  - ZEPTOMAIL_FROM_EMAIL
+  - MPESA_CONSUMER_KEY
+  - MPESA_CONSUMER_SECRET
+  - MPESA_PASSKEY
+  - MPESA_SHORTCODE
+  - MPESA_ENV
+  - NEXT_PUBLIC_SITE_URL (set to Vercel preview URL)
+  - NEXT_PUBLIC_GA_ID
+  - SMM_API_URL
+  - SMM_API_KEY
+  - CRON_SECRET
+- **Validation results:**
+  - Homepage: 200
+  - CSS: 200
+  - JS: loading
+  - Images: 200
+  - 404: 200 (custom not-found page)
+  - Services page: 200, all 8 platforms render
+  - Platform pages: 200
+  - Subcategory pages: 200
+  - Service/microcategory pages: 200
+  - Blog: 200
+  - Auth pages (sign-in, sign-up, reset-password): 200
+  - Admin page: 200
+  - Dashboard: 200
+  - Orders page: 200
+  - Pay/M-Pesa page: 200
+  - Happy Hour API: 200
+  - Service funnel: YouTube, Telegram, Facebook all return 200
+- **Auth/email result:**
+  - Password reset API returns 500 with "Failed to send reset email"
+  - ZeptoMail TM_4001 blocker persists on Vercel
+  - Reset URLs use request origin (Vercel domain confirmed)
+  - Auth code: VERCEL-COMPATIBLE
+  - Email transport: BLOCKED — ZEPTOMAIL CREDENTIAL
+- **APK/download result:**
+  - No APK files found
+  - No APK download links in auth flows
+  - APK isolation: CONFIRMED
+- **Domain/origin result:**
+  - Vercel deployment uses correct origin
+  - No hardcoded production domain in auth flows
+  - Request-origin-based URLs working correctly
+- **M-Pesa result:**
+  - Pay page loads (200)
+  - Full STK/callback flow not tested (requires real payment)
+  - Code remains Vercel-compatible
+- **Tests:** 156 passed
+- **Lint:** 0 errors, 117 warnings
+- **Build:** PASS
+- **Build ID:** `uY505Ognq0AIK074hjGu9`
+- **Git:**
+  - Branch: `review/janjez-reconciliation-20260822`
+  - Starting HEAD: `810422d689e33ef834da6360d52b8f455850fe0b`
+  - Final HEAD: `810422d689e33ef834da6360d52b8f455850fe0b` (no new commits)
+  - Working tree: Clean (only pre-existing untracked files)
+- **Remaining blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P2: Middleware deprecation warning (non-blocking)
+  - P3: Logo source asset is 233x270 JPEG
+- **Next action:** Obtain valid ZeptoMail token, configure in Vercel env, re-test auth E2E. Deploy to production only after full validation.
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `810422d689e33ef834da6360d52b8f455850fe0b`
+- Working tree: Clean
+- Vercel project: dukeosieko-dels-projects/janjez-socio
+- Vercel preview: https://janjez-socio-pkf4hvumi-dukeosieko-dels-projects.vercel.app
+- PM2: Not modified
+- Tests: 156 passed
+- Lint: 0 errors
+- Build: PASS
