@@ -8,6 +8,7 @@ import { listJanjezServices } from "@/lib/janjez-services";
 import { JanjezService } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 import { PLATFORMS } from "@/lib/data";
+import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 import type { Metadata } from "next";
 
 export const revalidate = 0;
@@ -16,6 +17,16 @@ const KNOWN_PLATFORM_IDS = PLATFORMS.map((p) => p.id);
 
 function isKnownPlatform(platform: string): boolean {
   return KNOWN_PLATFORM_IDS.includes(platform);
+}
+
+function matchPlatform(category: string): string | null {
+  const lower = category.toLowerCase();
+  for (const platform of KNOWN_PLATFORMS) {
+    if (lower.includes(platform)) {
+      return platform;
+    }
+  }
+  return null;
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ platform: string }> }): Promise<Metadata> {
@@ -35,8 +46,8 @@ interface PlatformPageProps {
 async function getSubcategories(platform: string): Promise<Array<{ name: string; count: number; slug: string }>> {
   const services = await listJanjezServices(true, "show_catalogue");
   const filtered = isKnownPlatform(platform)
-    ? services.filter((s) => s.category === platform)
-    : services.filter((s) => !isKnownPlatform(s.category));
+    ? services.filter((s) => matchPlatform(s.category) === platform)
+    : services.filter((s) => !isKnownPlatform(s.category) && !matchPlatform(s.category));
   const subMap = new Map<string, number>();
   for (const svc of filtered) {
     const key = svc.subcategory || "General";
@@ -52,8 +63,8 @@ async function getSubcategories(platform: string): Promise<Array<{ name: string;
 async function getSubcategoryServices(platform: string, subcategorySlug?: string): Promise<JanjezService[]> {
   const services = await listJanjezServices(true, "show_catalogue");
   const filtered = isKnownPlatform(platform)
-    ? services.filter((s) => s.category === platform)
-    : services.filter((s) => !isKnownPlatform(s.category));
+    ? services.filter((s) => matchPlatform(s.category) === platform)
+    : services.filter((s) => !isKnownPlatform(s.category) && !matchPlatform(s.category));
   if (!subcategorySlug || subcategorySlug === "all") return filtered;
   return filtered.filter((s) => {
     const sub = s.subcategory || "General";

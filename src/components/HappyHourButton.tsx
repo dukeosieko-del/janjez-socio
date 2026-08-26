@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 
 interface JanjezServiceSummary {
   id: string;
@@ -9,6 +10,16 @@ interface JanjezServiceSummary {
   slug: string;
   category: string;
   subcategory: string | null;
+}
+
+function resolvePlatform(category: string): string | null {
+  const lower = category.toLowerCase();
+  for (const platform of KNOWN_PLATFORMS) {
+    if (lower.includes(platform)) {
+      return platform;
+    }
+  }
+  return null;
 }
 
 export default function HappyHourButton() {
@@ -27,10 +38,12 @@ export default function HappyHourButton() {
         return;
       }
       const svc = services[0] as JanjezServiceSummary;
-      const path = svc.subcategory
-        ? `/services/${svc.category}/${svc.subcategory}/${svc.slug}`
-        : `/services/${svc.category}/${svc.slug}`;
-      router.push(path);
+      const platform = resolvePlatform(svc.category);
+      if (platform) {
+        router.push(`/services/${platform}`);
+      } else {
+        router.push("/services");
+      }
     } catch (err) {
       console.error("Happy Hour error:", err);
       alert("Could not find a Happy Hour service. Please try again.");

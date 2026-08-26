@@ -25,13 +25,13 @@ export default function BlogPage() {
       title: "Maximizing Your YouTube Watch Time",
       excerpt: "Tips and tricks to increase watch time organically while using our high-retention view services.",
       date: "July 18, 2026",
-      href: "/services/youtube/watch-time",
+      href: "/services/youtube",
     },
     {
       title: "Why WhatsApp Channel Reactions Are Trending",
       excerpt: "Discover why channel post reactions are becoming the go-to growth metric for WhatsApp creators.",
       date: "July 15, 2026",
-      href: "/services/whatsapp/channel-post-reactions",
+      href: "/services/whatsapp",
     },
     {
       title: "Happy Hour: Get 5% Off Every Order",
