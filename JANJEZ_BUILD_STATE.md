@@ -1473,4 +1473,107 @@ AUTH STATUS:
   - P2: Middleware deprecation warning (non-blocking)
   - P3: Logo source asset is 233x270 JPEG
 
-- **Next action:** Commit changes, update build state, and continue with remaining phases.
+## 3. SESSION 2026-08-26 — Browser-level investigation and remediation
+
+### Starting state
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **Starting HEAD:** `348246b538529399ade513e2d6ba7ef465385d0f`
+- **Previous commit:** `348246b` — fix: guest ordering, payment UX, and service taxonomy
+
+### Issues investigated
+1. Admin category/subcategory dropdown behavior
+2. X/Twitter service 404 in rendered browser UI
+3. Generic service mapping across all 8 platforms
+4. Payment modal internal information leakage
+5. Guest order flow browser behavior
+
+### Root causes found
+
+**Admin category/subcategory dropdown:**
+- Previous fix added `<select>` for category but subcategory remained a free-text `<input>`
+- No structured mapping between admin-selected category and available subcategories
+- Subcategory options were not derived from existing service data
+
+**X/Twitter service 404:**
+- Database contained services with malformed slugs (e.g., `] [Speed 500K/HR] [INSTANT] (Twitter (X) | Tweet `)
+- Route generation normalized slugs via `normalizeSlug()` but database slugs were not normalized
+- Subcategory page matched using `sub.toLowerCase().replace(/\s+/g, "-")` which didn't normalize special characters
+- Microcategory page queried Supabase with exact slug match, failing for malformed slugs
+
+**Generic service mapping:**
+- Platform pages generated subcategory/service links using raw `svc.slug` without normalization
+- Subcategory matching didn't use `normalizeSlug()`, causing mismatches for slugs with special characters
+- Microcategory lookup used exact slug equality only, no fallback for normalized variants
+
+**Payment modal information leakage:**
+- `OrderForm.tsx` displayed `#{selectedService.serviceId}` (provider service ID) in service description header
+- `FulfillmentForm.tsx` had "drip-feed" in HTML id attributes and some customer-facing text
+- `HappyHourButton.tsx` aria-label contained "drip-feed service" terminology
+
+**Guest order flow:**
+- `FulfillmentForm.tsx` guest flow was correctly implemented (anonymous checkout bypasses wallet check)
+- `OrderForm.tsx` also had anonymous flow via `submitAnonymousOrder`
+- PM2 was running stale `.next/standalone/server.js` build that no longer existed, causing 500 errors on dynamic routes
+
+### Fixes applied
+
+1. **AdminTabs.tsx:**
+   - Added dynamic subcategory `<select>` that populates from existing `janjezServices` for selected category
+   - Added "Custom..." option for new subcategories
+   - Category select onChange resets subcategory state
+
+2. **Service route pages (platform, subcategory, microcategory):**
+   - Added `normalizeSlug` import to all three route files
+   - Platform page: subcategory slugs now use `normalizeSlug()`, service links use `normalizeSlug(svc.slug)`
+   - Subcategory page: subcategory matching uses `normalizeSlug(sub) === subcategorySlug`, service links normalized
+   - Microcategory page: added two-step slug lookup (exact match → normalized fallback)
+
+3. **Database slug normalization:**
+   - Normalized all 5 existing service slugs via Supabase REST API
+   - Fixed: `Instagram likes ` → `instagram-likes`, `] [Speed 500K/HR] [INSTANT] (Twitter (X) | Tweet ` → `speed-500khr-instant-twitter-x-tweet`, `Facebook` → `facebook`
+
+4. **Payment modal / customer UI:**
+   - Removed provider service ID display from `OrderForm.tsx` service header
+   - Changed "Drip-feed schedule" label to "Schedule delivery" in `FulfillmentForm.tsx` and `OrderForm.tsx`
+   - Updated explanatory text to customer-friendly wording
+   - Changed `HappyHourButton.tsx` aria-label from "drip-feed service" to "discounted service"
+
+5. **PM2/runtime fix:**
+   - Updated `ecosystem.config.js` from `.next/standalone/server.js` to `npm start`
+   - Restarted PM2 process to resolve 500 errors on dynamic routes
+
+### Files changed
+- `src/components/admin/AdminTabs.tsx` — dynamic subcategory select
+- `src/components/OrderForm.tsx` — remove provider ID, terminology update
+- `src/components/fulfillment/FulfillmentForm.tsx` — terminology update
+- `src/components/HappyHourButton.tsx` — aria-label terminology fix
+- `src/app/services/[platform]/page.tsx` — normalize slugs in links
+- `src/app/services/[platform]/[subcategory]/page.tsx` — normalize slug matching
+- `src/app/services/[platform]/[subcategory]/[microcategory]/page.tsx` — normalize slug lookup
+- `ecosystem.config.js` — fix PM2 startup command
+- `src/lib/janzez-services.ts` — `normalizeSlug` already present from previous commit
+
+### Verification
+- Tests: 156 passed
+- Lint: 0 errors, 117 warnings
+- Build: PASS
+- All 8 platform routes return HTTP 200
+- X taxonomy funnel: `/services/x` → `/services/x/twitter` → `/services/x/twitter/speed-500khr-instant-twitter-x-tweet` all return 200
+- YouTube, Instagram, Facebook, TikTok, Telegram, Google Maps Reviews routes all return 200
+- Anonymous checkout UI renders correctly for guests
+- No customer-facing provider IDs or drip-feed terminology found in components
+
+### Git
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **Starting HEAD:** `348246b538529399ade513e2d6ba7ef465385d0f`
+- **Final HEAD:** `5534c50` (pending push)
+- **Commit:** `5534c50` — fix: resolve service taxonomy 404, payment info leak, and guest ordering
+- **Working tree:** Clean (staged changes committed)
+
+### Remaining blockers
+- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+- P2: Middleware deprecation warning (non-blocking)
+- P3: Logo source asset is 233x270 JPEG
+
+### Next action
+Push commit `5534c50` to remote and deploy to Vercel Preview for browser-level E2E validation of all 8 platforms and guest checkout flow.
