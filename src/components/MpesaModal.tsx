@@ -79,28 +79,34 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
       const token = session.access_token;
 
       const poll = async () => {
-        const statusRes = await fetch(
-          `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
-          {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
+        try {
+          const statusRes = await fetch(
+            `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
+            {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          const statusData = await statusRes.json();
+
+          if (statusData.paid) {
+            setTxId(checkoutId.slice(0, 10));
+            setStep("success");
+            await refreshProfile();
+            return;
           }
-        );
 
-        const statusData = await statusRes.json();
+          if (Date.now() - startTime >= POLL_TIMEOUT) {
+            throw new Error("Payment timed out. Please check your phone and try again.");
+          }
 
-        if (statusData.paid) {
-          setTxId(checkoutId.slice(0, 10));
-          setStep("success");
-          await refreshProfile();
-          return;
+          setTimeout(poll, POLL_INTERVAL);
+        } catch (pollErr) {
+          console.error("M-Pesa poll error:", pollErr);
+          setError(pollErr instanceof Error ? pollErr.message : "Payment processing failed. Please try again.");
+          setStep("input");
         }
-
-        if (Date.now() - startTime >= POLL_TIMEOUT) {
-          throw new Error("Payment timed out. Please check your phone and try again.");
-        }
-
-        setTimeout(poll, POLL_INTERVAL);
       };
 
       setTimeout(poll, POLL_INTERVAL);
