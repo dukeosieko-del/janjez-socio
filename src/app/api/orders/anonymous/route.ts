@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     const numQuantity = Number(quantity);
 
-    const janjezService = await resolveJanjezService(janjez_service_id, null, null);
+    const janjezService = await resolveJanjezService(null, null, janjez_service_id);
     if (!janjezService) {
       return NextResponse.json({ error: "Service not found or not available" }, { status: 404 });
     }

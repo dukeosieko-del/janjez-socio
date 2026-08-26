@@ -381,7 +381,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
-                    id="drip-feed"
+                    id="schedule-delivery"
                     checked={dripFeed}
                     onChange={(e) => {
                       setDripFeed(e.target.checked);
@@ -392,7 +392,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
                     }}
                     className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
                   />
-                  <label htmlFor="drip-feed" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
+                  <label htmlFor="schedule-delivery" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
                     Schedule delivery
                   </label>
                 </div>

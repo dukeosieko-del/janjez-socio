@@ -69,7 +69,7 @@ async function getSubcategoryServices(platform: string, subcategorySlug?: string
   if (!subcategorySlug || subcategorySlug === "all") return filtered;
   return filtered.filter((s) => {
     const sub = s.subcategory || "General";
-    return sub.toLowerCase().replace(/\s+/g, "-") === subcategorySlug;
+    return normalizeSlug(sub) === subcategorySlug;
   });
 }
 
