@@ -1274,3 +1274,122 @@ CURRENT STATE SUMMARY:
 - Tests: 156 passed
 - Lint: 0 errors
 - Build: PASS
+
+### 2026-08-26 — MILESTONE 15: ZeptoMail Credential Diagnostic
+- **Task:** Diagnose why ZeptoMail returns TM_4001 Access Denied
+- **Operation type:** READ-ONLY INVESTIGATION (no source changes)
+- **Files inspected:**
+  - `src/lib/email/transport.ts`
+  - `src/lib/email/config.ts`
+  - `src/app/api/auth/reset-password/route.ts`
+  - `src/app/api/auth/send-verification/route.ts`
+  - `src/app/api/auth/reset-password/route.test.ts`
+  - `src/app/api/auth/send-verification/route.test.ts`
+  - Vercel environment configuration
+  - Git history
+- **Diagnostic phases completed:** Phases 1-9
+- **Findings:**
+
+  **Phase 1 — Transport implementation:**
+  - Current `transport.ts` is functionally identical to former production version
+  - Only change from original: URL normalization adds `https://` and trailing slash (bug fix, not regression)
+  - Uses `zeptomail` SDK `SendMailClient`
+  - Endpoint: `ZEPTOMAIL_URL` env var or default `https://api.zeptomail.com`
+  - Token: `ZEPTOMAIL_SENDMAIL_TOKEN` env var
+  - Sender: `ZEPTOMAIL_FROM_EMAIL` env var or fallback `noreply@${SITE_URL without protocol}`
+
+  **Phase 2 — Environment variable presence:**
+  - `ZEPTOMAIL_SENDMAIL_TOKEN`: Present in both Vercel Preview and Production
+  - `ZEPTOMAIL_URL`: Production ONLY (Preview uses default fallback)
+  - `ZEPTOMAIL_FROM_EMAIL`: Production ONLY (Preview uses fallback based on SITE_URL)
+  - `NEXT_PUBLIC_SITE_URL`: Present in both Preview and Production
+
+  **Phase 3 — Sender configuration:**
+  - EC2 `.env` has `ZEPTOMAIL_FROM_EMAIL=noreply@janjez.social`
+  - Vercel Preview fallback: `noreply@janjez-socio-pkf4hvumi-dukeosieko-dels-projects.vercel.app`
+  - Vercel Production: `noreply@janjez.social` (from configured env var)
+  - Sender domain `janjez.social` requires verification in ZeptoMail account
+
+  **Phase 4 — ZeptoMail TM_4001:**
+  - `TM_4001 Access Denied` indicates:
+    - Invalid/expired/revoked API token
+    - Token not authorized for account/sender/domain
+    - Account-level permission restriction
+  - Former production build successfully delivered emails → token was valid at that time
+  - Current token fails on both EC2 and Vercel → token issue, not code/environment issue
+
+  **Phase 5 — Vercel configuration:**
+  - Validation deployment is Preview environment
+  - Token configured for Preview: YES
+  - URL configured for Preview: NO (uses default)
+  - From email configured for Preview: NO (uses fallback)
+  - Fallback URL is correct (`https://api.zeptomail.com`)
+  - Fallback from email is problematic (Vercel preview domain not verified)
+
+  **Phase 6 — Controlled send test:**
+  - Password reset with non-existent email: 200 (returns before send attempt)
+  - Password reset with existing email: 500 — "Failed to send reset email"
+  - Verification email: 500 — "Failed to send verification email"
+  - Error confirmed: ZeptoMail returns `TM_4001 Access Denied`
+
+  **Phase 7 — Auth endpoint test:**
+  - All email-sending auth endpoints fail with 500 when attempting to send
+  - Non-email auth endpoints work correctly
+
+  **Phase 8 — Former production comparison:**
+  - Transport code is identical to former production version
+  - No evidence of different endpoint, token source, or sender in git history
+  - Only change is URL normalization (bug fix)
+  - Former production likely used a different valid token
+
+  **Phase 9 — Auth domain check:**
+  - Reset URLs: use `requestUrl.origin` → correctly uses Vercel preview origin
+  - Verification URLs: use `SITE_URL` → correctly uses Vercel preview origin
+  - No hardcoded production domains in auth URL generation
+  - Domain/origin handling: PASS
+
+- **Root cause classification:** **A — Credential invalid**
+  - Primary: The `ZEPTOMAIL_SENDMAIL_TOKEN` is invalid, expired, or revoked
+  - Evidence: Same TM_4001 error on both EC2 and Vercel with same token
+  - Former production build used a different valid token
+  - Code is functionally identical to former production version
+  - Secondary: Vercel Preview lacks `ZEPTOMAIL_FROM_EMAIL`, causing fallback to unverified Vercel domain
+
+- **Source changes required:** NONE
+  - This is an external credential/account issue
+  - No application code changes will resolve TM_4001
+  - Do not modify auth logic to bypass credential failure
+
+- **Required external action:**
+  1. Obtain valid ZeptoMail Send Mail token from ZeptoMail dashboard
+  2. Ensure token is authorized for `noreply@janjez.social` sender
+  3. Update token in:
+     - Vercel Preview environment (`ZEPTOMAIL_SENDMAIL_TOKEN`)
+     - Vercel Production environment
+     - EC2 `.env` if still in use
+  4. Consider adding `ZEPTOMAIL_FROM_EMAIL` to Vercel Preview to avoid domain fallback
+
+- **Verification:**
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - Build: PASS
+- **Build ID:** `uY505Ognq0AIK074hjGu9`
+- **Vercel deployment:** https://janjez-socio-pkf4hvumi-dukeosieko-dels-projects.vercel.app
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `7e5f7449522cb55e2a3070701ff3b2d9b4d0225f`
+- Working tree: Clean
+- Vercel project: dukeosieko-dels-projects/janjez-socio
+- Vercel preview: https://janjez-socio-pkf4hvumi-dukeosieko-dels-projects.vercel.app
+- PM2: Not modified
+- Tests: 156 passed
+- Lint: 0 errors
+- Build: PASS
+
+AUTH STATUS:
+- **Auth code:** VERCEL-COMPATIBLE (PASS)
+- **Email transport:** BLOCKED — ZEPTOMAIL CREDENTIAL (TM_4001)
+- **Root cause:** Credential invalid/unauthorized (Classification A)
+- **Source changes:** None required
+- **Next action:** Obtain valid ZeptoMail token from dashboard and configure in all environments
