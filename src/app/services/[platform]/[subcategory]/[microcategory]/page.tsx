@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { JanjezService } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
+import { matchPlatform } from "@/lib/service-queries";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -36,13 +37,18 @@ async function getService(platform: string, subcategorySlug: string, serviceSlug
   const { data, error } = await supabase
     .from("janjez_services")
     .select("*")
-    .eq("category", platform)
     .eq("slug", serviceSlug)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
-  return data as unknown as JanjezService;
+
+  const service = data as unknown as JanjezService;
+  if (matchPlatform(service.category) !== platform) {
+    return null;
+  }
+
+  return service;
 }
 
 export default async function MicrocategoryPage({ params }: MicrocategoryPageProps) {

@@ -86,6 +86,20 @@ export const KNOWN_PLATFORMS = [
   "x",
 ];
 
+export function isKnownPlatform(platform: string): boolean {
+  return KNOWN_PLATFORMS.includes(platform);
+}
+
+export function matchPlatform(category: string): string | null {
+  const lower = category.toLowerCase();
+  for (const platform of KNOWN_PLATFORMS) {
+    if (lower.includes(platform)) {
+      return platform;
+    }
+  }
+  return null;
+}
+
 export function categorizeServices(services: Array<{ category: string; id: string; name: string }>): Record<string, Array<{ category: string; id: string; name: string }>> {
   const categorized: Record<string, Array<{ category: string; id: string; name: string }>> = {};
   const others: Array<{ category: string; id: string; name: string }> = [];

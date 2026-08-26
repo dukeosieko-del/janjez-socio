@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { listJanjezServices } from "@/lib/janjez-services";
 import { JanjezService } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
+import { isKnownPlatform, matchPlatform } from "@/lib/service-queries";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -31,7 +32,9 @@ export async function generateMetadata({ params }: SubcategoryPageProps): Promis
 
 async function getSubcategoryServices(platform: string, subcategorySlug: string): Promise<{ services: JanjezService[]; subcategoryName: string }> {
   const all = await listJanjezServices(true, "show_catalogue");
-  const filtered = all.filter((s) => s.category === platform);
+  const filtered = isKnownPlatform(platform)
+    ? all.filter((s) => matchPlatform(s.category) === platform)
+    : all.filter((s) => !isKnownPlatform(s.category) && !matchPlatform(s.category));
   const inSubcategory = filtered.filter((s) => {
     const sub = s.subcategory || "General";
     return sub.toLowerCase().replace(/\s+/g, "-") === subcategorySlug;

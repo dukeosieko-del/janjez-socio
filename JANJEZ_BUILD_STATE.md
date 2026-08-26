@@ -1055,3 +1055,43 @@ CURRENT STATE SUMMARY:
 - Tests: 156 passed
 - Lint: 0 errors
 - Build: PASS
+
+### 2026-08-26 — MILESTONE 11: Service Funnel 404 Fix
+- **Task:** Fix service routing 404 in subcategory and microcategory pages
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:**
+  - `src/lib/service-queries.ts` — export `isKnownPlatform` and `matchPlatform` utilities
+  - `src/app/services/[platform]/[subcategory]/page.tsx` — use `matchPlatform` instead of direct `s.category === platform` equality
+  - `src/app/services/[platform]/[subcategory]/[microcategory]/page.tsx` — use `matchPlatform` for platform validation instead of direct DB `.eq("category", platform)`
+- **Root cause:** Subcategory and microcategory pages compared `s.category` (full provider category string like "YouTube | Live Stream Viewers...") directly against URL platform slug ("youtube"). Direct equality always failed. Platform page already used `matchPlatform` correctly; these two pages did not.
+- **Fixes:**
+  - Services now resolve correctly through platform → subcategory → service microcategory routes
+  - Database queries validate platform using `matchPlatform` after fetching by slug
+- **Verification:**
+  - Build: PASS
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - `/services/youtube` → 200
+  - `/services/youtube/hhhh` → 200
+  - `/services/youtube/hhhh/tttttttttttttttttttttttttttt` → 200
+  - `/services/telegram/general/temu` → 200
+  - All 8 platforms render on `/services`
+  - Auth pages: 200
+  - Images: HTTP 200
+  - CSS: HTTP 200
+  - 404 page: renders correctly
+  - PM2: online
+- **Build ID:** `EqpTE3lnwIC-Iowh3dYC4`
+- **Remaining blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P3: Logo source asset is 233x270 JPEG (best available in repo)
+  - Data quality: some service slugs contain special characters/trailing spaces that may cause URL encoding issues (separate from routing bug)
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `5fede08a362096121f7347fb95f62e8d9ac71fa2`
+- Working tree: MODIFIED (3 files changed)
+- PM2: `janjez-app` online
+- Tests: 156 passed
+- Lint: 0 errors
+- Build: PASS
