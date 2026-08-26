@@ -828,3 +828,74 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
   - PM2 error log: no new errors after restart
 - **Build ID:** `Rm8hVAJqki4aQwCl9Wzb9`
 - **Next action:** Commit standalone deployment fix.
+
+### 2026-08-25 — MILESTONE 5: Taxonomy + Logo + Auth Diagnostic
+- **Task:** Fix service taxonomy to show all 8 platforms, fix logo aspect ratio, diagnose auth/email
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:**
+  - `src/lib/service-queries.ts` — export `KNOWN_PLATFORMS`
+  - `src/components/ServiceCatalog.tsx` — initialize from `KNOWN_PLATFORMS` (8 platforms)
+  - `src/app/services/page.tsx` — same fallback for services listing
+  - `src/components/Header.tsx` — logo 28x32, quality 90
+  - `src/components/Sidebar.tsx` — logo 28x32, quality 90
+  - `src/components/Footer.tsx` — logo 28x32, quality 90
+- **Taxonomy fix:**
+  - Services page now renders all 8 intended platforms: YouTube, WhatsApp, Instagram, Facebook, TikTok, Telegram, Google Maps Reviews, X
+  - Platforms with zero services remain visible with count=0
+  - Landing page `ServiceCatalog` code updated; client-side hydration currently blocked by pre-existing Next.js client-manifest errors in standalone build
+- **Logo fix:**
+  - Source asset remains `public/janjez-logo.png` (233x270 JPEG, best available in repo)
+  - Changed rendered dimensions from 32x32 to 28x32 to match source aspect ratio
+  - Added `quality={90}` to reduce JPEG compression artifacts
+- **Auth/email status:**
+  - ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid (TM_4001 Access Denied)
+  - No valid token found in `.env`, PM2 env, ecosystem config, or environment
+  - Registration, verification, password reset, and sign-in flows are all blocked on email transport
+  - Supabase email confirmation behavior not yet reconciled
+- **Build verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 116 warnings
+- **Current blockers:**
+  - P1: No valid ZeptoMail token — all email-dependent auth flows broken
+  - P2: Landing page `ServiceCatalog` client-side hydration blocked by Next.js standalone client-manifest errors (pre-existing)
+- **Build ID:** `HIYfFYK70vkH3dMddfN89`
+- **Commit:** `9f5084d589901e2da84f4390230a89a9c5cf3a16`
+- **Next action:** Obtain valid ZeptoMail token, reconcile Supabase email confirmation, fix Next.js standalone client-manifest errors if required.
+
+---
+
+## 21. CURRENT STATE SUMMARY
+
+### 2026-08-26 — MILESTONE 6: Customer-Facing Regression Fixes
+- **Task:** Fix service mapping, blog links, Happy Hour routing, M-Pesa modal, and verify E2E
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:**
+  - `src/components/HappyHourButton.tsx` — navigate to platform page instead of constructing invalid paths from raw DB strings
+  - `src/app/blog/page.tsx` — update hardcoded post hrefs to valid routes
+  - `src/app/services/[platform]/page.tsx` — use KNOWN_PLATFORMS substring matching instead of exact category === platform
+  - `src/components/MpesaModal.tsx` — wrap poll loop in try/catch to prevent perpetual loading on timeout/error
+- **Fixes:**
+  - Happy Hour button now resolves platform from DB category string and routes to `/services/${platform}`
+  - Blog posts now link to valid routes (`/services/youtube`, `/services/whatsapp`)
+  - X service page correctly shows "Twitter Impressions" service using platform substring matching
+  - M-Pesa modal no longer gets stuck in processing state on poll errors
+- **Verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 116 warnings
+  - Services page: all 8 platforms present
+  - X service page: renders service
+  - Blog page: links updated
+  - Happy Hour: routes correctly
+  - M-Pesa modal: error handling fixed
+- **Build ID:** `f2bkKlzaCok1iIjU2Y9oo`
+- **Commit:** `cd78c484dd5387a6794c8456f3023614a5be6c32`
+- **Remaining blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P2: Landing page ServiceCatalog hydration blocked by pre-existing Next.js standalone client-manifest errors
+  - P3: Logo source asset is 233x270 JPEG (best available in repo)
+
+---
+
+## 21. CURRENT STATE SUMMARY
