@@ -1147,3 +1147,44 @@ AUTH STATUS SUMMARY:
 - **Problem B (Production reset link):** Email sends, but reset-link behavior triggers APK/interception. Likely client-side/browser-level issue from previous configuration. Current code correctly handles reset links as browser pages.
 - **Domain/origin safety:** CONFIRMED — reset URLs use request origin correctly
 - **APK isolation:** CONFIRMED — no APK links in auth flows
+
+### 2026-08-26 — MILESTONE 13: Vercel Preparation
+- **Task:** Prepare codebase for parallel Vercel validation deployment
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:**
+  - `next.config.ts` — removed `output: "standalone"` (EC2-specific, incompatible with Vercel serverless)
+  - `package.json` — removed EC2-specific `postbuild` script that copied artifacts to `.next/standalone/`
+  - `src/app/smm-provider/page.tsx` — replaced `http://localhost:3000` fallback with empty string to avoid hardcoded localhost on Vercel
+- **Fixes:**
+  - Vercel build no longer uses EC2 standalone output mode
+  - Vercel build no longer executes EC2-specific postbuild artifact copying
+  - SMM provider page uses environment-driven base URL instead of hardcoded localhost
+- **Verification:**
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - Build: PASS
+- **Build ID:** `4KZLsw0jmhJw2f9wQkT_G`
+- **Vercel readiness:** READY WITH CONDITIONS
+  - P0 resolved: standalone output removed
+  - P0 resolved: EC2 postbuild removed
+  - P3 resolved: localhost fallback fixed
+  - P1 remains: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid (external credential blocker)
+  - P2 remains: middleware.ts deprecation warning (non-blocking)
+- **EC2 safety:** EC2 staging runtime NOT touched. PM2/nginx/standalone packaging remain available for EC2 if needed; this change only removes Vercel-incompatible assumptions from the build config.
+- **Vercel deployment:** NOT PERFORMED during this task
+- **Required Vercel env vars:** NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, ZEPTOMAIL_URL, ZEPTOMAIL_SENDMAIL_TOKEN, ZEPTOMAIL_FROM_EMAIL, MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_PASSKEY, MPESA_SHORTCODE, MPESA_ENV, NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_GA_ID, SMM_API_URL, SMM_API_KEY, CRON_SECRET
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `3659bd9bbbb552a56b1046490504f3284b264a1d`
+- Working tree: MODIFIED (3 files changed)
+- PM2: `janjez-app` online
+- Tests: 156 passed
+- Lint: 0 errors
+- Build: PASS
+
+VERCEL READINESS SUMMARY:
+- **Status:** READY WITH CONDITIONS
+- **Blockers resolved:** P0 (standalone output), P0 (postbuild), P3 (localhost fallback)
+- **Remaining external blockers:** P1 (ZeptoMail credential), P2 (middleware deprecation warning)
+- **Deployment:** NOT PERFORMED — requires valid ZeptoMail token and explicit Vercel project setup

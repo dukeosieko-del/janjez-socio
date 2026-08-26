@@ -18,7 +18,7 @@ async function getAuthToken(): Promise<string | null> {
 
 async function getProviderBalance() {
   try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const base = process.env.NEXT_PUBLIC_SITE_URL || "";
     const token = await getAuthToken();
     const res = await fetch(`${base}/api/smm/balance`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -32,7 +32,7 @@ async function getProviderBalance() {
 }
 
 async function getRecentLogs() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "";
   const token = await getAuthToken();
   const res = await fetch(`${base}/api/admin/fulfillment-logs?limit=20`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
