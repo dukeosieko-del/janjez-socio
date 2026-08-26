@@ -899,3 +899,84 @@ The goal is to eliminate repeated discovery and prevent small context mistakes f
 ---
 
 ## 21. CURRENT STATE SUMMARY
+
+### 2026-08-26 — MILESTONE 7: Fix Next.js Standalone Client-Manifest Errors
+- **Task:** Fix InvariantError for client reference manifest on `/_not-found` and other routes
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:** `src/app/not-found.tsx` (created)
+- **Root cause:** Next.js 16.2.10 standalone build did not generate proper client reference manifest for the auto-generated `/_not-found` route, causing `InvariantError: The client reference manifest for route "/_not-found" does not exist. This is a bug in Next.js.`
+- **Fix:** Added custom `src/app/not-found.tsx` page to force Next.js to generate proper client manifests for the not-found route in standalone mode.
+- **Verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 116 warnings
+  - Staging 404 page: renders correctly
+  - PM2 error log: no new `InvariantError` entries after rebuild
+- **Build ID:** `GPu1BUgo019j9ryxbOZv8`
+- **Commit:** `19e3aad4661ea1a72d67b3c37cfeed502cb9fb02`
+- **Remaining:**
+  - P1: ZeptoMail token invalid — auth flows blocked
+  - P2: Landing page ServiceCatalog client component appears stuck in loading state (requires browser-side debugging)
+  - P3: Logo source asset is 233x270 JPEG
+
+---
+
+## 21. CURRENT STATE SUMMARY
+(Updated at end of session)
+
+### 2026-08-26 — MILESTONE 8: Final Remediation Pass
+- **Task:** Fix standalone client-manifest errors and complete final E2E verification
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:** `src/app/not-found.tsx` (created)
+- **Fixes:**
+  - Added custom not-found page to resolve Next.js standalone client-manifest `InvariantError` for `/_not-found`, `ViewportBoundary`, `MetadataBoundary`, `IconMark`
+  - Verified no new PM2 errors after rebuild
+- **Verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 117 warnings
+  - Staging: all 8 service platforms render, X service appears, blog links valid, Happy Hour routes correctly, not-found page renders 404
+- **Build ID:** `IWi_MNTk4zzbDOQ8wh-w2`
+- **Commit:** `5b454b55096021d1dcb20492e88172dc39f57795`
+- **Current blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P2: Landing page `ServiceCatalog` client component appears stuck in loading state (requires browser-side debugging to determine if hydration or fetch issue)
+  - P3: Logo source asset is 233x270 JPEG (best available in repo)
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `5b454b55096021d1dcb20492e88172dc39f57795`
+- Working tree: CLEAN (only pre-existing untracked files)
+- PM2: `janjez-app` online
+- Tests: 155 passed
+- Lint: 0 errors
+- Build: PASS
+(Updated at end of session)
+
+### 2026-08-26 — MILESTONE 8: Final Remediation Pass
+- **Task:** Fix standalone client-manifest errors and complete final E2E verification
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:** `src/app/not-found.tsx` (created)
+- **Fixes:**
+  - Added custom not-found page to resolve Next.js standalone client-manifest `InvariantError` for `/_not-found`, `ViewportBoundary`, `MetadataBoundary`, `IconMark`
+  - Verified no new PM2 errors after rebuild
+- **Verification:**
+  - Build: PASS
+  - Tests: 155 passed
+  - Lint: 0 errors, 117 warnings
+  - Staging: all 8 service platforms render, X service appears, blog links valid, Happy Hour routes correctly, not-found page renders 404
+- **Build ID:** `IWi_MNTk4zzbDOQ8wh-w2`
+- **Commit:** `5b454b55096021d1dcb20492e88172dc39f57795`
+- **Current blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P2: Landing page `ServiceCatalog` client component appears stuck in loading state (requires browser-side debugging)
+  - P3: Logo source asset is 233x270 JPEG (best available in repo)
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `5b454b55096021d1dcb20492e88172dc39f57795`
+- Working tree: CLEAN (only pre-existing untracked files)
+- PM2: `janjez-app` online
+- Tests: 155 passed
+- Lint: 0 errors
+- Build: PASS
