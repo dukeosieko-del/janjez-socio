@@ -203,8 +203,6 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
   const displayName = service ? service.name : (deliverable?.name || subcategoryName);
   const displayNote = service ? service.description : deliverable?.note;
-  const displayFlag = deliverable?.flag;
-  const providerId = service ? service.provider_service_id : (deliverable?.flag ? "Mapped" : undefined);
   const refillText = service ? (service.supports_refill ? "30 Days Refill Guarantee" : "No refill") : "No refill";
 
   return (
@@ -219,21 +217,11 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         </div>
       </div>
 
-      {displayFlag && (
-        <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-3 mb-3">
-          <p className="text-kenya-red text-xs">{displayFlag}</p>
-        </div>
-      )}
-      {displayNote && (
-        <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3 mb-3">
-          <p className="text-kenya-white/50 text-xs italic">{displayNote}</p>
-        </div>
-      )}
-      {providerId && (
-        <div className="bg-kenya-green/5 border border-kenya-green/20 rounded-xl p-3 mb-3">
-          <p className="text-kenya-green text-xs">Mapped to provider service: {providerId}</p>
-        </div>
-      )}
+        {displayNote && (
+          <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3 mb-3">
+            <p className="text-kenya-white/50 text-xs italic">{displayNote}</p>
+          </div>
+        )}
       <div className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-kenya-white/70 mb-2">
@@ -339,7 +327,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
           </div>
         </div>
 
-        {total > walletBalance && total > 0 && (
+        {user && total > walletBalance && total > 0 && (
           <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4 flex items-center gap-3">
             <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
             <p className="text-kenya-white/80 text-sm">Insufficient wallet balance. Top up via M-Pesa to complete this order.</p>

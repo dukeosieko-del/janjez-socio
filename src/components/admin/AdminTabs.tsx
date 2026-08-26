@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/components/AuthContext";
+import { KNOWN_PLATFORMS } from "@/lib/service-queries";
+import { normalizeSlug } from "@/lib/janzez-services";
 
 interface IntegrationStatus {
   provider: string;
@@ -486,7 +488,7 @@ export function ServicesTab() {
 
     const payload = {
       name: form.name,
-      slug: form.slug,
+      slug: normalizeSlug(form.slug || ""),
       category: form.category,
       subcategory: form.subcategory || null,
       description: form.description || null,
@@ -683,36 +685,35 @@ export function ServicesTab() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Platform (Category)</label>
-                      <input
-                        type="text"
-                        required
-                        list="platform-options"
-                        value={form.category || ""}
-                        onChange={(e) => setForm({ ...form, category: e.target.value })}
-                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                      />
-                      <datalist id="platform-options">
-                        {Array.from(new Set(janjezServices.map((s) => s.category))).map((c) => (
-                          <option key={c} value={c} />
-                        ))}
-                        {Array.from(new Set(providerServices.map((s) => s.category).filter(Boolean))).map((c) => (
-                          <option key={c} value={c as string} />
-                        ))}
-                      </datalist>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-kenya-white/70 mb-1">Subcategory</label>
-                      <input
-                        type="text"
-                        value={form.subcategory || ""}
-                        onChange={(e) => setForm({ ...form, subcategory: e.target.value || null })}
-                        className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
-                      />
-                    </div>
-                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="block text-sm font-medium text-kenya-white/70 mb-1">Platform (Category)</label>
+                       <select
+                         required
+                         value={form.category || ""}
+                         onChange={(e) => setForm({ ...form, category: e.target.value })}
+                         className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+                       >
+                         <option value="">-- Select a platform --</option>
+                         {KNOWN_PLATFORMS.map((p) => (
+                           <option key={p} value={p}>
+                             {p.charAt(0).toUpperCase() + p.slice(1).replace(/-/g, " ")}
+                           </option>
+                         ))}
+                         <option value="others">Others</option>
+                       </select>
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-kenya-white/70 mb-1">Subcategory</label>
+                       <input
+                         type="text"
+                         value={form.subcategory || ""}
+                         onChange={(e) => setForm({ ...form, subcategory: e.target.value || null })}
+                         placeholder="e.g. Group Members, Likes, Views"
+                         className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green"
+                       />
+                     </div>
+                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-kenya-white/70 mb-1">Description</label>

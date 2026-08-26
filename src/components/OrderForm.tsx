@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { getServiceCatalogue, getServicesByCategory, getServiceById } from "@/lib/service-queries";
-import { submitOrder } from "@/lib/order-log";
+import { submitOrder, submitAnonymousOrder } from "@/lib/order-log";
 import { calculateOrderCost } from "@/lib/pricing";
 
 interface ServiceCatalogueItem {
@@ -77,8 +77,10 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
   const [runs, setRuns] = useState("");
   const [interval, setInterval] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [anonymousPlacing, setAnonymousPlacing] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const categoryServices = useMemo(() => {
     if (!selectedCategory) return [];
@@ -135,6 +137,54 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
   const handlePlaceOrder = useCallback(async () => {
     if (!selectedService || !link || quantityNum <= 0 || quantityError) return;
     if (dripFeed && (runsNum <= 0 || intervalNum <= 0)) return;
+
+    if (!user && isAnonymous) {
+      if (!phoneNumber || !/^\d{9,15}$/.test(phoneNumber.replace(/\s+/g, ""))) {
+        setOrderError("Please enter a valid phone number for anonymous checkout.");
+        return;
+      }
+      if (!janjezServiceId && !selectedService?.id) {
+        setOrderError("Anonymous checkout requires a mapped service.");
+        return;
+      }
+
+      setAnonymousPlacing(true);
+      setPlacing(true);
+      setOrderError(null);
+      setOrderSuccess(false);
+
+      try {
+        const result = await submitAnonymousOrder({
+          janjezServiceId: janjezServiceId || selectedService!.id,
+          link,
+          quantity: quantityNum,
+          phoneNumber,
+          runs: dripFeed ? runsNum : null,
+          interval: dripFeed ? intervalNum : null,
+        });
+
+        if (!result.ok) {
+          setOrderError(result.error || "Failed to start anonymous checkout.");
+          setPlacing(false);
+          setAnonymousPlacing(false);
+          return;
+        }
+
+        setOrderSuccess(true);
+        setPlacing(false);
+        setAnonymousPlacing(false);
+        const checkoutId = result.data.checkoutRequestId;
+        setTimeout(() => {
+          window.location.href = checkoutId ? `/orders/track?ref=${checkoutId}` : "/order/anonymous/created";
+        }, 2000);
+      } catch {
+        setOrderError("Unexpected error while starting anonymous checkout.");
+        setPlacing(false);
+        setAnonymousPlacing(false);
+      }
+      return;
+    }
+
     if (!user) {
       onRequireAuth("login");
       return;
@@ -185,14 +235,15 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, dripFeed, runsNum, intervalNum, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedService?.categoryId, selectedService?.name, selectedService?.serviceId, quantity, janjezServiceId]);
+  }, [selectedService, link, quantityNum, quantityError, dripFeed, runsNum, intervalNum, onRequireAuth, onInsufficientBalance, user, walletBalance, total, selectedService?.categoryId, selectedService?.name, selectedService?.serviceId, selectedService?.id, quantity, janjezServiceId, isAnonymous, phoneNumber]);
 
   const isValid =
     selectedService &&
     link.trim().length > 0 &&
     quantityNum >= (selectedService?.min ?? 0) &&
     quantityNum <= (selectedService?.max ?? 0) &&
-    (!dripFeed || (runsNum > 0 && intervalNum > 0));
+    (!dripFeed || (runsNum > 0 && intervalNum > 0)) &&
+    (!isAnonymous || (phoneNumber.trim().length > 0 && /^\d{9,15}$/.test(phoneNumber.replace(/\s+/g, ""))));
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -426,6 +477,21 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
               </div>
             )}
 
+            {isAnonymous && (
+              <div>
+                <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                  Phone Number (for M-Pesa)
+                </label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="07XXXXXXXX or 01XXXXXXXX"
+                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                />
+              </div>
+            )}
+
             {/* Total Charge */}
             <div className="flex items-center justify-between bg-kenya-black/60 rounded-xl px-5 py-4 border border-kenya-white/10">
               <span className="text-kenya-white/70 font-medium">Total Charge</span>
@@ -451,10 +517,10 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
 
             <button
               onClick={handlePlaceOrder}
-              disabled={!isValid || placing}
+              disabled={!isValid || placing || anonymousPlacing}
               className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2"
             >
-              {placing ? "Placing Order…" : "Place Order"}
+              {placing || anonymousPlacing ? "Processing…" : isAnonymous ? "Place & Pay (Guest)" : "Place Order"}
             </button>
           </div>
         </div>

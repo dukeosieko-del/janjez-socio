@@ -1393,3 +1393,84 @@ AUTH STATUS:
 - **Root cause:** Credential invalid/unauthorized (Classification A)
 - **Source changes:** None required
 - **Next action:** Obtain valid ZeptoMail token from dashboard and configure in all environments
+
+### 2026-08-26 — MILESTONE 16: Guest Ordering, Payment UX, and Service Taxonomy Fixes
+- **Task:** Fix guest ordering flow, payment modal information leakage, and admin service taxonomy
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:**
+  - `src/components/fulfillment/FulfillmentForm.tsx` — hide balance warning for guests, remove provider ID display
+  - `src/components/OrderForm.tsx` — add anonymous ordering support
+  - `src/components/admin/AdminTabs.tsx` — category select with 8 platforms + Others, slug normalization
+  - `src/app/api/admin/services/route.ts` — normalize slug on create
+  - `src/app/api/admin/services/[id]/route.ts` — normalize slug on update
+  - `src/lib/janzez-services.ts` — add `normalizeSlug` utility
+
+- **Root causes found:**
+
+  **Guest ordering insufficient balance:**
+  - `FulfillmentForm.tsx` showed "Insufficient wallet balance" to ALL users including guests because `total > walletBalance` was true for guests (walletBalance=0)
+  - `OrderForm.tsx` had `isAnonymous` state but never used it — always required auth and checked wallet balance
+  - Legacy page-clients had same issue but are protected by middleware redirect
+  - Anonymous order API (`/api/orders/anonymous`) already existed and worked correctly
+
+  **Payment modal information leakage:**
+  - `FulfillmentForm.tsx` displayed `providerId` to customers: "Mapped to provider service: {providerId}"
+  - This exposed internal provider identifiers to the customer-facing UI
+
+  **Service taxonomy / admin mapping:**
+  - Admin category input was free-text with datalist, allowing arbitrary strings
+  - Subcategory input was also free-text
+  - Slugs were not sanitized, leading to malformed URLs with spaces/special characters
+  - Current DB has services with messy category strings and bad slugs (e.g., "tttttttttttttttttttttttttttt", "Instagram likes ")
+
+- **Fixes applied:**
+
+  1. **FulfillmentForm.tsx:**
+     - Removed provider ID display block (information leakage fix)
+     - Removed `displayFlag` display block
+     - Balance warning now only shows for authenticated users: `user && total > walletBalance && total > 0`
+     - Removed unused `providerId` and `displayFlag` variables
+
+  2. **OrderForm.tsx:**
+     - Added anonymous ordering flow before auth check
+     - Collects phone number for M-Pesa STK push
+     - Calls `submitAnonymousOrder` for guests
+     - Redirects to `/orders/track?ref=${checkoutId}` on success
+     - Shows "Place & Pay (Guest)" button for anonymous users
+     - Updated `isValid` to require phone number when anonymous
+
+  3. **AdminTabs.tsx:**
+     - Category input changed from free-text to `<select>` with 8 known platforms + "Others"
+     - Subcategory input has placeholder guidance
+     - Slug normalized via `normalizeSlug(form.slug || "")` before submission
+
+  4. **Admin service API routes:**
+     - `POST /api/admin/services` — slug normalized via `normalizeSlug(String(slug))`
+     - `PATCH /api/admin/services/[id]` — slug normalized via `normalizeSlug(String(body[key]))`
+
+  5. **Slug normalization (`normalizeSlug`):**
+     - Lowercase, trim
+     - Remove special characters (keep word chars, spaces, hyphens)
+     - Replace spaces with hyphens
+     - Collapse multiple hyphens
+     - Trim leading/trailing hyphens
+     - Fallback to "service" if empty
+
+- **Verification:**
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - Build: PASS
+  - Local runtime: services page 200, catalogue API 200
+
+- **Note on `/order` redirect:**
+  - `next.config.ts` has permanent redirect `/order` → `/services`
+  - Therefore `OrderForm.tsx` anonymous flow is currently unreachable via normal navigation
+  - Changes preserved for future use if redirect is removed
+  - Primary guest flow is through `/services/...` → `FulfillmentForm.tsx`
+
+- **Remaining blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P2: Middleware deprecation warning (non-blocking)
+  - P3: Logo source asset is 233x270 JPEG
+
+- **Next action:** Commit changes, update build state, and continue with remaining phases.

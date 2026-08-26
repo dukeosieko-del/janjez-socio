@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { listJanjezServices, getJanjezService, createJanjezService, updateJanjezService, deleteJanjezService } from "@/lib/janjez-services";
+import { listJanjezServices, getJanjezService, createJanjezService, updateJanjezService, deleteJanjezService, normalizeSlug } from "@/lib/janjez-services";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     const result = await createJanjezService({
       name: String(name),
-      slug: String(slug),
+      slug: normalizeSlug(String(slug)),
       category: String(category),
       subcategory: typeof subcategory === "string" ? subcategory : undefined,
       description: typeof description === "string" ? description : undefined,

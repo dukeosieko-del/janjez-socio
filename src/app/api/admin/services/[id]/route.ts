@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getJanjezService, updateJanjezService, deleteJanjezService } from "@/lib/janjez-services";
+import { getJanjezService, updateJanjezService, deleteJanjezService, normalizeSlug } from "@/lib/janjez-services";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/server/auth-helpers";
 import { rateLimitAdmin } from "@/lib/server/rate-limiter";
@@ -66,6 +66,8 @@ export async function PATCH(request: NextRequest) {
           updates[key] = Number(body[key]);
         } else if (key === "is_active" || key === "supports_drip_feed" || key === "supports_refill" || key === "supports_cancel" || key === "show_sidebar" || key === "show_landing" || key === "show_guarded" || key === "show_anonymous" || key === "show_catalogue") {
           updates[key] = Boolean(body[key]);
+        } else if (key === "slug") {
+          updates[key] = normalizeSlug(String(body[key]));
         } else {
           updates[key] = body[key];
         }
