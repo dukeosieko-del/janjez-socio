@@ -42,6 +42,7 @@ const { initiateStkPush } = await import("@/lib/mpesa/client");
 
 function mockRequest(body: Record<string, unknown>) {
   const obj = {
+    url: "http://localhost:3000/api/orders/anonymous",
     json: async () => body,
     headers: new Headers({ "Content-Type": "application/json" }),
   };

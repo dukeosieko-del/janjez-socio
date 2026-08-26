@@ -1013,3 +1013,45 @@ CURRENT STATE SUMMARY:
 - Tests: 155 passed
 - Lint: 0 errors
 - Build: PASS
+
+### 2026-08-26 — MILESTONE 10: Auth/Domain Fixes and ServiceCatalog Resolution
+- **Task:** Fix auth domain URLs, M-Pesa callback, and ServiceCatalog loading
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:**
+  - `src/app/api/auth/reset-password/route.ts` — use request origin instead of SITE_URL for reset links
+  - `src/lib/mpesa/client.ts` — add optional origin parameter to getCallbackUrl()
+  - `src/app/api/mpesa/stk-push/route.ts` — pass request origin to getCallbackUrl()
+  - `src/app/api/orders/anonymous/route.ts` — pass request origin to getCallbackUrl()
+  - `src/app/api/orders/anonymous/route.test.ts` — add url to mockRequest
+  - `src/lib/mpesa/client.test.ts` — update tests for new getCallbackUrl signature
+  - `src/app/page.tsx` — use ServiceCatalogClient wrapper for ServiceCatalog
+  - `src/components/ServiceCatalogClient.tsx` — new client wrapper with dynamic import
+- **Fixes:**
+  - Password reset emails now use the request origin (staging vs production correct)
+  - M-Pesa callback URLs now use the request origin instead of hardcoded SITE_URL
+  - ServiceCatalog loading issue resolved via dynamic import wrapper (bypasses Next.js standalone RSC chunking bug)
+- **Verification:**
+  - Build: PASS
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - Services page: all 8 platforms render
+  - X service: appears correctly
+  - Blog links: valid routes
+  - Auth pages: 200
+  - Images: HTTP 200
+  - CSS: HTTP 200
+  - 404 page: renders correctly
+  - PM2: online
+- **Build ID:** `ebOM_ZuAh3-BXhf7lQE2l`
+- **Current blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P3: Logo source asset is 233x270 JPEG (best available in repo)
+
+CURRENT STATE SUMMARY:
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `c5a1c4753c5ed8b346dc0be39c212f29900c2a84`
+- Working tree: MODIFIED (7 files changed, 1 new file)
+- PM2: `janjez-app` online
+- Tests: 156 passed
+- Lint: 0 errors
+- Build: PASS

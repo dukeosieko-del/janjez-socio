@@ -279,7 +279,7 @@ export function formatPhoneNumber(phone: string): string {
   return formatPhone(phone);
 }
 
-export function getCallbackUrl(): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
+export function getCallbackUrl(origin?: string): string {
+  const siteUrl = origin || process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
   return `${siteUrl}/api/mpesa/callback`;
 }

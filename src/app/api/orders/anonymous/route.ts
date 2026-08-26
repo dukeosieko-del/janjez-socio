@@ -127,7 +127,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
     }
 
-    const callbackUrl = getCallbackUrl();
+    const requestUrl = new URL(request.url);
+    const callbackUrl = getCallbackUrl(requestUrl.origin);
 
     try {
       const stkRes = await initiateStkPush({

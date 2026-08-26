@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const callbackUrl = getCallbackUrl();
+    const requestUrl = new URL(request.url);
+    const callbackUrl = getCallbackUrl(requestUrl.origin);
     const response = await initiateStkPush({
       phoneNumber,
       amount: numAmount,

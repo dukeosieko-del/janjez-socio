@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create reset token" }, { status: 500 });
     }
 
-    const resetUrl = `${SITE_URL}/auth/reset-password?token=${token}`;
+    const requestUrl = new URL(request.url);
+    const resetUrl = `${requestUrl.origin}/auth/reset-password?token=${token}`;
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #0D0D0D;">
