@@ -10,6 +10,7 @@ import { JanjezService } from "@/lib/janjez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 import { isKnownPlatform, matchPlatform } from "@/lib/service-queries";
 import { normalizeSlug } from "@/lib/janzez-services";
+import ServiceDenseList from "@/components/ServiceDenseList";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 import type { Metadata } from "next";
 
@@ -56,56 +57,39 @@ export default async function SubcategoryPage({ params }: SubcategoryPageProps) 
 
   return (
     <div className="min-h-screen flex bg-kenya-black">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
-          <AnnouncementBanner />
-          <LiveTicker />
-          <Header />
-          <main className="flex-1">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-              <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
-                <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
-                <span>/</span>
-                <Link href={`/services/${platform}`} className="hover:text-kenya-green transition-colors capitalize">{platform.replace(/-/g, " ")}</Link>
-                <span>/</span>
-                <span className="text-kenya-green font-medium">{subcategoryName}</span>
-              </nav>
-              <div className="mb-8">
-                <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">{subcategoryName}</h1>
-                <p className="text-kenya-white/60">{services.length} deliverable{services.length !== 1 ? "s" : ""} available</p>
-              </div>
-
-              {singleService ? (
-                <FulfillmentForm
-                  platformId={singleService.category}
-                  platformName={singleService.category}
-                  platformIcon={getPlatformAvatar(singleService.category)}
-                  subcategoryName={subcategoryName}
-                  service={singleService}
-                />
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {services.map((svc) => (
-                    <Link
-                      key={svc.id}
-                      href={`/services/${platform}/${subcategory}/${normalizeSlug(svc.slug)}`}
-                      className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
-                    >
-                      <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">
-                        <span className="text-lg">📦</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-kenya-white font-semibold text-base truncate">{svc.name}</p>
-                        <p className="text-kenya-green text-sm">KES {Number(svc.selling_price_ksh).toFixed(2)}</p>
-                      </div>
-                      <span className="text-kenya-white/40 text-xs">→</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
+      <Sidebar />
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+        <AnnouncementBanner />
+        <LiveTicker />
+        <Header />
+        <main className="flex-1">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+            <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-4">
+              <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
+              <span>/</span>
+              <Link href={`/services/${platform}`} className="hover:text-kenya-green transition-colors capitalize">{platform.replace(/-/g, " ")}</Link>
+              <span>/</span>
+              <span className="text-kenya-green font-medium">{subcategoryName}</span>
+            </nav>
+            <div className="mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-kenya-white mb-1">{subcategoryName}</h1>
+              <p className="text-kenya-white/60 text-sm">{services.length} deliverable{services.length !== 1 ? "s" : ""} available</p>
             </div>
-          </main>
-          <Footer />
+
+            {singleService ? (
+              <FulfillmentForm
+                platformId={singleService.category}
+                platformName={singleService.category}
+                platformIcon={getPlatformAvatar(singleService.category)}
+                subcategoryName={subcategoryName}
+                service={singleService}
+              />
+            ) : (
+              <ServiceDenseList services={services} />
+            )}
+          </div>
+        </main>
+        <Footer />
       </div>
     </div>
   );

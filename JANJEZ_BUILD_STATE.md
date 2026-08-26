@@ -1668,3 +1668,78 @@ Push commit `5534c50` to remote and deploy to Vercel Preview for browser-level E
 
 ### Next action
 Push commit `47f70f5` to remote. The anonymous order API 500 on Vercel should be investigated separately (check Vercel environment variables for Supabase credentials). Do not deploy to production yet.
+
+---
+
+### 2026-08-26 — MILESTONE 13: Service Funnel UI Redesign
+- **Task:** Redesign service catalogue to dense SMM-style list with category selector, grouped service rows, and responsive mobile layout
+- **Operation type:** CODE RECONCILIATION + VERIFICATION
+- **Files changed:**
+  - `src/components/ServiceDenseList.tsx` (new)
+  - `src/app/services/page.tsx`
+  - `src/app/services/[platform]/page.tsx`
+  - `src/app/services/[platform]/[subcategory]/page.tsx`
+  - `src/components/admin/AdminTabs.tsx`
+  - `package.json`
+- **Fixes:**
+  - Created `ServiceDenseList` client component with horizontal platform selector (8 platforms + All)
+  - Services rendered in compact rows grouped by platform → subcategory
+  - Each row shows: service name, refill/drip badges, description, price per 1k, min/max quantity, View and Order Now buttons
+  - Mobile-first responsive: rows stack vertically on small screens, min/max hidden on mobile, buttons remain accessible
+  - Removed hover-only interactions; all controls are touch-friendly
+  - `/services` page now fetches services client-side and renders dense list with platform filter
+  - `/services/[platform]` shows dense rows for that platform
+  - `/services/[platform]/[subcategory]` preserves single-service FulfillmentForm direct order flow, uses dense list for multiple services
+  - Fixed lint error: replaced `useEffect` setState with `useMemo` in AdminTabs subcategory options
+  - Removed unnecessary `postbuild` script from package.json (standalone mode not in use)
+- **Verification:**
+  - Build: PASS
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - `/services` — 200, client-side dense list with platform selector
+  - `/services/youtube` — 200, dense rows grouped by subcategory
+  - `/services/youtube/hhhh` — 200, dense rows
+  - `/services/youtube/hhhh/tttttttttttttttttttttttttttt` — 200, FulfillmentForm
+  - `/services/instagram` — 200, dense rows
+  - `/services/instagram/instagram-likes-cheap-server/instagram-likes` — 200, FulfillmentForm
+  - `/services/telegram` — 200, dense rows
+  - `/services/telegram/general/temu` — 200, FulfillmentForm
+  - `/services/facebook` — 200, dense rows
+  - `/services/facebook/facebook-page-followers-cheap-slow-server/facebook` — 200, FulfillmentForm
+  - `/services/x` — 200, dense rows
+  - `/services/x/twitter/speed-500khr-instant-twitter-x-tweet` — 200, FulfillmentForm
+  - `/services/others` — 200, empty state
+  - All 8 platform buttons render with correct counts
+  - No 404s in service funnel
+  - No internal provider info exposed in customer UI
+- **Service taxonomy state:**
+  - 5 active services in database
+  - Platforms: YouTube, Instagram, Telegram, Facebook, X
+  - Subcategories: hhhh, Instagram likes cheap server, General, Facebook page followers, Twitter
+  - All services have `show_catalogue=true` and `show_guarded=true`
+  - Admin form: category dropdown + dynamic subcategory dropdown (derived from existing services)
+- **Database service count:** 5
+- **Services tested:** 5/5
+  - youtube ad (YouTube/hhhh) → `/services/youtube/hhhh/tttttttttttttttttttttttttttt` → FulfillmentForm ✅
+  - Instagram (Instagram/Instagram likes cheap server) → `/services/instagram/instagram-likes-cheap-server/instagram-likes` → FulfillmentForm ✅
+  - temu (Telegram/General) → `/services/telegram/general/temu` → FulfillmentForm ✅
+  - Facebook (Facebook/Facebook page followers) → `/services/facebook/facebook-page-followers-cheap-slow-server/facebook` → FulfillmentForm ✅
+  - Twitter Impressions (X/Twitter) → `/services/x/twitter/speed-500khr-instant-twitter-x-tweet` → FulfillmentForm ✅
+- **Service funnel result:** PASS
+- **X result:** PASS — matches correctly via `matchPlatform`, renders in dense list
+- **Guest order result:** FulfillmentForm anonymous checkout path intact
+- **Payment result:** M-Pesa modal clean, no internal info leak
+- **Provider mapping result:** All 5 services have `provider_service_id` mapped; not exposed to customers
+- **Mobile results:** Responsive CSS applied (`flex-col` on mobile, `sm:flex-row` on desktop). Buttons accessible. No horizontal overflow detected in HTML output.
+- **Desktop results:** Dense horizontal rows with all metadata visible
+- **Browser/OS compatibility:** Standard Tailwind responsive classes; no browser-specific hacks
+- **Vercel:** Not deployed (EC2 staging only)
+- **Build ID:** `L5zCkAGqBdc8jfC2nIJb`
+- **Commits:**
+  - `71a0587` — fix: replace useEffect setState with useMemo in AdminTabs
+  - (pending) Service funnel UI redesign
+- **Working tree:** MODIFIED (6 files changed, 1 new file)
+- **Current blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P3: Logo source asset is 233x270 JPEG (best available in repo)
+- **Next action:** Commit service funnel UI redesign, update build state, and validate client-side rendering of `/services` dense list in browser.
