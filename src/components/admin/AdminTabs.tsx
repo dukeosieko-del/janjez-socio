@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { KNOWN_PLATFORMS } from "@/lib/service-queries";
@@ -415,14 +415,10 @@ export function ServicesTab() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState(false);
   const [form, setForm] = useState<Partial<JanjezServiceShape>>({});
-  const [subcategoryOptions, setSubcategoryOptions] = useState<string[]>([]);
   const [customSubcategory, setCustomSubcategory] = useState("");
 
-  useEffect(() => {
-    if (!form.category) {
-      setSubcategoryOptions([]);
-      return;
-    }
+  const subcategoryOptions = useMemo(() => {
+    if (!form.category) return [];
     const cat = form.category.toLowerCase();
     const subs = new Set<string>();
     for (const svc of janjezServices) {
@@ -430,7 +426,7 @@ export function ServicesTab() {
         subs.add(svc.subcategory);
       }
     }
-    setSubcategoryOptions(Array.from(subs).sort());
+    return Array.from(subs).sort();
   }, [form.category, janjezServices]);
 
   const load = useCallback(async () => {
