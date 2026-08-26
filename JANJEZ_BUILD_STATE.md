@@ -1737,9 +1737,38 @@ Push commit `47f70f5` to remote. The anonymous order API 500 on Vercel should be
 - **Build ID:** `L5zCkAGqBdc8jfC2nIJb`
 - **Commits:**
   - `71a0587` — fix: replace useEffect setState with useMemo in AdminTabs
-  - (pending) Service funnel UI redesign
-- **Working tree:** MODIFIED (6 files changed, 1 new file)
+  - `458fe9c` — feat: redesign service catalogue to dense SMM-style list with platform selector
+  - `28d5373` — refactor: extract ServiceDenseListFetcher to separate client component
+- **Working tree:** CLEAN (only pre-existing untracked files)
 - **Current blockers:**
   - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
   - P3: Logo source asset is 233x270 JPEG (best available in repo)
 - **Next action:** Commit service funnel UI redesign, update build state, and validate client-side rendering of `/services` dense list in browser.
+
+---
+
+## 21. CURRENT STATE SUMMARY (Updated 2026-08-26)
+
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **HEAD:** `28d5373`
+- **Working tree:** CLEAN (only pre-existing untracked files)
+- **PM2:** `janjez-app` online, restarts=5
+- **Tests:** 156 passed
+- **Lint:** 0 errors, 117 warnings
+- **Build:** PASS
+- **Build ID:** `L5zCkAGqBdc8jfC2nIJb`
+
+### Service Catalogue Redesign (Milestone 13)
+- `ServiceDenseList` component with 8-platform horizontal selector
+- `/services` page: client-side fetcher + dense list
+- `/services/[platform]`: dense rows grouped by subcategory
+- `/services/[platform]/[subcategory]`: dense rows or direct FulfillmentForm
+- All 5 services traced: 15/15 routes HTTP 200
+- Mobile responsive: `flex-col` on small screens, `sm:flex-row` on desktop
+
+### Remaining blockers
+- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+- P3: Logo source asset is 233x270 JPEG (best available in repo)
+
+### Next action
+Validate `/services` dense list client-side rendering in browser and push commits to remote.
