@@ -3,9 +3,14 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-import ServiceDenseListFetcher from "@/components/ServiceDenseListFetcher";
+import { listJanjezServices } from "@/lib/janjez-services";
+import ServiceDenseList from "@/components/ServiceDenseList";
 
-export default function ServicesPage() {
+export const revalidate = 0;
+
+export default async function ServicesPage() {
+  const services = await listJanjezServices(true, "show_catalogue");
+
   return (
     <div className="min-h-screen flex bg-kenya-black">
       <Sidebar />
@@ -21,7 +26,7 @@ export default function ServicesPage() {
                 Browse all services across platforms. Select a category to filter.
               </p>
             </div>
-            <ServiceDenseListFetcher />
+            <ServiceDenseList services={services} />
           </div>
         </main>
         <Footer />
