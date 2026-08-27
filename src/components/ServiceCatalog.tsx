@@ -8,7 +8,7 @@ import { getPlatformAvatar } from "@/lib/platform-avatars";
 
 interface LandingService {
   id: string;
-  category: string;
+  categoryId: string;
   name: string;
   selling_price_ksh: number;
   slug: string;
@@ -37,9 +37,9 @@ export default function ServiceCatalog() {
             });
           }
           for (const svc of services) {
-            const catLower = svc.category.toLowerCase();
+            const catLower = svc.categoryId.toLowerCase();
             const matched = KNOWN_PLATFORMS.find((p) => catLower.includes(p));
-            const key = matched || svc.category;
+            const key = matched || svc.categoryId;
             const existing = platformMap.get(key) || {
               id: key,
               name: key.charAt(0).toUpperCase() + key.slice(1).replace(/-/g, " "),
