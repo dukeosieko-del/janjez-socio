@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
 
     const formatted = services.map((svc) => ({
       id: svc.id,
-      serviceId: svc.provider_service_id,
       categoryId: svc.category,
       name: svc.name,
       description: svc.description,
@@ -29,7 +28,6 @@ export async function GET(request: NextRequest) {
       monetizable: false,
       slug: svc.slug,
       subcategory: svc.subcategory,
-      provider_service_id: svc.provider_service_id,
       supports_drip_feed: svc.supports_drip_feed,
       supports_refill: svc.supports_refill,
       supports_cancel: svc.supports_cancel,
