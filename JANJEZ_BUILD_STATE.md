@@ -93,27 +93,39 @@ The Cloud Agent repository, Kilo review worktrees, EC2 staging tree, and any pro
 ### AUTHORITATIVE EC2 STAGING
 - **Path:** `/home/ubuntu/janjez-socio`
 - **Branch:** `review/janjez-reconciliation-20260822`
-- **HEAD:** `2a3107b0a2f7a3d2b77e77b845cc40f3cd3c2d6b`
-- **Commit:** `docs: record EC2 access blocker`
+- **HEAD:** `5c6820e2448d564667f0d1754a698ff805037f41`
+- **Commit:** `docs: update build state with service funnel UI redesign results`
 - **Role:** Authoritative staging runtime
-- **PM2:** `janjez-app` online, running `.next/standalone/server.js`
+- **PM2:** `janjez-app` online, PID 407192, uptime 26m
 - **Port:** `3000` (bound to `0.0.0.0:3000`)
 - **Nginx:** active (proxies to PM2)
-- **Domains:** `https://staging.janjez.social` (via VS Code tunnel `janjez-staging`)
-- **Clean/dirty:** DIRTY — 39 modified tracked files, 7 untracked items
-- **Build ID:** `IUEGeQlUlTzuLQhfA-Km6`
-- **Preservation artifacts:** `/tmp/janjez-aug24-25.diff`, `/tmp/janjez-untracked.txt`, `/tmp/janjez-forensic-metadata.txt`
+- **Domains:** `https://staging.janjez.social` (via VS Code tunnel `janjez-staging`), `https://janjez.social`
+- **Clean/dirty:** CLEAN — 0 modified tracked files, 5 untracked files (backup/temp artifacts)
+- **Build ID:** `w07-ZNSEgVvSVhFAajBFq`
 - **Deployed:** Yes (runtime verified, static assets returning HTTP 200)
 
 ### REPOSITORY
 - **Repository:** `dukeosieko-del/janjez-socio`
 - **Remote:** `origin` → `dukeosieko-del/janjez-socio.git`
 - **Branch:** `review/janjez-reconciliation-20260822`
-- **HEAD:** `2a3107b0a2f7a3d2b77e77b845cc40f3cd3c2d6b`
-- **Working tree:** DIRTY (uncommitted reconciliation changes)
+- **HEAD:** `5c6820e2448d564667f0d1754a698ff805037f41`
+- **Working tree:** CLEAN (only pre-existing untracked files)
+- **Ahead of origin:** 4 commits (`5c6820e`, `28d5373`, `458fe9c`, `71a0587`)
 
 ### KEY DISTINCTION
 This EC2 instance IS the authoritative runtime. Changes are being made directly here, not via Cloud Agent worktree.
+
+---
+
+## 3A. RECONCILIATION CHECKPOINT (2026-08-26)
+
+- **Recon file:** `JANJEZ_CURRENT_STATE_RECON_20260826.md` created with complete forensic reconnaissance
+- **Starting HEAD:** `5c6820e`
+- **Final HEAD:** `5c6820e` (no new commits required; working tree clean)
+- **Commits incorporated:** All 4 local commits already on recon branch
+- **Validation:** Tests 156 passed, Lint 0 errors, Build PASS
+- **Service funnel:** 15/15 routes HTTP 200, 0 404s
+- **Recon findings:** See `JANJEZ_CURRENT_STATE_RECON_20260826.md` for full details
 
 ---
 
@@ -1739,24 +1751,54 @@ Push commit `47f70f5` to remote. The anonymous order API 500 on Vercel should be
   - `71a0587` — fix: replace useEffect setState with useMemo in AdminTabs
   - `458fe9c` — feat: redesign service catalogue to dense SMM-style list with platform selector
   - `28d5373` — refactor: extract ServiceDenseListFetcher to separate client component
+  - `5c6820e` — docs: update build state with service funnel UI redesign results
 - **Working tree:** CLEAN (only pre-existing untracked files)
 - **Current blockers:**
   - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
   - P3: Logo source asset is 233x270 JPEG (best available in repo)
-- **Next action:** Commit service funnel UI redesign, update build state, and validate client-side rendering of `/services` dense list in browser.
+- **Next action:** Push commits to remote and validate client-side rendering of `/services` dense list in browser.
+
+---
+
+### 2026-08-26 — MILESTONE 14: Reconciliation Checkpoint
+- **Task:** Reconcile current state, create reconnaissance document, update build state
+- **Operation type:** RECONCILIATION + DOCUMENTATION
+- **Files changed:**
+  - `JANJEZ_CURRENT_STATE_RECON_20260826.md` (new)
+  - `JANJEZ_BUILD_STATE.md` (updated)
+- **Reconciliation:**
+  - Verified all legitimate work is on `review/janjez-reconciliation-20260822`
+  - Confirmed 4 commits ahead of origin: `5c6820e`, `28d5373`, `458fe9c`, `71a0587`
+  - Working tree clean (0 modified tracked files, 5 untracked backup/temp files)
+  - All 8 platforms, service taxonomy, admin mapping, guest ordering, pricing, M-Pesa, provider mapping verified
+- **Verification:**
+  - Build: PASS
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - Service routes: 15/15 HTTP 200, 0 404s
+- **Build ID:** `w07-ZNSEgVvSVhFAajBFq`
+- **Commit:** `5c6820e` (existing, documentation update)
+- **Recon file:** `JANJEZ_CURRENT_STATE_RECON_20260826.md` created with full forensic reconnaissance
+- **Working tree:** CLEAN (only pre-existing untracked files)
+- **Current blockers:**
+  - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+  - P1: Supabase schema not directly verifiable (migration files present, DB access required)
+  - P2: Legacy static service dependencies remain in codebase (`GlobalSearch.tsx`, `PlatformDropdown.tsx`, `ServicesGrid.tsx`, `order-log.ts`, `service-routes.ts`)
+  - P3: Logo source asset is 233x270 JPEG (best available in repo)
+- **Next action:** Push commits to remote, then proceed with Phase 2 legacy static dependency migration.
 
 ---
 
 ## 21. CURRENT STATE SUMMARY (Updated 2026-08-26)
 
 - **Branch:** `review/janjez-reconciliation-20260822`
-- **HEAD:** `28d5373`
+- **HEAD:** `5c6820e`
 - **Working tree:** CLEAN (only pre-existing untracked files)
 - **PM2:** `janjez-app` online, restarts=5
 - **Tests:** 156 passed
 - **Lint:** 0 errors, 117 warnings
 - **Build:** PASS
-- **Build ID:** `L5zCkAGqBdc8jfC2nIJb`
+- **Build ID:** `w07-ZNSEgVvSVhFAajBFq`
 
 ### Service Catalogue Redesign (Milestone 13)
 - `ServiceDenseList` component with 8-platform horizontal selector
@@ -1766,9 +1808,15 @@ Push commit `47f70f5` to remote. The anonymous order API 500 on Vercel should be
 - All 5 services traced: 15/15 routes HTTP 200
 - Mobile responsive: `flex-col` on small screens, `sm:flex-row` on desktop
 
+### Reconnaissance Document
+- `JANJEZ_CURRENT_STATE_RECON_20260826.md` created with complete forensic reconnaissance
+- All git identity, deployment, runtime, service architecture, and blocker details recorded
+
 ### Remaining blockers
 - P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken
+- P1: Supabase schema not directly verifiable
+- P2: Legacy static service dependencies remain in codebase
 - P3: Logo source asset is 233x270 JPEG (best available in repo)
 
 ### Next action
-Validate `/services` dense list client-side rendering in browser and push commits to remote.
+Push commits to remote, then proceed with Phase 2 legacy static dependency migration.
