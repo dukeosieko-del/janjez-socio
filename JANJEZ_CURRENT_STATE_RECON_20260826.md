@@ -169,7 +169,7 @@ README is **STALE** regarding deployment model. The project is currently deploye
 ## 5. ACTUAL DEPLOYMENT POSITION
 
 ### Server
-- **Type:** AWS EC2 (AWS Lightsail per historical records)
+- **Type:** AWS Lightsail (EC2-based)
 - **Hostname:** `ip-172-26-5-201.ap-south-1.compute.internal`
 - **OS:** Linux (Ubuntu-based)
 
