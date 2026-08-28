@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         link: sanitizeString(link_submitted, 500),
         quantity: numQuantity,
         amount: expectedAmount,
-        amount_paid: expectedAmount,
+        amount_paid: amountForMpesa,
         quantity_source: "preset",
         status: "pending",
         payment_status: "pending_mpesa",

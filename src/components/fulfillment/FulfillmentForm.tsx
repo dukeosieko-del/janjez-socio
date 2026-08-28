@@ -48,7 +48,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     if (service) return Number(service.selling_price_ksh);
     if (deliverable) {
       const match = deliverable.price.replace(" Ksh", "").match(/([\d,.]+)/);
-      if (match) return parseFloat(match[1].replace(/,/g, ""));
+      if (match) return parseFloat(match[1].replace(/,/g, "")) * 1000;
     }
     return 0;
   }, [service, deliverable]);

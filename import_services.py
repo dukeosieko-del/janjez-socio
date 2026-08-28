@@ -48,7 +48,7 @@ def match_platform(name):
 
 def normalize_slug(s):
     s = s.lower().strip()
-    s = re.sub(r"[^\w\s-]", "", s)
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
     s = re.sub(r"\s+", "-", s)
     s = re.sub(r"-+", "-", s)
     s = s.strip("-") or "service"

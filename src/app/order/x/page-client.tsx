@@ -193,7 +193,6 @@ export default function XTwitterPageClient() {
                 <p className="text-kenya-white/70 text-sm mb-4">{selectedService.description}</p>
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   <span className="inline-flex items-center gap-1.5 bg-kenya-black/60 text-kenya-white text-xs px-3 py-1.5 rounded-lg border border-kenya-white/10">Rate: KES {selectedService.rate.toFixed(2)}</span>
-                  <span className="inline-flex items-center gap-1.5 bg-kenya-red/20 text-kenya-red text-xs px-3 py-1.5 rounded-lg border border-kenya-red/30">-5% Happy Hour</span>
                   <span className="inline-flex items-center gap-1.5 bg-kenya-black/60 text-kenya-white/60 text-xs px-3 py-1.5 rounded-lg border border-kenya-white/10">Min: {selectedService.min.toLocaleString()} | Max: {selectedService.max.toLocaleString()}</span>
                 </div>
                 <div className="bg-kenya-black/40 rounded-xl p-4 border border-kenya-white/5 mb-4">
@@ -265,7 +264,6 @@ export default function XTwitterPageClient() {
                       <span className="text-kenya-white/40 text-xs">Wallet balance: KES {walletBalance.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {total > 0 && <span className="text-xs bg-kenya-red text-white font-bold px-2 py-0.5 rounded">-5% Happy Hour</span>}
                       <span className="text-2xl font-bold text-kenya-green">KES {total.toFixed(2)}</span>
                     </div>
                   </div>

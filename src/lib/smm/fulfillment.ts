@@ -9,12 +9,6 @@ import {
 } from "./provider";
 import type { ProviderService } from "./provider";
 
-export interface ServiceMatch {
-  providerService: ProviderService;
-  score: number;
-  reason: "cheapest" | "manual";
-}
-
 export async function syncProviderCatalog() {
   const supabase = createAdminClient();
   if (!supabase) {
@@ -66,45 +60,6 @@ export async function getProviderServices(): Promise<ProviderService[]> {
 
   if (!data) return [];
   return data as unknown as ProviderService[];
-}
-
-export async function findCheapestProviderService(category: string, name: string): Promise<ProviderService | null> {
-  const supabase = createAdminClient();
-  if (!supabase) return null;
-
-  const { data } = await supabase
-    .from("provider_services")
-    .select("*")
-    .ilike("category", `%${category}%`)
-    .ilike("name", `%${name}%`)
-    .order("rate", { ascending: true })
-    .limit(1);
-
-  if (data && data.length > 0) {
-    return {
-      service: parseInt(data[0].id, 10),
-      name: data[0].name,
-      type: data[0].type,
-      category: data[0].category,
-      rate: String(data[0].rate),
-      min: String(data[0].min),
-      max: String(data[0].max),
-      refill: data[0].refill,
-      cancel: data[0].cancel,
-      dripfeed: data[0].supports_drip_feed,
-    };
-  }
-
-  const fallback = await fetchProviderServices();
-  const matched = fallback
-    .filter(
-      (s) =>
-        s.category.toLowerCase().includes(category.toLowerCase()) ||
-        s.name.toLowerCase().includes(name.toLowerCase())
-    )
-    .sort((a, b) => parseFloat(a.rate) - parseFloat(b.rate));
-
-  return matched[0] || null;
 }
 
 export interface JanjezServiceWithProvider {

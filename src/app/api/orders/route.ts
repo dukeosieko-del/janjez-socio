@@ -34,7 +34,7 @@ function calculateExpectedAmount(
       (s) => s.categoryId === catalogCategoryId && (s.serviceId === skuId || s.id === skuId)
     );
     if (service) {
-      return service.rate * quantity;
+      return calculateOrderCost(service.rate * 1000, quantity);
     }
   }
 
@@ -49,7 +49,7 @@ function calculateExpectedAmount(
         const priceMatch = deliverable.price.match(/([\d,.]+)/);
         if (priceMatch) {
           const rate = parseFloat(priceMatch[1].replace(/,/g, ""));
-          return rate * quantity;
+          return calculateOrderCost(rate * 1000, quantity);
         }
       }
     }
@@ -274,6 +274,15 @@ export async function POST(request: NextRequest) {
           message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be processed: ${errorMessage}.`,
           link: "/orders/all",
         });
+
+        try {
+          await supabase.rpc("credit_wallet", {
+            p_user_id: user.id,
+            p_amount: expectedAmount,
+          });
+        } catch (refundError) {
+          console.error("Wallet refund failed for order", data.id, refundError);
+        }
       }
 
       try {

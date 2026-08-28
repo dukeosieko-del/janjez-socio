@@ -296,11 +296,6 @@ export default function YouTubeSubscribersClient() {
                       <span className="text-kenya-white/40 text-xs">Wallet balance: KES {walletBalance.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {total > 0 && (
-                        <span className="text-xs bg-kenya-red text-white font-bold px-2 py-0.5 rounded">
-                          -5% Happy Hour
-                        </span>
-                      )}
                       <span className="text-2xl font-bold text-kenya-green">
                         KES {total.toFixed(2)}
                       </span>
