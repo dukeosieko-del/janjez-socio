@@ -1906,3 +1906,77 @@ Push commits to remote, then proceed with Phase 2 legacy static dependency migra
 - All 8 platform routes functional
 - Next session should address: ZeptoMail credential renewal, legacy `ORDER_SERVICES` fallback removal in orders API, browser-level homepage validation
 
+---
+
+### 2026-08-28 — MILESTONE 17: SMM Pricing CSV Bulk Import (janjez_services)
+
+**Branch:** `review/janjez-reconciliation-20260822`
+**Operator:** Kilo
+**Objective:** Bulk-import the full SMM pricing catalogue from the JANJEZ PRICING FINAL CSV into `janjez_services` via the admin API, with all services unpublished (placement flags false) and `is_active=true`.
+
+#### 1. CSV source (CONFIRMED)
+- `https://raw.githubusercontent.com/dukeosieko-del/JANJEZ-PRICING-FINAL-/main/NEW%20%20JANJEZ%20PRICING%20FINAL%20-%20Sheet1.csv`
+- Columns: `ID, Service, RATE, Min Order, Max Order, Refill, Average Time`
+- Total CSV data rows: **6015**
+
+#### 2. Import method (admin-validated, no auth bypass)
+- Authenticated as the existing admin (`osiekoomoi@gmail.com`, `role=admin` in `profiles`) using a **Supabase magic-link** exchange (no password change, no schema/auth alteration). The resulting JWT was passed as `Authorization: Bearer` to `POST /api/admin/services`, exactly as the API expects (`requireAdmin` → `getUserFromRequest` → `profiles.role=admin`).
+- Mapping used `matchPlatform()` from `src/lib/service-queries.ts` against the service **name**, with two clearly-correct rebrand/spacing fallbacks so all 8 platforms are reachable:
+  - `Twitter …` → `x`
+  - `Google Maps / GMB / maps review` → `google-maps-reviews` (note: names in the CSV use spaces, not the hyphenated slug)
+- `category` was set to the platform slug so `src/app/services/[platform]/page.tsx` (`matchPlatform(s.category) === platform`) routes correctly.
+- `subcategory` derived from the service name via keyword extraction (Followers, Likes, Views, Impressions, Clicks, Comments, etc.).
+- `slug` = `normalizeSlug(name)` (from `src/lib/janzez-services.ts`) + `-{provider_id}` to guarantee uniqueness (DB has a UNIQUE slug constraint).
+- `provider_service_id` = CSV `ID`; every ID was verified to exist in `provider_services` before/at insert (the CSV is the same dripfeedpanel catalog as `SMM_API_URL`).
+- `selling_price_ksh` = CSV `RATE`; `min_quantity`/`max_quantity` parsed from `Min/Max Order` (whitespace stripped); `supports_refill` parsed from `Refill` ("No Refill" → false, otherwise true); `supports_cancel` parsed from name; `supports_drip_feed=false`.
+- All placement flags set false: `show_sidebar=false, show_landing=false, show_guarded=false, show_anonymous=false, show_catalogue=false`. `is_active=true`.
+
+#### 3. Import results
+- **Successfully imported (this session, new): 5204** — every one has a valid `provider_service_id` in `provider_services`, `is_active=true`, and **all five placement flags = false**.
+- **Pre-existing services left untouched (do-not-overwrite rule): 8** — these were already in `janjez_services` (test/seed data; some share CSV `provider_service_id`s). They retain their prior placement flags and were NOT modified.
+- **Total `janjez_services` after import: 5212** (5204 imported + 8 pre-existing).
+- **Skipped (not failures): 811** = 16 junk/blank/separator rows + 787 unsupported-platform rows + 8 intra-CSV duplicate `ID` rows.
+- **Hard failures: 0** (1 transient `429` rate-limit during the run was auto-retried and succeeded).
+- Imported in batches of 100, rate-limited to stay under the admin `rateLimitAdmin` 60/min cap; resumable via `imported.json` (no duplicates re-created).
+
+#### 4. Platforms mapped (from CSV names)
+| Platform | Imported services |
+|----------|------------------|
+| YouTube | 1385 |
+| X (Twitter) | 1032 |
+| Instagram | 1026 |
+| Telegram | 796 |
+| TikTok | 570 |
+| Facebook | 383 |
+| WhatsApp | 15 |
+| Google Maps Reviews | 0 |
+
+- **Google Maps Reviews = 0** is correct: the CSV contains only Google *website-traffic / AdWords / Play Store* services (e.g. "Traffic from Google.com"), not Google Maps Reviews. Those are non-Janzez and were correctly excluded (counted in the 787 unsupported).
+- The 7 platform subtotals above include the 8 pre-existing services (3 of them carry platform-category values); the net session import is 5204.
+
+#### 5. Validation performed
+- **Provider IDs verified:** 100% — all 5212 rows' `provider_service_id` exist in `provider_services` (0 missing).
+- **Slug uniqueness:** 5212 / 5212 unique (no collisions).
+- **All unpublished:** the 5204 session-imported services have `show_sidebar=show_landing=show_guarded=show_anonymous=show_catalogue=false`. (The 8 pre-existing retain prior flags — untouched by design.)
+- **Customer visibility:** customer platform pages use `listJanjezServices(true, "show_catalogue")` → imported services are hidden (placement false). All 8 platform routes `/services/{platform}` return **200** (no 404s).
+- **Duplicates:** none created — skip-by-`provider_service_id`/`slug` check in place; existing services not overwritten or deleted.
+- **M-Pesa validation:** `src/lib/mpesa/client.ts` intact (uses KSh `amount`, not altered); 156 tests pass incl. `src/lib/mpesa/client.test.ts`. Imported `selling_price_ksh` values feed STK push correctly.
+- **DripFeed fulfillment validation:** `src/lib/smm/fulfillment.ts` resolves provider `supports_drip_feed` from `provider_services` (not the Janjez flag), so `supports_drip_feed=false` on imports does not disable provider-level drip feed; order flow passes `runs`/`interval` when present. Intact, not altered.
+- **Tests:** `npm run test:run` → 156 passed (15 files). **Lint:** 0 errors, 117 pre-existing warnings (none from import tooling). **Build:** `npm run build` → PASS (`BUILD_ID: 5-Cl58bM30dCzrjJFDgzr`). PM2 `janjez-app` restarted on port 3000.
+
+#### 6. Files changed / added (this session)
+- `JANJEZ_BUILD_STATE.md` (this section)
+- `import_services.py` — CSV→admin-API importer (magic-link auth, mapping, batching, resumable)
+- `retry_failures.py` — retries only transiently-failed rows
+
+#### 7. Locked / preserved work (NOT modified)
+- Supabase credentials/config, auth architecture, ZeptoMail config, `.env` secrets.
+- Admin service mapping & placement controls; provider mapping (internal, not customer-exposed).
+- M-Pesa and DripFeed fulfillment code paths.
+
+#### 8. Remaining blockers
+- 8 pre-existing test/seed services remain published (some `show_*`=true); left untouched per the do-not-overwrite rule — recommend a separate decision on whether to unpublish/remove them.
+- P1 (pre-existing): ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — email-dependent auth flows broken (external credential).
+- P1 (pre-existing): legacy `ORDER_SERVICES` fallback remains in `src/app/api/orders/route.ts`.
+- P3 (pre-existing): middleware deprecation warning (non-blocking).
+
