@@ -2127,3 +2127,95 @@ All routes return HTTP 200 with rendered pricing and "Place Order" button.
 - 5,204 imported services unpublished and structurally integrated
 - Next session: Address pre-existing service cleanup, ZeptoMail credential renewal, legacy ORDER_SERVICES removal
 
+---
+
+### 2026-08-28 — MILESTONE 19: Payment + Fulfillment Surgical Audit
+
+- **Task:** Complete surgical audit of payment → order → provider mapping → fulfillment → tracking pipeline
+- **Operation type:** AUDIT + FIXES
+- **Commit before:** `f25e5b1`
+- **Commit after:** `ea207ae`
+
+#### Audit scope
+- Provider ↔ Janjez service 1-to-1 mapping (full 5,212 inventory)
+- M-Pesa UX and state machine
+- Complete order lifecycle (auth + guest)
+- Payment modal / customer information boundary
+- Error + 404 surgery
+- Pricing integrity
+- Fulfillment safety
+- Admin service settings authority
+- Automated QA coverage
+
+#### Key findings and fixes
+
+**1. Wallet refund on fulfillment failure (CRITICAL)**
+- **File:** `src/app/api/orders/route.ts`
+- **Issue:** When `fulfillOrder()` failed after wallet debit, the user lost money with no automatic recovery
+- **Fix:** Added `credit_wallet` RPC call in the fulfillment catch block to refund `expectedAmount`
+
+**2. Legacy pricing fallback bypassed authoritative formula**
+- **File:** `src/app/api/orders/route.ts`
+- **Issue:** `calculateExpectedAmount()` used raw `rate * quantity` instead of `calculateOrderCost()`
+- **Fix:** Replaced with `calculateOrderCost(rate * 1000, quantity)` to use the authoritative pricing model
+
+**3. FulfillmentForm deliverable path underpricing (LATENT)**
+- **File:** `src/components/fulfillment/FulfillmentForm.tsx`
+- **Issue:** When `deliverable` prop was used, `ratePerUnit` was per-unit but passed directly to `calculateOrderCost()`, producing 1000× underpricing
+- **Fix:** Multiply parsed `deliverable.price` by 1000 before passing to `calculateOrderCost()`
+
+**4. Misleading Happy Hour UI badges**
+- **Files:** 13 `src/app/order/*/page-client.tsx` files
+- **Issue:** Displayed "-5% Happy Hour" badge but no discount was actually applied to the price
+- **Fix:** Removed all misleading Happy Hour badges from customer-facing order pages
+
+**5. Anonymous order overpayment not recorded**
+- **File:** `src/app/api/orders/anonymous/route.ts`
+- **Issue:** `amount_paid` was recorded as `expectedAmount` even when M-Pesa charged `Math.max(50, expectedAmount)`
+- **Fix:** Record actual M-Pesa amount in `amount_paid` field
+
+**6. Dead code removal**
+- **File:** `src/lib/smm/fulfillment.ts`
+- **Issue:** `findCheapestProviderService` and `ServiceMatch` interface were never called in production
+- **Fix:** Removed dead code
+
+**7. Import script slug normalization consistency**
+- **File:** `import_services.py`
+- **Issue:** Python `\w` is Unicode-aware while JS `\w` is ASCII-only, causing potential slug mismatches
+- **Fix:** Changed to `[^a-z0-9\s-]` for ASCII-only consistency
+
+#### Verified intact
+- ✅ Payment-before-fulfillment for both authenticated and anonymous flows
+- ✅ No provider auto-substitution when mapping is missing
+- ✅ Duplicate fulfillment prevention
+- ✅ Drip-feed parameter handling
+- ✅ Provider order ID persistence
+- ✅ Customer-facing UI contains no provider IDs, DripFeed terminology, or internal info
+
+#### Tests/build/lint
+- **Tests:** 156 passed (15 files)
+- **Lint:** 0 errors, 117 warnings
+- **Build:** PASS
+
+#### Files changed
+- `src/app/api/orders/route.ts` — wallet refund on fulfillment failure, legacy pricing fix
+- `src/app/api/orders/anonymous/route.ts` — record actual M-Pesa amount
+- `src/components/fulfillment/FulfillmentForm.tsx` — deliverable path pricing fix
+- `src/lib/smm/fulfillment.ts` — remove dead code
+- `import_services.py` — ASCII-only slug normalization
+- 13 `src/app/order/*/page-client.tsx` files — remove misleading Happy Hour badges
+
+#### Remaining blockers
+- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — email-dependent auth flows broken (external credential)
+- P1: Legacy `ORDER_SERVICES` fallback remains in `src/app/api/orders/route.ts` (still present but now uses authoritative formula)
+- P3: Middleware deprecation warning (non-blocking)
+
+#### Next starting point
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `ea207ae`
+- Working tree: MODIFIED (source fixes committed)
+- PM2: `janjez-app` online on port 3000
+- All 8 platform routes functional
+- 5,204 imported services unpublished and structurally integrated
+- Next session: Vercel Preview redeployment with all fixes, browser-level E2E validation
+
