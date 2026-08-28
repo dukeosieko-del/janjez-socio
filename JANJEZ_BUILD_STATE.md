@@ -2212,10 +2212,80 @@ All routes return HTTP 200 with rendered pricing and "Place Order" button.
 
 #### Next starting point
 - Branch: `review/janjez-reconciliation-20260822`
-- HEAD: `ea207ae`
-- Working tree: MODIFIED (source fixes committed)
+- HEAD: `e50ef4b`
+- Working tree: CLEAN (only pre-existing untracked files)
 - PM2: `janjez-app` online on port 3000
 - All 8 platform routes functional
 - 5,204 imported services unpublished and structurally integrated
-- Next session: Vercel Preview redeployment with all fixes, browser-level E2E validation
+- Next session: Vercel production deployment, browser-level E2E validation
+
+---
+
+### 2026-08-28 — MILESTONE 20: Final Production Closure / Dual Deployment
+
+- **Task:** Final production hardening, reconciliation, and dual-environment deployment
+- **Operation type:** PRODUCTION CLOSURE + DEPLOYMENT
+- **Commit before:** `e50ef4b`
+- **Commit after:** `e50ef4b` (no new commits; deployment-only)
+
+#### Reconciliation
+- Verified current HEAD: `e50ef4b37721c39af1091a0c4d7a994b2fff25ad`
+- Branch: `review/janjez-reconciliation-20260822`
+- Remote: `origin/review/janjez-reconciliation-20260822` in sync
+- Working tree: CLEAN (only pre-existing untracked files)
+- All legitimate commits from Kilo Cloud, Kilo Extension, and delegated sub-agents incorporated
+- No duplicate fixes, no reverted valid work
+
+#### Final source state
+- **Tests:** 156 passed (15 files)
+- **Lint:** 0 errors, 117 warnings (pre-existing)
+- **Build:** PASS
+- **TypeScript:** 0 new errors
+
+#### Lightsail deployment
+- **Instance:** AWS Lightsail (verified running)
+- **PM2:** `janjez-app` online, restarted with final build
+- **Domain:** `https://staging.janjez.social`
+- **Build:** PASS
+- **Runtime verified:** /services renders catalogue, homepage renders platform cards, all 8 platform routes return 200
+
+#### Vercel deployment
+- **Project:** `janjez-socio` under `dukeosieko-dels-projects`
+- **Preview URL:** `https://janjez-socio-dq9kj43q4-dukeosieko-dels-projects.vercel.app`
+- **Build:** PASS
+- **Runtime verified:** /services returns 200 with "Select Category" rendered, platform routes return 200
+
+#### Dual-environment consistency
+- Same source commit (`e50ef4b`) deployed to both Lightsail and Vercel
+- Same service architecture, pricing logic, routing, API contracts
+- Environment-specific values correctly isolated
+- No staging domains in production configuration
+- No production credentials exposed to client
+
+#### Final checklist
+- ✅ Service inventory: 5,212 total (5,204 imported + 8 pre-existing)
+- ✅ Provider one-to-one mapping: 5,212/5,212 valid
+- ✅ All imported services unpublished (`show_* = false`)
+- ✅ Payment: wallet refund on fulfillment failure implemented
+- ✅ Pricing: authoritative `calculateOrderCost()` used everywhere
+- ✅ Fulfillment: no provider auto-substitution, duplicate prevention
+- ✅ Customer UI: no provider IDs, DripFeed terminology, or internal info
+- ✅ Admin controls: category/subcategory/placement all functional
+- ✅ 8 platforms: YouTube, WhatsApp, Instagram, Facebook, TikTok, Telegram, Google Maps Reviews, X
+- ✅ Service funnel: platform → subcategory → service → order → payment → fulfillment → tracking
+- ✅ Auth: graceful missing-credential handling, ZeptoMail deferred as external dependency
+- ✅ ZeptoMail: isolated, fails gracefully, no raw errors to customers
+- ✅ Supabase auth: returns controlled errors when misconfigured
+- ✅ Tests/build/lint: passing
+
+#### Remaining external blockers
+- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — email-dependent auth flows broken (external credential awaiting renewal)
+- P1: Vercel production deployment (`vercel --prod`) not yet performed — requires explicit authorization
+- P2: Legacy `ORDER_SERVICES` fallback remains in `src/app/api/orders/route.ts` (present but now uses authoritative formula)
+
+#### Production status
+- **Code:** PRODUCTION-READY
+- **Lightsail:** DEPLOYED AND VERIFIED
+- **Vercel Preview:** DEPLOYED AND VERIFIED
+- **Vercel Production:** NOT YET DEPLOYED (awaiting explicit `vercel --prod` authorization)
 
