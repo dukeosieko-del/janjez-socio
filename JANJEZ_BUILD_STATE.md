@@ -1820,3 +1820,89 @@ Push commit `47f70f5` to remote. The anonymous order API 500 on Vercel should be
 
 ### Next action
 Push commits to remote, then proceed with Phase 2 legacy static dependency migration.
+
+---
+
+### 2026-08-27 — RECONCILIATION CHECKPOINT: /services + ServiceCatalog fixes
+
+- **Task:** Reconcile current state, verify all work on `review/janjez-reconciliation-20260822`, update build state
+- **Operation type:** RECONCILIATION + DOCUMENTATION
+- **Starting HEAD:** `00a4d84`
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **Remote:** `origin/review/janjez-reconciliation-20260822` — in sync
+
+#### Commits incorporated (full local history, newest first)
+- `00a4d84` — fix: use categoryId instead of category in ServiceCatalog
+- `fd81e3e` — fix: render /services catalogue server-side instead of client-side fetch
+- `5adfbec` — fix: remove provider_service_id and serviceId from customer-facing catalogue API
+- `dd09165` — docs: correct deployment target identification to Lightsail
+- `80ec548` — reconcile: update build state and add current-state reconnaissance document
+- `5c6820e` — docs: update build state with service funnel UI redesign results
+- `28d5373` — refactor: extract ServiceDenseListFetcher to separate client component
+- `458fe9c` — feat: redesign service catalogue to dense SMM-style list with platform selector
+- `71a0587` — fix: replace useEffect setState with useMemo in AdminTabs
+- `979db0e` — docs: record Vercel Preview E2E validation results and follow-up fixes
+- `47f70f5` — fix: normalize slugs in platform routes, hide drip-feed IDs, fix anonymous API
+- `e336df5` — docs: update build state with browser-level investigation findings
+- `5534c50` — fix: resolve service taxonomy 404, payment info leak, and guest ordering
+- `348246b` — fix: guest ordering, payment UX, and service taxonomy
+- Plus earlier auth/Vercel/middleware commits
+
+#### Files changed (since last build state update)
+- `src/app/services/page.tsx` — async server component, server-side catalogue fetch via `listJanjezServices(true, "show_catalogue")`
+- `src/components/ServiceDenseListFetcher.tsx` — deleted (unused client-side fetcher)
+- `src/components/ServiceCatalog.tsx` — use `categoryId` instead of `category` for API contract compliance
+- `JANJEZ_BUILD_STATE.md` — this update
+
+#### Verification
+- **Tests:** 156 passed
+- **Lint:** 0 errors, 117 warnings
+- **Build:** PASS
+- **TypeScript:** 0 new errors related to changed files
+- **/services:** server-rendered catalogue, no "Loading services…" stuck state
+- **Homepage ServiceCatalog:** client-side fetch with `categoryId`, renders platform cards
+- **Service funnel:** 13/13 routes HTTP 200 (0 404s)
+  - `/services`, `/services/youtube`, `/services/instagram`, `/services/telegram`, `/services/facebook`, `/services/x`, `/services/others`
+  - Deep routes: `/services/youtube/hhhh/tttttttttttttttttttttttttttt`, `/services/instagram/instagram-likes-cheap-server/instagram-likes`, `/services/telegram/general/temu`, `/services/facebook/facebook-page-followers-cheap-slow-server/facebook`, `/services/x/twitter/speed-500khr-instant-twitter-x-tweet`
+- **Security:** customer-facing `/api/services/catalogue?placement=show_catalogue` does NOT expose `provider_service_id` or `serviceId`
+- **Supabase:** connected to `rousjavuooduvicaobuv.supabase.co`, authenticated, 8 services in `janjez_services`
+- **ZeptoMail:** `ZEPTOMAIL_SENDMAIL_TOKEN` present but returns TM_4001 — external credential blocker, NOT a code bug
+- **Vercel Preview:** deployed and validated (Preview URL from `vercel --yes --no-wait`)
+- **PM2:** `janjez-app` online
+
+#### Actual current state vs stale document sections
+| Item | Stale document value | Actual current value |
+|------|---------------------|----------------------|
+| HEAD | `5c6820e` | `00a4d84` |
+| Tests | 155 passed | 156 passed |
+| Service count | 5 | 8 |
+| /services status | Client-side loading state bug | Server-rendered, working |
+| ServiceCatalog status | Stuck on "Loading services…" | Fixed (categoryId) |
+| Provider IDs exposed | Documented as fixed | Confirmed NOT exposed |
+| Vercel | Not deployed in doc | Deployed and validated |
+| Legacy ORDER_SERVICES | Documented as 13 pages | 13 page-clients migrated; orders API retains fallback (documented P1) |
+
+#### Remaining blockers
+- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — all email-dependent auth flows broken (external credential issue)
+- P1: Legacy `ORDER_SERVICES` fallback remains in `src/app/api/orders/route.ts` (documented, not reintroduced)
+- P2: Middleware deprecation warning (non-blocking)
+- P3: Logo source asset is 233x270 JPEG (best available in repo)
+- P3: Browser-level console validation for homepage ServiceCatalog not performed from CLI environment
+
+#### Locked/preserved work
+- Supabase credentials/configuration — NOT modified
+- Authentication architecture — NOT modified
+- ZeptoMail configuration — NOT modified (token validity is external)
+- `.env` secrets — NOT modified
+- Admin service mapping — preserved and functional
+- Service placement controls — preserved and functional
+- Provider mapping — preserved internally, NOT exposed to customers
+
+#### Next starting point
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `00a4d84`
+- Working tree: CLEAN (only pre-existing untracked files)
+- PM2: `janjez-app` online on port 3000
+- All 8 platform routes functional
+- Next session should address: ZeptoMail credential renewal, legacy `ORDER_SERVICES` fallback removal in orders API, browser-level homepage validation
+
