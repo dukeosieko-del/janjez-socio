@@ -4,7 +4,6 @@ import { fulfillOrder } from "@/lib/smm/fulfillment";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
-import { ORDER_SERVICES } from "@/lib/data";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 
 export const runtime = "nodejs";
@@ -16,15 +15,6 @@ function calculateExpectedAmount(
   skuId: string | null | undefined,
   quantity: number
 ): number {
-  if (skuId && catalogCategoryId) {
-    const service = ORDER_SERVICES.find(
-      (s) => s.categoryId === catalogCategoryId && (s.serviceId === skuId || s.id === skuId)
-    );
-    if (service) {
-      return service.rate * quantity * 0.95;
-    }
-  }
-
   const catalogItem = SERVICE_CATALOG.find(
     (c) => c.id === catalogCategoryId || c.name === category
   );
