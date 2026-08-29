@@ -2671,3 +2671,35 @@ ALTER TABLE public.orders
 2. `matchPlatform()` name-based `Twitter`/`Google Maps Reviews` gap is latent (no current failure).
 3. External blockers unchanged: `pending_mpesa` migration not applied; ZeptoMail token invalid; Vercel prod deploy pending.
 
+
+### 2026-08-29 — MILESTONE 23: Routing, Fulfillment, and Production Readiness
+- **Task:** Fix 404s in service funnel, DripFeed fulfillment bugs, deploy to Lightsail
+- **Operation type:** CODE RECONCILIATION + DEPLOYMENT + VERIFICATION
+- **Files changed:**
+  - `src/app/services/[platform]/page.tsx` — add platform alias redirects (x-twitter → x, google-maps → google-maps-reviews)
+  - `src/lib/service-queries.ts` — add explicit aliases in matchPlatform for google-maps and x-twitter
+  - `src/app/api/services/sidebar/route.ts` — use matchPlatform for canonical platform slugs, normalizeSlug for subcategory slugs
+  - `src/lib/smm/fulfillment.ts` — add provider balance pre-check, make fulfillOrder throw on provider failure to trigger wallet refund, add SMM_FULFILLMENT_ENABLED guard
+  - `src/app/api/orders/route.ts` — fix type error after fulfillOrder refactor (removed unreachable error status check)
+  - `src/lib/smm/fulfillment.test.ts` — mock getProviderBalance to return sufficient balance
+  - `.env` — set SMM_FULFILLMENT_ENABLED=true
+- **Routing fixes:**
+  - `/services/x-twitter` → 307 redirect to `/services/x`
+  - `/services/google-maps` → 307 redirect to `/services/google-maps-reviews`
+  - Sidebar now generates canonical platform slugs and normalized subcategory slugs
+- **Fulfillment fixes:**
+  - Provider balance checked before placing orders
+  - Provider failures now throw instead of returning error objects, triggering wallet refund in orders route catch block
+  - SMM_FULFILLMENT_ENABLED=false now actually disables fulfillment
+- **Verification:**
+  - Build: PASS
+  - Tests: 156 passed
+  - Lint: 0 errors, 117 warnings
+  - Staging routes: /services (200), /services/youtube (200), /services/x (200), /services/x-twitter (307), /services/google-maps-reviews (200), /services/google-maps (307)
+- **Deployed to:** staging.janjez.social (Lightsail, PM2 janjez-app)
+- **Commit:** `5d3d886`
+- **Remaining blockers:**
+  - P0: pending_mpesa database migration NOT applied — guest checkout fails with constraint violation
+  - P1: DripFeed provider balance is $0.00 — no orders can succeed until account is funded
+  - P1: ZeptoMail token invalid — auth email flows broken
+  - P2: No Google Maps services in database (0 services) — sidebar shows platform but no services available
