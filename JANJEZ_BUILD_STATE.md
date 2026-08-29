@@ -2396,10 +2396,81 @@ All routes return HTTP 200 with rendered pricing and "Place Order" button.
 
 #### Next starting point
 - Branch: `review/janjez-reconciliation-20260822`
-- HEAD: `95793d7`
+- HEAD: `460b4cf`
 - Working tree: CLEAN
 - PM2: `janjez-app` online on port 3000
 - All 8 platform routes functional
 - 5,212 services total, all with valid provider mappings
-- Next session: Apply pending_mpesa migration, deploy to Lightsail/Vercel production, browser-level E2E validation
+- **BLOCKER:** `pending_mpesa` database constraint not applied — guest orders fail with constraint violation
+- **BLOCKER:** Vercel production deployment blocked until DB gate passes
+
+---
+
+### 2026-08-29 — MILESTONE 22: Final Pre-Production DB Gate + Deployment Verification
+
+- **Task:** Verify database constraint, test guest order flow, prepare production deployment
+- **Operation type:** VERIFICATION + DEPLOYMENT GATE
+- **Commit before:** `460b4cf`
+- **Commit after:** `460b4cf` (no code changes — verification only)
+
+#### DB Gate Verification
+- **Migration file:** `supabase/migrations/20250101000023_pending_mpesa_payment_status.sql` — exists, correct SQL
+- **Database constraint:** `orders_payment_status_check` — **NOT YET APPLIED**
+- **Verification method:** Live guest order API test
+- **Test result:** FAILED
+  ```
+  Anonymous order insert error: new row for relation "orders" violates check constraint "orders_payment_status_check"
+  ```
+- **Root cause:** Database still only allows `('unpaid', 'paid', 'refunded')` — `pending_mpesa` missing
+- **Impact:** ALL guest/anonymous orders fail at database insert
+- **Required action:** Apply migration via Supabase dashboard SQL Editor
+
+#### Exact SQL to Apply
+```sql
+ALTER TABLE public.orders
+  DROP CONSTRAINT IF EXISTS orders_payment_status_check;
+
+ALTER TABLE public.orders
+  ADD CONSTRAINT orders_payment_status_check
+  CHECK (payment_status IN ('unpaid', 'pending_mpesa', 'paid', 'refunded'));
+```
+
+#### Vercel Production Status
+- **Current production:** `https://www.janjez.social` — deployed Aug 26, 2026 (older commit)
+- **Target commit:** `460b4cf`
+- **Status:** BLOCKED — awaiting DB gate pass
+- **Environment variables:** Present (including ZeptoMail token)
+
+#### ZeptoMail Status
+- **Token:** Present but returns `TM_4001 Access Denied`
+- **Impact:** Signup verification and password reset emails blocked
+- **Mitigation:** Controlled error handling, app starts normally
+- **Fix:** Restore valid `ZEPTOMAIL_SENDMAIL_TOKEN` externally
+
+#### Final Verification Checklist
+| Check | Status |
+|-------|--------|
+| Code quality | ✅ 156 tests pass, build PASS, 0 lint errors |
+| Service catalogue | ✅ 5,212 services, all mapped |
+| Provider reconciliation | ✅ 5,212/5,212 valid mappings |
+| Payment UX | ✅ Amount locked during order payment |
+| Fulfillment safety | ✅ No auto-substitution, refund on failure |
+| Customer info boundary | ✅ No provider IDs exposed |
+| Routing/404s | ✅ All 8 platforms functional |
+| Lightsail deployment | ✅ Running `460b4cf` |
+| Vercel Preview | ✅ Running `460b4cf` |
+| Vercel Production | ⚠️ BLOCKED — DB gate not passed |
+| `pending_mpesa` migration | ⚠️ NOT APPLIED — guest orders fail |
+| ZeptoMail | ⚠️ External credential blocker |
+
+#### Remaining blockers (production gate)
+1. **P1 (CRITICAL):** Apply `pending_mpesa` database migration via Supabase dashboard
+2. **P1:** Vercel production deployment (`vercel --prod`) — requires DB gate pass + authorization
+3. **P1 (External):** ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — awaiting renewal
+
+#### Next action
+1. Apply migration SQL via Supabase dashboard
+2. Re-test guest order flow
+3. If DB gate passes, deploy `460b4cf` to Vercel production
+4. Update this document with deployment results
 
