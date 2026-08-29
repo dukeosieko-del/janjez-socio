@@ -240,15 +240,7 @@ export async function POST(request: NextRequest) {
       try {
         const fulfillmentResult = await fulfillOrder(data.id);
 
-        if (fulfillmentResult.status === "failed" || fulfillmentResult.status === "error") {
-          await supabase.from("notifications").insert({
-            user_id: user.id,
-            type: "order_failed",
-            title: "Order Fulfillment Failed",
-            message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be fulfilled: ${fulfillmentResult.error || "Unknown error"}. Our team has been notified.`,
-            link: "/orders/all",
-          });
-        } else {
+        if (fulfillmentResult.status === "processing" || fulfillmentResult.status === "already_fulfilled") {
           await supabase.from("notifications").insert({
             user_id: user.id,
             type: "order_fulfilled",

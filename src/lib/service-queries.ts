@@ -92,8 +92,15 @@ export function isKnownPlatform(platform: string): boolean {
 
 export function matchPlatform(category: string): string | null {
   const lower = category.toLowerCase();
+  const aliases: Record<string, string> = {
+    "google-maps": "google-maps-reviews",
+    "x-twitter": "x",
+  };
+  if (aliases[lower]) {
+    return aliases[lower];
+  }
   for (const platform of KNOWN_PLATFORMS) {
-    if (lower.includes(platform)) {
+    if (lower === platform || lower.includes(platform)) {
       return platform;
     }
   }

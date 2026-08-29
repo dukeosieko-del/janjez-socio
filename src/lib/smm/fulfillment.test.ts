@@ -12,7 +12,7 @@ vi.mock("@/lib/smm/provider", () => ({
   getProviderMultipleStatus: vi.fn(),
   createProviderRefill: vi.fn(),
   createProviderCancel: vi.fn(),
-  getProviderBalance: vi.fn(),
+  getProviderBalance: vi.fn().mockResolvedValue({ balance: "100" }),
   getProviderStatus: vi.fn(),
   SMM_API_URL: "https://api.test.com",
   SMM_API_KEY: "test",

@@ -135,6 +135,16 @@ export async function fulfillOrder(orderId: string) {
     return { status: "already_fulfilled", providerOrderId: order.provider_order_id };
   }
 
+  if (process.env.SMM_FULFILLMENT_ENABLED === "false") {
+    const message = "Fulfillment is disabled";
+    await logFulfillment(supabase, orderId, "place", "failed", null, null, message);
+    await supabase
+      .from("orders")
+      .update({ fulfillment_status: "failed", fulfillment_error: message })
+      .eq("id", orderId);
+    throw new Error(message);
+  }
+
   const category = order.category || "";
   const subcategory = order.subcategory || "";
   const sku = order.sku_id || order.service_name || "";
@@ -180,11 +190,34 @@ export async function fulfillOrder(orderId: string) {
       .from("orders")
       .update({ fulfillment_status: "failed", fulfillment_error: "No provider mapping found for this service. Contact support." })
       .eq("id", order.id);
-    return { status: "failed", error: "No provider mapping found for this service" };
+    throw new Error("No provider mapping found for this service");
   }
 
   if (!providerRate) {
     providerRate = parseFloat(providerService.rate);
+  }
+
+  const expectedCharge = (providerRate * quantity) / 1000;
+  try {
+    const balance = await getProviderBalance();
+    const providerBalance = parseFloat((balance as { balance?: string } | undefined)?.balance || "0");
+    if (providerBalance < expectedCharge) {
+      const message = `Insufficient provider balance: ${providerBalance} USD (need ${expectedCharge} USD)`;
+      await logFulfillment(supabase, order.id, "place", "failed", null, null, message);
+      await supabase
+        .from("orders")
+        .update({ fulfillment_status: "failed", fulfillment_error: message })
+        .eq("id", order.id);
+      throw new Error(message);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Provider balance check failed";
+    await logFulfillment(supabase, order.id, "place", "error", null, null, message);
+    await supabase
+      .from("orders")
+      .update({ fulfillment_status: "failed", fulfillment_error: message })
+      .eq("id", order.id);
+    throw new Error(message);
   }
 
   let response: { order?: number; error?: string } = {};
@@ -203,7 +236,7 @@ export async function fulfillOrder(orderId: string) {
       .from("orders")
       .update({ fulfillment_status: "failed", fulfillment_error: message })
       .eq("id", order.id);
-    return { status: "error", error: message };
+    throw new Error(message);
   }
 
   if (response.order) {
@@ -213,7 +246,7 @@ export async function fulfillOrder(orderId: string) {
         provider_service_id: String(providerService.service),
         provider_order_id: String(response.order),
         provider_status: "pending",
-        provider_charge: (providerRate * quantity) / 1000,
+        provider_charge: expectedCharge,
         provider_currency: "USD",
         fulfillment_status: "processing",
         fulfilled_at: new Date().toISOString(),
@@ -231,7 +264,7 @@ export async function fulfillOrder(orderId: string) {
     .update({ fulfillment_status: "failed", fulfillment_error: message })
     .eq("id", order.id);
 
-  return { status: "failed", error: message };
+  throw new Error(message);
 }
 
 export async function cancelOrder(orderId: string) {

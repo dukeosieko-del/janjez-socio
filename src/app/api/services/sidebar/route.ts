@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
-import { listJanjezServices } from "@/lib/janjez-services";
+import { listJanjezServices } from "@/lib/janzez-services";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
+import { matchPlatform } from "@/lib/service-queries";
+import { normalizeSlug } from "@/lib/janzez-services";
 
 export const runtime = "nodejs";
 
@@ -13,24 +15,25 @@ export async function GET(request: NextRequest) {
     const categoryMap = new Map<string, { name: string; icon: string; href: string; subcategories: Map<string, { name: string; href: string; count: number }> }>();
 
     for (const svc of services) {
-      const catKey = svc.category.toLowerCase();
+      const platformSlug = matchPlatform(svc.category) || svc.category.toLowerCase();
+      const catKey = platformSlug;
       if (!categoryMap.has(catKey)) {
         categoryMap.set(catKey, {
-          name: svc.category.charAt(0).toUpperCase() + svc.category.slice(1),
-          icon: getPlatformAvatar(svc.category),
-          href: `/services/${svc.category}`,
+          name: platformSlug.charAt(0).toUpperCase() + platformSlug.slice(1).replace(/-/g, " "),
+          icon: getPlatformAvatar(platformSlug),
+          href: `/services/${platformSlug}`,
           subcategories: new Map(),
         });
       }
 
       const category = categoryMap.get(catKey)!;
       const subName = svc.subcategory || "General";
-      const subKey = subName.toLowerCase().replace(/\s+/g, "-");
+      const subKey = normalizeSlug(subName);
 
       if (!category.subcategories.has(subKey)) {
         category.subcategories.set(subKey, {
           name: subName,
-          href: `/services/${svc.category}/${subKey}`,
+          href: `/services/${platformSlug}/${subKey}`,
           count: 0,
         });
       }

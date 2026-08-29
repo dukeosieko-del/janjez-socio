@@ -34,6 +34,13 @@ interface PlatformPageProps {
   params: Promise<{ platform: string }>;
 }
 
+import { redirect } from "next/navigation";
+
+const PLATFORM_ALIASES: Record<string, string> = {
+  "x-twitter": "x",
+  "google-maps": "google-maps-reviews",
+};
+
 async function getServices(platform: string): Promise<JanjezService[]> {
   const services = await listJanjezServices(true, "show_catalogue");
   const filtered = isKnownPlatform(platform)
@@ -44,7 +51,11 @@ async function getServices(platform: string): Promise<JanjezService[]> {
 
 export default async function PlatformPage({ params }: PlatformPageProps) {
   const { platform } = await params;
-  const services = await getServices(platform);
+  const canonical = PLATFORM_ALIASES[platform] || platform;
+  if (canonical !== platform) {
+    redirect(`/services/${canonical}`);
+  }
+  const services = await getServices(canonical);
   const platformName = platform.charAt(0).toUpperCase() + platform.slice(1).replace(/-/g, " ");
 
   return (
