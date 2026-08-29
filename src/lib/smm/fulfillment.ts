@@ -103,11 +103,58 @@ export async function fulfillOrder(orderId: string) {
     return { status: "already_fulfilled", providerOrderId: order.provider_order_id };
   }
 
+  if (process.env.SMM_FULFILLMENT_ENABLED === "false") {
+    const message = "Fulfillment is disabled";
+    await logFulfillment(supabase, orderId, "place", "failed", null, null, message);
+    await supabase
+      .from("orders")
+      .update({ fulfillment_status: "failed", fulfillment_error: message })
+      .eq("id", orderId);
+    throw new Error(message);
+  }
+
   const category = order.category || "";
   const subcategory = order.subcategory || "";
   const sku = order.sku_id || order.service_name || "";
 
+<<<<<<< ours
   const providerService = await findCheapestProviderService(category, sku || subcategory);
+=======
+  let providerService: ProviderService | null = null;
+  let resolvedService: JanjezServiceWithProvider | null = null;
+  let quantity = order.quantity || 1;
+  let providerRate = 0;
+
+  const janjezService = await resolveJanjezService(order.sku_id, order.catalog_category_id, order.janjez_service_id);
+  if (janjezService && janjezService.provider_service_id) {
+    resolvedService = janjezService;
+    const { data: providerData } = await supabase
+      .from("provider_services")
+      .select("*")
+      .eq("id", janjezService.provider_service_id)
+      .single();
+
+    if (providerData) {
+      providerService = {
+        service: parseInt(providerData.id, 10),
+        name: providerData.name,
+        type: providerData.type,
+        category: providerData.category,
+        rate: String(providerData.rate),
+        min: String(providerData.min),
+        max: String(providerData.max),
+        refill: providerData.refill,
+        cancel: providerData.cancel,
+        dripfeed: providerData.supports_drip_feed,
+      };
+      providerRate = parseFloat(providerData.rate);
+      quantity = Math.min(
+        Math.max(order.quantity || 1, parseInt(providerData.min, 10)),
+        parseInt(providerData.max, 10)
+      );
+    }
+  }
+>>>>>>> theirs
 
   if (!providerService) {
     await logFulfillment(supabase, order.id, "place", "failed", null, null, "No matching provider service found");
@@ -115,13 +162,40 @@ export async function fulfillOrder(orderId: string) {
       .from("orders")
       .update({ fulfillment_status: "failed", fulfillment_error: "No matching provider service found" })
       .eq("id", order.id);
+<<<<<<< ours
     return { status: "failed", error: "No matching provider service" };
+=======
+    throw new Error("No provider mapping found for this service");
+>>>>>>> theirs
   }
 
   const quantity = Math.min(
     Math.max(order.quantity || 1, parseInt(providerService.min, 10)),
     parseInt(providerService.max, 10)
   );
+
+  const expectedCharge = (providerRate * quantity) / 1000;
+  try {
+    const balance = await getProviderBalance();
+    const providerBalance = parseFloat((balance as { balance?: string } | undefined)?.balance || "0");
+    if (providerBalance < expectedCharge) {
+      const message = `Insufficient provider balance: ${providerBalance} USD (need ${expectedCharge} USD)`;
+      await logFulfillment(supabase, order.id, "place", "failed", null, null, message);
+      await supabase
+        .from("orders")
+        .update({ fulfillment_status: "failed", fulfillment_error: message })
+        .eq("id", order.id);
+      throw new Error(message);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Provider balance check failed";
+    await logFulfillment(supabase, order.id, "place", "error", null, null, message);
+    await supabase
+      .from("orders")
+      .update({ fulfillment_status: "failed", fulfillment_error: message })
+      .eq("id", order.id);
+    throw new Error(message);
+  }
 
   let response: { order?: number; error?: string } = {};
   try {
@@ -137,7 +211,7 @@ export async function fulfillOrder(orderId: string) {
       .from("orders")
       .update({ fulfillment_status: "failed", fulfillment_error: message })
       .eq("id", order.id);
-    return { status: "error", error: message };
+    throw new Error(message);
   }
 
   if (response.order) {
@@ -147,7 +221,11 @@ export async function fulfillOrder(orderId: string) {
         provider_service_id: String(providerService.service),
         provider_order_id: String(response.order),
         provider_status: "pending",
+<<<<<<< ours
          provider_charge: (parseFloat(providerService.rate) * quantity) / 1000,
+=======
+        provider_charge: expectedCharge,
+>>>>>>> theirs
         provider_currency: "USD",
         fulfillment_status: "processing",
         fulfilled_at: new Date().toISOString(),
@@ -165,9 +243,128 @@ export async function fulfillOrder(orderId: string) {
     .update({ fulfillment_status: "failed", fulfillment_error: message })
     .eq("id", order.id);
 
-  return { status: "failed", error: message };
+  throw new Error(message);
 }
 
+<<<<<<< ours
+=======
+export async function cancelOrder(orderId: string) {
+  const supabase = createAdminClient();
+  if (!supabase) {
+    throw new Error("Server misconfigured");
+  }
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) {
+    throw new Error(error?.message || "Order not found");
+  }
+
+  if (!order.provider_order_id) {
+    return { status: "not_fulfilled", error: "Order has no provider order to cancel" };
+  }
+
+  const janjezServiceId = order.janjez_service_id;
+  let resolvedService: JanjezServiceWithProvider | null = null;
+
+  if (janjezServiceId) {
+    resolvedService = await resolveJanjezService(null, null, janjezServiceId);
+  }
+
+  if (!resolvedService) {
+    return { status: "error", error: "Unable to resolve service for cancellation" };
+  }
+
+  if (!resolvedService.supports_cancel) {
+    return { status: "cancel_not_supported", error: "This service does not support cancellation" };
+  }
+
+  try {
+    await createProviderCancel([String(order.provider_order_id)]);
+    await supabase
+      .from("orders")
+      .update({
+        fulfillment_status: "cancelled",
+        provider_status: "Cancelled",
+        status: "cancelled",
+      })
+      .eq("id", order.id);
+    await logFulfillment(supabase, order.id, "cancel", "cancelled", { order_id: order.provider_order_id }, null);
+    return { status: "cancelled" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Provider cancellation failed";
+    await logFulfillment(supabase, order.id, "cancel", "error", { order_id: order.provider_order_id }, null, message);
+    return { status: "error", error: message };
+  }
+}
+
+export async function refillOrder(orderId: string) {
+  const supabase = createAdminClient();
+  if (!supabase) {
+    throw new Error("Server misconfigured");
+  }
+
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) {
+    throw new Error(error?.message || "Order not found");
+  }
+
+  if (!order.provider_order_id) {
+    return { status: "not_fulfilled", error: "Order has no provider order to refill" };
+  }
+
+  const janjezServiceId = order.janjez_service_id;
+  let resolvedService: JanjezServiceWithProvider | null = null;
+
+  if (janjezServiceId) {
+    resolvedService = await resolveJanjezService(null, null, janjezServiceId);
+  }
+
+  if (!resolvedService) {
+    return { status: "error", error: "Unable to resolve service for refill" };
+  }
+
+  if (!resolvedService.supports_refill) {
+    return { status: "refill_not_supported", error: "This service does not support refill" };
+  }
+
+  try {
+    await createProviderRefill([String(order.provider_order_id)]);
+    await supabase
+      .from("orders")
+      .update({ provider_status: "Pending" })
+      .eq("id", order.id);
+    await logFulfillment(supabase, order.id, "refill", "processing", { order_id: order.provider_order_id }, null);
+    return { status: "refill_submitted" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Provider refill failed";
+    await logFulfillment(supabase, order.id, "refill", "error", { order_id: order.provider_order_id }, null, message);
+    return { status: "error", error: message };
+  }
+}
+
+function mapProviderStatus(status: string | null | undefined): "fulfilled" | "cancelled" | "processing" {
+  if (!status) return "processing";
+  const upper = status.trim();
+  if (upper === "Completed") return "fulfilled";
+  if (upper === "Cancelled" || upper === "Refunded") return "cancelled";
+  if (upper === "Partial") return "processing";
+  if (upper === "Pending" || upper === "In Progress" || upper === "Processing") return "processing";
+  return "processing";
+}
+
+export { mapProviderStatus };
+
+>>>>>>> theirs
 export async function syncOrderStatuses(orderIds?: string[]) {
   const supabase = createAdminClient();
   if (!supabase) return;

@@ -52,6 +52,17 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
   const handlePlaceOrder = useCallback(async () => {
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
+<<<<<<< ours
+=======
+    if (dripFeed && (parseInt(runs, 10) <= 0 || parseInt(intervalMin, 10) <= 0)) return;
+
+    if (total > walletBalance) {
+      setMpesaOpen(true);
+      setRequiredAmount(total);
+      return;
+    }
+
+>>>>>>> theirs
     if (!user) {
       if (onRequireAuth) {
         onRequireAuth("login");
@@ -61,11 +72,14 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       return;
     }
 
+<<<<<<< ours
     if (total > walletBalance) {
       setMpesaOpen(true);
       return;
     }
 
+=======
+>>>>>>> theirs
     setPlacing(true);
     setOrderError(null);
     setOrderSuccess(false);
