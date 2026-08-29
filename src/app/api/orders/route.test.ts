@@ -120,8 +120,8 @@ describe("POST /api/orders - drip-feed validation", () => {
     const req = mockRequest({
       category: "instagram",
       subcategory: "Likes",
-      sku_id: "YT_VIEW_01",
-      catalog_category_id: "youtube",
+      sku_id: "Quick Boost ⚡",
+      catalog_category_id: "instagram",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
       amount_paid: 45.00,
@@ -140,8 +140,8 @@ describe("POST /api/orders - drip-feed validation", () => {
     const req = mockRequest({
       category: "instagram",
       subcategory: "Likes",
-      sku_id: "YT_VIEW_01",
-      catalog_category_id: "youtube",
+      sku_id: "Quick Boost ⚡",
+      catalog_category_id: "instagram",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
       amount_paid: 45.00,
@@ -160,8 +160,8 @@ describe("POST /api/orders - drip-feed validation", () => {
     const req = mockRequest({
       category: "instagram",
       subcategory: "Likes",
-      sku_id: "YT_VIEW_01",
-      catalog_category_id: "youtube",
+      sku_id: "Quick Boost ⚡",
+      catalog_category_id: "instagram",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
       amount_paid: 45.00,
@@ -180,8 +180,8 @@ describe("POST /api/orders - drip-feed validation", () => {
     const req = mockRequest({
       category: "instagram",
       subcategory: "Likes",
-      sku_id: "YT_VIEW_01",
-      catalog_category_id: "youtube",
+      sku_id: "Quick Boost ⚡",
+      catalog_category_id: "instagram",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
       amount_paid: 45.00,
@@ -233,11 +233,11 @@ describe("POST /api/orders - drip-feed validation", () => {
     const req = mockRequest({
       category: "instagram",
       subcategory: "Likes",
-      sku_id: "YT_VIEW_01",
-      catalog_category_id: "youtube",
+      sku_id: "Quick Boost ⚡",
+      catalog_category_id: "instagram",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 45.00,
+      amount_paid: 8.00,
       quantity_source: "preset",
       runs: 2,
       interval: 1,
@@ -281,11 +281,11 @@ describe("POST /api/orders - drip-feed validation", () => {
     const req = mockRequest({
       category: "instagram",
       subcategory: "Likes",
-      sku_id: "YT_VIEW_01",
-      catalog_category_id: "youtube",
+      sku_id: "Quick Boost ⚡",
+      catalog_category_id: "instagram",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 45.00,
+      amount_paid: 8.00,
       quantity_source: "preset",
     });
     const res = await POST(req);
@@ -320,11 +320,11 @@ describe("POST /api/orders - drip-feed validation", () => {
     const req = mockRequest({
       category: "instagram",
       subcategory: "Likes",
-      sku_id: "YT_VIEW_01",
-      catalog_category_id: "youtube",
+      sku_id: "Quick Boost ⚡",
+      catalog_category_id: "instagram",
       quantity: 100,
       link_submitted: "https://instagram.com/p/test",
-      amount_paid: 45.00,
+      amount_paid: 8.00,
       quantity_source: "preset",
       runs: 2,
       interval: 60,
@@ -334,7 +334,7 @@ describe("POST /api/orders - drip-feed validation", () => {
     expect(res.status).toBe(201);
     expect(mockAdminClient.rpc).toHaveBeenCalledWith("debit_wallet", {
       p_user_id: "user-123",
-      p_amount: 45.00,
+      p_amount: 8.00,
     });
   });
 });

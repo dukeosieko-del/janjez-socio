@@ -4,7 +4,6 @@ import { fulfillOrder, resolveJanjezService } from "@/lib/smm/fulfillment";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
-import { ORDER_SERVICES } from "@/lib/data";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { calculateOrderCost } from "@/lib/pricing";
 
@@ -28,16 +27,6 @@ function calculateExpectedAmount(
   skuId: string | null | undefined,
   quantity: number
 ): number {
-  console.warn("[orders] Legacy pricing path used without janjez_service_id. Migrate callers to use janjez_service_id for authoritative pricing.");
-  if (skuId && catalogCategoryId) {
-    const service = ORDER_SERVICES.find(
-      (s) => s.categoryId === catalogCategoryId && (s.serviceId === skuId || s.id === skuId)
-    );
-    if (service) {
-      return calculateOrderCost(service.rate * 1000, quantity);
-    }
-  }
-
   const catalogItem = SERVICE_CATALOG.find(
     (c) => c.id === catalogCategoryId || c.name === category
   );
