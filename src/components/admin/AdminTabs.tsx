@@ -1066,49 +1066,45 @@ export function MappingTab() {
     setBulkLoading(true);
     const headers = { ...authHeaders(session), "Content-Type": "application/json" };
     try {
+      const ids = filtered.map((s) => s.id);
       if (action === "publish") {
-        await Promise.all(
-          filtered.map((s) =>
-            fetch(`/api/admin/services/${s.id}`, {
-              method: "PATCH",
-              headers,
-              body: JSON.stringify({ is_active: true }),
-            })
-          )
-        );
+        await fetch("/api/admin/services/bulk", {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ ids, updates: { is_active: true } }),
+        });
       } else if (action === "unpublish") {
-        await Promise.all(
-          filtered.map((s) =>
-            fetch(`/api/admin/services/${s.id}`, {
-              method: "PATCH",
-              headers,
-              body: JSON.stringify({ is_active: false }),
-            })
-          )
-        );
+        await fetch("/api/admin/services/bulk", {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ ids, updates: { is_active: false } }),
+        });
       } else if (action === "catalogue_show") {
-        await Promise.all(
-          filtered.map((s) =>
-            fetch(`/api/admin/services/${s.id}`, {
-              method: "PATCH",
-              headers,
-              body: JSON.stringify({ show_catalogue: true }),
-            })
-          )
-        );
+        await fetch("/api/admin/services/bulk", {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ ids, updates: { show_catalogue: true } }),
+        });
       } else if (action === "catalogue_hide") {
-        await Promise.all(
-          filtered.map((s) =>
-            fetch(`/api/admin/services/${s.id}`, {
-              method: "PATCH",
-              headers,
-              body: JSON.stringify({ show_catalogue: false }),
-            })
-          )
-        );
+        await fetch("/api/admin/services/bulk", {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ ids, updates: { show_catalogue: false } }),
+        });
       } else if (action === "sync") {
         setSyncing(true);
-        await fetch("/api/smm/catalog", { method: "POST", headers });
+        await fetch("/api/admin/services/sync-prices", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            services: filtered.map((s) => ({
+              id: s.id,
+              selling_price_ksh: s.selling_price_ksh,
+              min_quantity: s.min_quantity,
+              max_quantity: s.max_quantity,
+            })),
+          }),
+        });
       }
       load();
     } catch {
