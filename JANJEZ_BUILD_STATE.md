@@ -2703,3 +2703,28 @@ ALTER TABLE public.orders
   - P1: DripFeed provider balance is $0.00 — no orders can succeed until account is funded
   - P1: ZeptoMail token invalid — auth email flows broken
   - P2: No Google Maps services in database (0 services) — sidebar shows platform but no services available
+
+### 2026-08-29 — MILESTONE 24: Production Readiness Verification + Health Endpoint
+- **Task:** Verify production readiness and add health check endpoint
+- **Operation type:** VERIFICATION + MINOR ADDITION
+- **Files changed:**
+  - `src/app/api/health/route.ts` — NEW health endpoint checking Supabase connectivity
+- **Production readiness findings:**
+  - `MPESA_ENV=sandbox` — INTENTIONAL for sandbox testing; must be changed to `production` for live payments
+  - `SMM_FULFILLMENT_ENABLED=true` — Already fixed in Milestone 23
+  - SSL on Lightsail nginx — Port 80 only; production uses Vercel with valid SSL. Staging HTTP acceptable.
+  - CORS — Not configured; not needed for same-origin API calls
+  - Rate limiter — In-memory Map; works for single-instance (PM2/Lightsail), not distributed (Vercel serverless). Acceptable for current deployment.
+  - `DEPLOY_URL` — Not referenced in codebase; not required
+  - `/api/health` — ADDED; returns Supabase connectivity status
+- **Verification:**
+  - Tests: 156 passed
+  - Build: PASS
+  - `/api/health`: Returns `{"status":"ok","checks":{"supabase":"ok"}}`
+- **Build ID:** `build-20260829-health`
+- **Commit:** pending
+- **Remaining blockers:**
+  - P0: pending_mpesa DB migration — guest orders fail
+  - P1: DripFeed balance $0.00 — no orders can succeed
+  - P1: ZeptoMail token invalid — email auth broken
+  - P2: 0 Google Maps services in DB
