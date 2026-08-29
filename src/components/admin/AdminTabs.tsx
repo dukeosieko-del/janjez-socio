@@ -966,6 +966,393 @@ export function ServicesTab() {
   );
 }
 
+export function MappingTab() {
+  const { session } = useAuth();
+  const [janjezServices, setJanjezServices] = useState<JanjezServiceShape[]>([]);
+  const [providerServices, setProviderServices] = useState<ProviderServiceShape[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [subcategoryFilter, setSubcategoryFilter] = useState("");
+  const [mappedFilter, setMappedFilter] = useState<"all" | "mapped" | "unmapped">("all");
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const providerMap = useMemo(() => {
+    const map = new Map<string, ProviderServiceShape>();
+    for (const p of providerServices) {
+      map.set(p.id, p);
+    }
+    return map;
+  }, [providerServices]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const headers = authHeaders(session);
+    try {
+      const [janRes, provRes] = await Promise.all([
+        fetch(`/api/admin/services`, { headers }),
+        fetch(`/api/admin/provider-services?search=${encodeURIComponent(search)}`, { headers }),
+      ]);
+      const janData = await janRes.json();
+      const provData = await provRes.json();
+      setJanjezServices(janData.services || []);
+      setProviderServices(provData.services || []);
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  }, [session, search]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+    load();
+  }, [load]);
+
+  const categories = useMemo(() => {
+    const cats = new Set(janjezServices.map((s) => s.category));
+    return Array.from(cats).sort();
+  }, [janjezServices]);
+
+  const subcategories = useMemo(() => {
+    const subs = new Set<string>();
+    for (const s of janjezServices) {
+      if (s.subcategory) subs.add(s.subcategory);
+    }
+    return Array.from(subs).sort();
+  }, [janjezServices]);
+
+  const filtered = useMemo(() => {
+    let result = janjezServices;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.category.toLowerCase().includes(q) ||
+          (s.subcategory && s.subcategory.toLowerCase().includes(q))
+      );
+    }
+    if (categoryFilter) {
+      result = result.filter((s) => s.category === categoryFilter);
+    }
+    if (subcategoryFilter) {
+      result = result.filter((s) => s.subcategory === subcategoryFilter);
+    }
+    if (mappedFilter === "mapped") {
+      result = result.filter((s) => !!s.provider_service_id);
+    } else if (mappedFilter === "unmapped") {
+      result = result.filter((s) => !s.provider_service_id);
+    }
+    return result;
+  }, [janjezServices, search, categoryFilter, subcategoryFilter, mappedFilter]);
+
+  const handleToggle = async (svc: JanjezServiceShape, field: string, value: boolean) => {
+    const headers = { ...authHeaders(session), "Content-Type": "application/json" };
+    try {
+      await fetch(`/api/admin/services/${svc.id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ [field]: value }),
+      });
+      load();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    setBulkLoading(true);
+    const headers = { ...authHeaders(session), "Content-Type": "application/json" };
+    try {
+      if (action === "publish") {
+        await Promise.all(
+          filtered.map((s) =>
+            fetch(`/api/admin/services/${s.id}`, {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify({ is_active: true }),
+            })
+          )
+        );
+      } else if (action === "unpublish") {
+        await Promise.all(
+          filtered.map((s) =>
+            fetch(`/api/admin/services/${s.id}`, {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify({ is_active: false }),
+            })
+          )
+        );
+      } else if (action === "catalogue_show") {
+        await Promise.all(
+          filtered.map((s) =>
+            fetch(`/api/admin/services/${s.id}`, {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify({ show_catalogue: true }),
+            })
+          )
+        );
+      } else if (action === "catalogue_hide") {
+        await Promise.all(
+          filtered.map((s) =>
+            fetch(`/api/admin/services/${s.id}`, {
+              method: "PATCH",
+              headers,
+              body: JSON.stringify({ show_catalogue: false }),
+            })
+          )
+        );
+      } else if (action === "sync") {
+        setSyncing(true);
+        await fetch("/api/smm/catalog", { method: "POST", headers });
+      }
+      load();
+    } catch {
+      /* ignore */
+    } finally {
+      setBulkLoading(false);
+      setSyncing(false);
+    }
+  };
+
+  const Switch = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+        checked ? "bg-kenya-green" : "bg-kenya-white/20"
+      }`}
+    >
+      <span
+        className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${
+          checked ? "translate-x-4" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+
+  if (loading) {
+    return <div className="text-kenya-white/60 text-sm">Loading service mapping...</div>;
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-kenya-white">Service Mapping</h2>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <input
+          type="text"
+          placeholder="Search by name, category, or subcategory..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-sm bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-2 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green"
+        />
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+        >
+          <option value="">All Platforms</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c.charAt(0).toUpperCase() + c.slice(1).replace(/-/g, " ")}
+            </option>
+          ))}
+        </select>
+        <select
+          value={subcategoryFilter}
+          onChange={(e) => setSubcategoryFilter(e.target.value)}
+          className="bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+        >
+          <option value="">All Subcategories</option>
+          {subcategories.map((sub) => (
+            <option key={sub} value={sub}>
+              {sub}
+            </option>
+          ))}
+        </select>
+        <select
+          value={mappedFilter}
+          onChange={(e) => setMappedFilter(e.target.value as "all" | "mapped" | "unmapped")}
+          className="bg-kenya-black border border-kenya-white/20 rounded-xl px-3 py-2 text-kenya-white focus:outline-none focus:border-kenya-green"
+        >
+          <option value="all">All Mapping Status</option>
+          <option value="mapped">Mapped</option>
+          <option value="unmapped">Unmapped</option>
+        </select>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className="text-kenya-white/60 text-sm mr-2">Bulk Actions:</span>
+        <button
+          onClick={() => handleBulkAction("publish")}
+          disabled={bulkLoading}
+          className="px-3 py-1.5 bg-kenya-green text-kenya-black font-bold text-sm rounded-lg hover:bg-kenya-green/90 transition-colors disabled:opacity-50"
+        >
+          Publish All
+        </button>
+        <button
+          onClick={() => handleBulkAction("unpublish")}
+          disabled={bulkLoading}
+          className="px-3 py-1.5 bg-kenya-red text-kenya-white font-bold text-sm rounded-lg hover:bg-kenya-red/90 transition-colors disabled:opacity-50"
+        >
+          Unpublish All
+        </button>
+        <button
+          onClick={() => handleBulkAction("catalogue_show")}
+          disabled={bulkLoading}
+          className="px-3 py-1.5 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded-lg hover:bg-kenya-white/20 transition-colors text-sm disabled:opacity-50"
+        >
+          Show in Catalogue
+        </button>
+        <button
+          onClick={() => handleBulkAction("catalogue_hide")}
+          disabled={bulkLoading}
+          className="px-3 py-1.5 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded-lg hover:bg-kenya-white/20 transition-colors text-sm disabled:opacity-50"
+        >
+          Hide from Catalogue
+        </button>
+        <button
+          onClick={() => handleBulkAction("sync")}
+          disabled={bulkLoading || syncing}
+          className="px-3 py-1.5 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded-lg hover:bg-kenya-white/20 transition-colors text-sm disabled:opacity-50"
+        >
+          {syncing ? "Syncing..." : "Sync Prices from CSV"}
+        </button>
+      </div>
+
+      <div className="overflow-x-auto border border-kenya-white/10 rounded-2xl">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="bg-kenya-white/5 text-kenya-white/70">
+              <th className="text-left px-3 py-2">Name</th>
+              <th className="text-left px-3 py-2">Category</th>
+              <th className="text-left px-3 py-2">Subcategory</th>
+              <th className="text-left px-3 py-2">Provider ID</th>
+              <th className="text-left px-3 py-2">Provider Name</th>
+              <th className="text-right px-3 py-2">Provider Rate (KES)</th>
+              <th className="text-right px-3 py-2">Janjez Price (KES)</th>
+              <th className="text-right px-3 py-2">Price Diff</th>
+              <th className="text-center px-2 py-2">Sidebar</th>
+              <th className="text-center px-2 py-2">Landing</th>
+              <th className="text-center px-2 py-2">Guarded</th>
+              <th className="text-center px-2 py-2">Anonymous</th>
+              <th className="text-center px-2 py-2">Catalogue</th>
+              <th className="text-center px-3 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={14} className="px-4 py-8 text-center text-kenya-white/50">
+                  {janjezServices.length === 0
+                    ? "No services found. Create services in the Janjez Services tab first."
+                    : "No services match your current filters."}
+                </td>
+              </tr>
+            ) : (
+              filtered.map((s) => {
+                const provider = s.provider_service_id ? providerMap.get(s.provider_service_id) : null;
+                const priceDiff = provider ? s.selling_price_ksh - provider.rate : null;
+                const isUnmapped = !s.provider_service_id;
+                return (
+                  <tr
+                    key={s.id}
+                    className={`border-t border-kenya-white/5 text-kenya-white/80 ${
+                      isUnmapped ? "bg-kenya-red/5" : ""
+                    }`}
+                  >
+                    <td className="px-3 py-2">
+                      {s.name}
+                      {isUnmapped && (
+                        <span className="ml-2 text-xs text-kenya-red font-medium">(UNMAPPED)</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">{s.category}</td>
+                    <td className="px-3 py-2">{s.subcategory || "—"}</td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {s.provider_service_id ? s.provider_service_id.slice(0, 8) : "—"}
+                    </td>
+                    <td className="px-3 py-2">{provider?.name || "—"}</td>
+                    <td className="px-3 py-2 text-right">
+                      {provider ? `KES ${provider.rate.toFixed(4)}` : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right">KES {s.selling_price_ksh.toFixed(2)}</td>
+                    <td
+                      className={`px-3 py-2 text-right ${
+                        priceDiff !== null && priceDiff > 0
+                          ? "text-kenya-green"
+                          : priceDiff !== null && priceDiff < 0
+                            ? "text-kenya-red"
+                            : ""
+                      }`}
+                    >
+                      {priceDiff !== null
+                        ? `${priceDiff >= 0 ? "+" : "-"}KES ${Math.abs(priceDiff).toFixed(2)}`
+                        : "—"}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <Switch
+                        checked={s.show_sidebar}
+                        onChange={(v) => handleToggle(s, "show_sidebar", v)}
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <Switch
+                        checked={s.show_landing}
+                        onChange={(v) => handleToggle(s, "show_landing", v)}
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <Switch
+                        checked={s.show_guarded}
+                        onChange={(v) => handleToggle(s, "show_guarded", v)}
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <Switch
+                        checked={s.show_anonymous}
+                        onChange={(v) => handleToggle(s, "show_anonymous", v)}
+                      />
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <Switch
+                        checked={s.show_catalogue}
+                        onChange={(v) => handleToggle(s, "show_catalogue", v)}
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => handleToggle(s, "is_active", !s.is_active)}
+                        className={`text-xs px-2 py-1 rounded ${
+                          s.is_active
+                            ? "bg-kenya-red/20 text-kenya-red border border-kenya-red/30"
+                            : "bg-kenya-green/20 text-kenya-green border border-kenya-green/30"
+                        }`}
+                      >
+                        {s.is_active ? "Unpublish" : "Publish"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+      {filtered.length === 0 && janjezServices.length > 0 && (
+        <p className="text-kenya-white/50 text-sm mt-4">No services match your current filters.</p>
+      )}
+    </div>
+  );
+}
+
 export function SettingsTab() {
   const { session } = useAuth();
   const [subTab, setSubTab] = useState<"integrations" | "dripfeed" | "daraja">("integrations");

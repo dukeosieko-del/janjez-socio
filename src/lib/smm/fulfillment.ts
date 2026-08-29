@@ -154,7 +154,7 @@ export async function fulfillOrder(orderId: string) {
   let quantity = order.quantity || 1;
   let providerRate = 0;
 
-  const janjezService = await resolveJanjezService(order.janjez_service_id, order.sku_id, order.catalog_category_id);
+  const janjezService = await resolveJanjezService(order.sku_id, order.catalog_category_id, order.janjez_service_id);
   if (janjezService && janjezService.provider_service_id) {
     resolvedService = janjezService;
     const { data: providerData } = await supabase
@@ -291,7 +291,7 @@ export async function cancelOrder(orderId: string) {
   let resolvedService: JanjezServiceWithProvider | null = null;
 
   if (janjezServiceId) {
-    resolvedService = await resolveJanjezService(janjezServiceId, null, janjezServiceId);
+    resolvedService = await resolveJanjezService(null, null, janjezServiceId);
   }
 
   if (!resolvedService) {
@@ -345,7 +345,7 @@ export async function refillOrder(orderId: string) {
   let resolvedService: JanjezServiceWithProvider | null = null;
 
   if (janjezServiceId) {
-    resolvedService = await resolveJanjezService(janjezServiceId, null, janjezServiceId);
+    resolvedService = await resolveJanjezService(null, null, janjezServiceId);
   }
 
   if (!resolvedService) {
