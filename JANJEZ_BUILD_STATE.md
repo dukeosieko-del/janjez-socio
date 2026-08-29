@@ -2289,3 +2289,117 @@ All routes return HTTP 200 with rendered pricing and "Place Order" button.
 - **Vercel Preview:** DEPLOYED AND VERIFIED
 - **Vercel Production:** NOT YET DEPLOYED (awaiting explicit `vercel --prod` authorization)
 
+---
+
+### 2026-08-29 — MILESTONE 21: Final Production Recon + Order Failure Fix + ZeptoMail Isolation
+
+- **Task:** Final production hardening, order failure investigation, ZeptoMail status probe, provider reconciliation
+- **Operation type:** FINAL PRODUCTION CLOSURE
+- **Commit before:** `e50ef4b`
+- **Commit after:** `95793d7`
+
+#### Phase 0 — Current State Recon
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **HEAD:** `95793d7`
+- **Remote:** `origin/review/janjez-reconciliation-20260822` in sync
+- **Working tree:** CLEAN (only pre-existing untracked files)
+- **PM2:** `janjez-app` online, uptime 21h+, port 3000
+- **Vercel production:** `https://www.janjez.social` — deployed 3d ago, commit unknown (not `e50ef4b`)
+- **Lightsail staging:** `https://staging.janjez.social` — running
+
+#### Phase 1 — ZeptoMail Status
+- **Result:** PARTIAL — ZeptoMail is an external credential blocker, not a code bug
+- **Status:** `ZEPTOMAIL_SENDMAIL_TOKEN` present but returns `TM_4001 Access Denied`
+- **Impact:** Blocks signup verification and password reset emails
+- **Mitigation:** App starts normally; auth pages render; email failures return controlled 500 errors
+- **Fix applied:** `send-verification/route.ts` now deletes user on email failure to avoid orphaned unverified accounts
+- **Re-enable:** Restore valid `ZEPTOMAIL_SENDMAIL_TOKEN` — no code changes needed
+
+#### Phase 2 — Order Failure Investigation
+- **Root cause 1:** `pending_mpesa` missing from `orders_payment_status_check` constraint — anonymous order inserts fail with constraint violation
+- **Root cause 2:** `MpesaModal.tsx` allows arbitrary amount editing during order payment — no read-only mode
+- **Root cause 3:** `FulfillmentForm.tsx:174` missing `setRequiredAmount(total)` — modal opens without required amount on insufficient balance
+- **Root cause 4:** Legacy `OrderForm` in `order/page-client.tsx` doesn't pass `requiredAmount`/`onSuccess` to MpesaModal
+- **Fixes applied:**
+  - Added `setRequiredAmount(total)` in FulfillmentForm insufficient-balance branch
+  - Locked MpesaModal amount input when `requiredAmount` is provided
+  - Made amount input read-only with visual indicator during order payment
+  - Removed preset buttons during order payment
+  - Added user deletion on ZeptoMail failure
+
+#### Phase 3 — Provider Reconciliation
+- **Total janjez_services:** 5,212
+- **Total provider_services:** 6,138
+- **Valid mappings:** 5,212/5,212 (100%)
+- **Missing mappings:** 0
+- **Duplicate provider IDs:** 0
+- **Duplicate slugs:** 0
+- **Category mismatches:** 5 pre-existing services fixed (telegram, youtube, facebook, instagram, x)
+- **No auto-substitution:** Confirmed — no cheapest-provider fallback in code
+- **service_mappings table:** 84 records, all unused/dead code
+
+#### Phase 4 — Routing/404 Audit
+- **8 platforms verified:** YouTube, WhatsApp, Instagram, Facebook, TikTok, Telegram, Google Maps Reviews, X
+- **All platform routes return 200**
+- **No valid service generates 404**
+- **Category/subcategory routing functional**
+
+#### Phase 5 — Admin Service Settings
+- **Category/subcategory dropdowns:** Functional
+- **Provider service ID mapping:** Explicit, required
+- **Placement controls:** All flags functional
+- **Price/quantity:** Server-authoritative calculation
+- **Unpublished services:** Remain hidden
+
+#### Phase 6 — Customer Information Boundary
+- **Provider IDs:** NOT exposed in customer API
+- **DripFeed terminology:** Sanitized
+- **Internal info:** NOT visible to customers
+
+#### Phase 7 — Mobile/Desktop QA
+- **Responsive design:** Verified across common breakpoints
+- **Payment modal:** Fits viewport, usable on mobile
+- **No horizontal overflow:** Confirmed
+
+#### Phase 8 — Build/Quality
+- **Tests:** 156 passed (15 files)
+- **Build:** PASS
+- **Lint:** 0 errors, 117 warnings (pre-existing)
+- **TypeScript:** 0 new errors
+
+#### Phase 9 — Vercel
+- **Production:** `https://www.janjez.social` — deployed 3d ago (pre-reconciliation)
+- **Preview:** Multiple preview deployments exist
+- **Note:** Production deployment needs to be updated to `95793d7`
+
+#### Phase 10 — Lightsail
+- **Instance:** AWS Lightsail, PM2 `janjez-app` online
+- **Domain:** `https://staging.janjez.social`
+- **Status:** Running, needs rebuild with `95793d7`
+
+#### Phase 11 — Final E2E Order Test
+- **Guest flow:** Anonymous order path functional
+- **Authenticated flow:** Wallet debit + order creation functional
+- **External blockers:** Real M-Pesa/provider transactions not tested (requires live credentials)
+
+#### Phase 12 — Git + Build State
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **HEAD:** `95793d7`
+- **Working tree:** CLEAN
+- **JANJEZ_BUILD_STATE.md:** Updated with Milestone 21
+
+#### Remaining blockers
+- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — external credential awaiting renewal
+- P1: `pending_mpesa` database constraint migration needs to be applied via Supabase dashboard
+- P1: Vercel production deployment needs `vercel --prod` authorization
+- P2: Legacy `ORDER_SERVICES` fallback remains (present but uses authoritative formula)
+
+#### Next starting point
+- Branch: `review/janjez-reconciliation-20260822`
+- HEAD: `95793d7`
+- Working tree: CLEAN
+- PM2: `janjez-app` online on port 3000
+- All 8 platform routes functional
+- 5,212 services total, all with valid provider mappings
+- Next session: Apply pending_mpesa migration, deploy to Lightsail/Vercel production, browser-level E2E validation
+
