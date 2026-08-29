@@ -176,6 +176,7 @@ export async function POST(request: NextRequest) {
 
     const emailResult = await sendVerificationEmail(supabase, newUser.user.id, sanitizedEmail, sanitizedFullName || null);
     if (!emailResult.ok) {
+      await supabase.auth.admin.deleteUser(newUser.user.id);
       return NextResponse.json({ error: emailResult.error || "Failed to send verification email" }, { status: 500 });
     }
 

@@ -171,6 +171,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         if (result.error?.includes("401") || result.error?.includes("Unauthorized")) {
           onRequireAuth?.("login");
         } else if (result.error?.includes("Insufficient wallet balance")) {
+          setRequiredAmount(total);
           setMpesaOpen(true);
         } else {
           setOrderError(result.error || "Failed to place order.");

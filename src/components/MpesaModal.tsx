@@ -171,34 +171,43 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
 
               <div>
                 <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                  Amount (KES)
+                  {requiredAmount ? "Order Amount (KES)" : "Amount (KES)"}
                 </label>
                 <input
                   type="number"
-                  placeholder={`Enter amount (minimum KES ${minTopUp})`}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder={requiredAmount ? `Required: KES ${requiredAmount.toFixed(2)}` : `Enter amount (minimum KES ${minTopUp})`}
+                  value={requiredAmount ? requiredAmount.toFixed(2) : amount}
+                  onChange={(e) => !requiredAmount && setAmount(e.target.value)}
                   min={minTopUp}
-                  defaultValue={suggestedAmount > 0 ? suggestedAmount : ""}
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
+                  readOnly={!!requiredAmount}
+                  className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white focus:outline-none focus:ring-1 transition-all ${
+                    requiredAmount
+                      ? "border-kenya-green/30 bg-kenya-green/5 text-kenya-green cursor-not-allowed"
+                      : "border-kenya-white/20 placeholder-kenya-white/30 focus:border-green-500 focus:ring-green-500"
+                  }`}
                 />
+                {requiredAmount && (
+                  <p className="text-xs text-kenya-white/50 mt-1">Amount is calculated from your order and cannot be changed.</p>
+                )}
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
-                {[suggestedAmount, 100, 500, 1000].filter((v, i, a) => a.indexOf(v) === i).map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => setAmount(preset.toString())}
-                    className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                      amount === preset.toString()
-                        ? "bg-kenya-green text-kenya-black"
-                        : "bg-kenya-white/5 text-kenya-white/70 hover:bg-kenya-white/10"
-                    }`}
-                  >
-                    KES {preset.toLocaleString()}
-                  </button>
-                ))}
-              </div>
+              {!requiredAmount && (
+                <div className="grid grid-cols-4 gap-2">
+                  {[suggestedAmount, 100, 500, 1000].filter((v, i, a) => a.indexOf(v) === i).map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => setAmount(preset.toString())}
+                      className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                        amount === preset.toString()
+                          ? "bg-kenya-green text-kenya-black"
+                          : "bg-kenya-white/5 text-kenya-white/70 hover:bg-kenya-white/10"
+                      }`}
+                    >
+                      KES {preset.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
                 <div className="flex items-start gap-3">
