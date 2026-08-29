@@ -38,6 +38,12 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
     onClose();
   };
 
+  useEffect(() => {
+    if (requiredAmount && requiredAmount > 0) {
+      setAmount(requiredAmount.toFixed(2));
+    }
+  }, [requiredAmount]);
+
   const handleTopUp = async () => {
     if (!phoneNumber || !amount) return;
     setError(null);
