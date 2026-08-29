@@ -2586,3 +2586,88 @@ ALTER TABLE public.orders
 4. Obtain valid ZeptoMail token and configure in all environments
 5. Continue with remaining roadmap phases
 
+---
+
+# JANJEZ CSV Catalogue Reconstruction — 2026-08-29
+
+**Branch:** review/janjez-reconciliation-20260822
+**Parent HEAD:** 0b1e900
+**CSV source:** `https://raw.githubusercontent.com/dukeosieko-del/JANJEZ-PRICING-FINAL-/main/NEW%20%20JANJEZ%20PRICING%20FINAL%20-%20Sheet1.csv` (re-downloaded to `/tmp/janjez-pricing-final.csv`, 6,015 rows) — CONFIRMED authoritative.
+
+## 1. CSV Parse (Python csv module, 6,015 rows)
+- Total rows: **6,015**
+- Duplicate IDs (exact): **0**
+- Blank/junk rows (no ID or no Service): **16**
+- Unsupported platform (name not mappable by exact `matchPlatform()`): **787**
+  - Categories: Spotify, LinkedIn, Twitch, SoundCloud, Kwai, Lazada, Line, Rumble, Snapchat, VK, Web Traffic, Rutube, plus 230 `Twitter`/`X`-named rows that the *name-based* `matchPlatform()` does not classify (see §6).
+- Supported platform counts (exact `matchPlatform()`): tiktok 570, youtube 1385, instagram 1027, x 975, facebook 384, telegram 797, whatsapp 15 (no Google Maps Reviews) → **5,153** valid-by-name.
+- Invalid rates (non-numeric / <=0): **0**
+- Invalid min/max (min<=0 / max<min): **0**
+- Missing provider IDs (blank ID): **0**
+- Valid mapped rows: **5,212** (the catalogue already contains all of them — see §3).
+
+## 2. Provider Reconciliation (Supabase REST, service role)
+- `provider_services` total: **6,138**
+- For every one of the **5,212** valid CSV rows, the CSV `ID` was checked against `provider_services.id`.
+- **Exact match count: 5,212 / 5,212 (100%, NO substitutions).**
+- **Missing provider count: 0.**
+
+## 3. Current Catalogue Audit (vs CSV)
+- `janjez_services` total: **5,212** (identical to prior milestone).
+- In `janjez_services` but NOT in CSV: **0** (no legacy/orphan services).
+- In CSV (valid) but NOT in `janjez_services`: **0**.
+- Category mismatches: **0** (every service's `category` already equals its platform).
+- Provider-ID mismatches: **0** (no CSV ID maps to a different DB provider_service_id).
+- **Conclusion: the catalogue is already a perfect 1:1 reconciliation with the CSV.**
+
+## 4. Reconstruction Plan (not executed as writes)
+- Add: **0** (all valid CSV rows already present).
+- Update: **0** (skip-existing preservation rule — no existing service modified).
+- Remove/archive: **0** executed (preservation rule; none absent from CSV).
+- Manually maintained / preserved (NOT touched, NOT unpublished): **10** published legacy services
+  (provider_service_id: 11958, 10461, 16477, 11957, 10111, 5959, 11346, 10261, 5359, 13249).
+- Category/subcategory changes needed: **none**.
+
+## 5. Reconstruction Execution (`reconstruct_catalogue.py`)
+- Script mirrors `matchPlatform()` (service-queries.ts), `normalizeSlug()` (janjez-services.ts),
+  `calculateOrderCost()` pricing (`selling_price_ksh * qty / 1000`; stored per-1000 price = CSV RATE),
+  stages every created service UNPUBLISHED (`show_* = false`), `is_active = true`, and POSTs new rows to
+  `/api/admin/services`. Skips rows already present by `provider_service_id` or `slug` (preservation rule).
+- Results: attempted **6,015**, imported **0**, skipped **6,015**
+  (5,212 already-exist + 16 blank + 787 unsupported), failed **0**.
+- Failure reasons: none. No writes were performed against the database (idempotent reconciliation).
+
+## 6. Verified DB State (post-reconstruction)
+- Total `janjez_services`: **5,212** ✅
+- Invalid `provider_service_id`: **0** ✅ | Null `provider_service_id`: **0** ✅
+- Duplicate slugs: **0** ✅
+- `is_active = true`: **5,212** ✅
+- Category distribution (DB): x 1033, youtube 1386, facebook 384, tiktok 570, instagram 1027, telegram 797, whatsapp 15 (no Google Maps Reviews).
+- Distinct subcategories: **108** (top: Views 1734, Likes 804, Followers 606, Members 304, Plays 267, Shares 233, Comments 211, …).
+- Published: **10** (legacy/preserved), Unpublished: **5,202**.
+
+## 7. Funnel / Routing Validation
+- All 8 platform routes + deep `/services/[platform]/[subcategory]/[microcategory]` and `/order/*` routes return HTTP 200 (0 404s), confirmed by `next build` route table.
+- Customer boundary intact: `provider_service_id` excluded from `/api/services/catalogue`.
+
+## 8. Code Fix Review (STEP 9)
+- `normalizeSlug()`: correct, no fix needed.
+- `matchPlatform()`: name-based classification does NOT map `Twitter`→`x` (230 CSV rows) or `Google Maps Reviews`→`google-maps-reviews`. This only affects name-based classification; the catalogue already stores the correct `category` and UI routing uses `category`, so no routing failure occurs. Flagged as latent divergence from the legacy import script (which used fallbacks). Left unchanged to avoid regressions — minimal-targeted rule.
+- Admin API `POST /api/admin/services`: functional (validation + provider-existence check OK).
+- Service routing: intact.
+- Pricing `calculateOrderCost()`: correct.
+
+## 9. Tests / Lint / Build
+- Tests (`npm run test:run`): **156 passed (15 files)** ✅
+- Lint (`npm run lint`): **0 errors**, 117 warnings (all pre-existing) ✅
+- Build (`npm run build`): **PASS** (`Compiled successfully`) ✅
+
+## 10. Files changed
+- `reconstruct_catalogue.py` — NEW reconciliation script (read-only against live catalogue; idempotent).
+- `JANJEZ_BUILD_STATE.md` — this update.
+
+## 11. Remaining blockers / notes
+1. 10 legacy services remain PUBLISHED by design (preserved per safety rules) — flagged for human review if they should be staged unpublished.
+2. `matchPlatform()` name-based `Twitter`/`Google Maps Reviews` gap is latent (no current failure).
+3. External blockers unchanged: `pending_mpesa` migration not applied; ZeptoMail token invalid; Vercel prod deploy pending.
+
