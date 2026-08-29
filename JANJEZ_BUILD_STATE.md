@@ -2474,3 +2474,115 @@ ALTER TABLE public.orders
 3. If DB gate passes, deploy `460b4cf` to Vercel production
 4. Update this document with deployment results
 
+---
+
+### 2026-08-29 — MILESTONE 23: Full Recon + Critical Fixes + Production Readiness Gate
+
+- **Task:** Complete read-only reconciliation of current repository state, verify CSV-to-DB integrity, fix critical payment-modal bugs, and validate production readiness
+- **Operation type:** READ-ONLY RECON + CODE FIXES + VERIFICATION
+- **Commit before:** `33dd89d`
+- **Commit after:** pending
+
+#### 1. Repository State Verification
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **HEAD:** `33dd89d772815aecc95e77424bc22d3d0ae3a54f`
+- **Working tree:** CLEAN (only pre-existing untracked files)
+- **PM2:** `janjez-app` online, PID varies, uptime 15m+
+- **Staging:** `https://staging.janjez.social` — HTTP 200
+- **Production:** `https://www.janjez.social` — HTTP 200
+
+#### 2. CSV-to-DB Reconciliation
+- **CSV source:** `/tmp/janjez-pricing-final.csv` (6,015 rows, identical to `/tmp/kilo/pricing.csv`)
+- **CSV analysis:**
+  - Total rows: 6,015
+  - Blank IDs/services: 9
+  - Unsupported platforms: 803
+  - Valid mapped rows: 5,212
+  - Duplicate IDs: 0 (verified via Python `Counter`)
+- **Database verification:**
+  - `janjez_services`: 5,212 total
+  - `provider_services`: 6,138 total
+  - All 5,212 `janjez_services` have `provider_service_id` populated (0 null)
+  - All 5,212 `provider_service_id` values exist in `provider_services` (0 missing)
+  - All 5,212 `provider_service_id` values are unique (0 duplicates)
+- **Platform distribution (verified via Supabase client):**
+  | Platform | Count |
+  |----------|-------|
+  | youtube | 1,386 |
+  | x | 1,033 |
+  | instagram | 1,027 |
+  | telegram | 797 |
+  | tiktok | 570 |
+  | facebook | 384 |
+  | whatsapp | 15 |
+  | **Total** | **5,212** |
+
+#### 3. Critical Bug Fixes
+**Bug A — Legacy `/order` page MpesaModal missing requiredAmount and onSuccess**
+- **File:** `src/app/order/page-client.tsx`
+- **Issue:** `MpesaModal` was rendered without `requiredAmount` or `onSuccess` props. When authenticated users with insufficient balance triggered the modal:
+  1. Amount was NOT locked (user could enter arbitrary value)
+  2. Modal had no success handler (order never retried after payment)
+- **Fix:**
+  - Added `requiredAmount` state to `page-client.tsx`
+  - Updated `handleInsufficientBalance` to accept and store the order total
+  - Passed `requiredAmount` and `onSuccess` to `MpesaModal`
+  - Updated `OrderForm.tsx` `onInsufficientBalance` callback signature to `(amount: number) => void`
+
+**Bug B — Misleading guest checkout text in FulfillmentForm**
+- **File:** `src/components/fulfillment/FulfillmentForm.tsx`
+- **Issue:** Guest checkout explanation stated "order amount is deducted from the excess" — no such mechanism exists for anonymous orders
+- **Fix:** Replaced with accurate text explaining M-Pesa minimum and that the order processes for the exact displayed amount
+
+#### 4. Verified Intact Systems
+- ✅ **Pricing:** `calculateOrderCost(selling_price_ksh, quantity)` used in all paths (OrderForm, FulfillmentForm, authenticated API, anonymous API)
+- ✅ **Payment lock:** `MpesaModal` locks amount when `requiredAmount` is provided; preset buttons hidden during order payment
+- ✅ **Fulfillment safety:** Wallet refund on failure, no provider auto-substitution, exact provider mapping
+- ✅ **Customer boundary:** `provider_service_id` excluded from customer-facing `/api/services/catalogue` response
+- ✅ **Routing:** All 8 platforms + deep service routes return HTTP 200 (0 404s)
+- ✅ **Anonymous API:** Code path correct; blocked only by `pending_mpesa` DB constraint
+- ✅ **Admin controls:** Category/subcategory dropdowns, placement flags, slug normalization all functional
+- ✅ **Mobile/responsive:** Dense list layout, `flex-col` on mobile, `sm:flex-row` on desktop
+
+#### 5. Confirmed External Blockers (NOT code bugs)
+1. **`pending_mpesa` migration NOT applied**
+   - Migration file exists: `supabase/migrations/20250101000023_pending_mpesa_payment_status.sql`
+   - Database still enforces `('unpaid', 'paid', 'refunded')` only
+   - **Impact:** ALL guest/anonymous orders fail with check constraint violation
+   - **Required action:** Apply via Supabase dashboard SQL Editor
+   - **Exact SQL:**
+     ```sql
+     ALTER TABLE public.orders
+       DROP CONSTRAINT IF EXISTS orders_payment_status_check;
+     ALTER TABLE public.orders
+       ADD CONSTRAINT orders_payment_status_check
+       CHECK (payment_status IN ('unpaid', 'pending_mpesa', 'paid', 'refunded'));
+     ```
+
+2. **ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid**
+   - Returns `TM_4001 Access Denied` on both EC2 and Vercel
+   - **Impact:** Signup verification and password reset emails blocked
+   - **Fix required:** Obtain valid token from ZeptoMail dashboard and configure in all environments
+
+3. **Vercel production deployment**
+   - Current production: `https://www.janjez.social` (deployed Aug 26, older commit)
+   - Requires `vercel --prod` authorization after DB gate passes
+
+#### 6. Tests / Lint / Build
+- **Tests:** 156 passed (15 files)
+- **Lint:** 0 errors, 117 warnings (all pre-existing)
+- **Build:** PASS
+
+#### 7. Files changed
+- `src/app/order/page-client.tsx` — pass `requiredAmount` and `onSuccess` to MpesaModal
+- `src/components/OrderForm.tsx` — update `onInsufficientBalance` callback signature
+- `src/components/fulfillment/FulfillmentForm.tsx` — fix misleading guest checkout text
+- `JANJEZ_BUILD_STATE.md` — this update
+
+#### 8. Next action
+1. Apply `pending_mpesa` migration via Supabase dashboard
+2. Re-test anonymous order flow end-to-end
+3. If DB gate passes, deploy to Vercel production
+4. Obtain valid ZeptoMail token and configure in all environments
+5. Continue with remaining roadmap phases
+

@@ -33,7 +33,7 @@ interface ServiceCatalogueItem {
 
 interface OrderFormProps {
   onRequireAuth: (tab?: "login" | "register") => void;
-  onInsufficientBalance?: () => void;
+  onInsufficientBalance?: (amount: number) => void;
   serviceId?: string | null;
   categoryId?: string | null;
   defaultAnonymous?: boolean;
@@ -191,7 +191,7 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
     }
 
     if (total > walletBalance) {
-      onInsufficientBalance?.();
+      onInsufficientBalance?.(total);
       return;
     }
 

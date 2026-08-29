@@ -374,9 +374,8 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
                   <p className="text-kenya-white/80 text-xs">
                     You will receive an M-Pesa STK push for KES {Math.max(50, total).toFixed(2)}.
                     The exact order cost is KES {total.toFixed(2)}.
-                    The minimum M-Pesa amount is KSh 50.
-                    If the total is below KSh 50, you will pay KSh 50 and the
-                    order amount is deducted from the excess.
+                    M-Pesa requires a minimum payment of KSh 50.
+                    Your order will be processed for the exact amount shown above.
                   </p>
                 </div>
               </>
