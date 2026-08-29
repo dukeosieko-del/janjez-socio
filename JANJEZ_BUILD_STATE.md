@@ -2753,3 +2753,24 @@ ALTER TABLE public.orders
   - P1: DripFeed balance $0.00 — no orders can succeed
   - P1: ZeptoMail token invalid — email auth broken
   - P2: 0 Google Maps services in DB
+
+### 2026-08-29 — MILESTONE 26: Fix Anonymous Order Flow + Vercel Production Deploy
+- **Task:** Fix anonymous order service resolution and deploy to production
+- **Operation type:** CODE RECONCILIATION + DEPLOYMENT + VERIFICATION
+- **Files changed:**
+  - `src/lib/janzez-services.ts` — Restored `provider_service_id` to `listJanjezServices` select allowlist (required for anonymous order fulfillment)
+  - `src/app/api/orders/anonymous/route.ts` — Added/removed temporary debug logging (clean)
+- **Root cause:** Security fix `3c58e59` removed `provider_service_id` from `listJanjezServices` select. Anonymous order route uses `listJanjezServices(true, "show_anonymous")` to resolve services, so `provider_service_id` was always `undefined`, causing 400 "Service is not configured for ordering."
+- **Fix:** Added `provider_service_id` back to the explicit column allowlist in `listJanjezServices`. Public APIs (`/api/services/catalogue`, `/api/services/sidebar`) still do NOT expose `provider_service_id` because they explicitly map response fields.
+- **Verification:**
+  - Anonymous order test on staging: Now proceeds past service config check to M-Pesa payment initiation
+  - Happy Hour API: 0 provider_service_id leaks
+  - Catalogue API: 0 provider_service_id leaks
+  - Tests: 156 passed
+  - Build: PASS
+- **Vercel Production:**
+  - Deployed: `https://janjez-socio-ihx7kba5t-dukeosieko-dels-projects.vercel.app` (200)
+  - Custom domain `https://www.janjez.social`: Returns 000 (DNS/domain config issue, not deployment failure)
+  - Production API probe (direct URL): catalogue leaks=0, happy-hour leaks=0
+- **Commit:** `7c28632`
+- **Data gap status:** RESOLVED — all 10 show_anonymous services have valid provider_service_id mappings
