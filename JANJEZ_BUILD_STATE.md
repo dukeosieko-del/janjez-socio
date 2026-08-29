@@ -2728,3 +2728,28 @@ ALTER TABLE public.orders
   - P1: DripFeed balance $0.00 — no orders can succeed
   - P1: ZeptoMail token invalid — email auth broken
   - P2: 0 Google Maps services in DB
+
+### 2026-08-29 — MILESTONE 25: Security Fix — Prevent provider_service_id Exposure
+- **Task:** Remove provider_service_id from public APIs and wire show_anonymous flag
+- **Operation type:** SECURITY FIX + DEPLOYMENT
+- **Files changed:**
+  - `src/app/api/services/happy-hour/route.ts` — Removed provider_service_id from SELECT and removed .not("provider_service_id", "is", null) filter
+  - `src/lib/janzez-services.ts` — Replaced select("*") with explicit column allowlist that EXCLUDES provider_service_id
+  - `src/lib/service-queries.ts` — Added getAnonymousServices() helper
+  - `src/app/api/orders/anonymous/route.ts` — Anonymous order flow now resolves via listJanjezServices(true, "show_anonymous") instead of resolveJanjezService
+  - `src/app/api/orders/anonymous/route.test.ts` — Updated tests for new resolution path
+- **Security fix:**
+  - provider_service_id no longer exposed in any public API response
+  - Happy hour API no longer filters by provider_service_id
+  - Anonymous order flow uses show_anonymous placement flag
+- **Verification:**
+  - Happy Hour API: 0 provider_service_id leaks
+  - Catalogue API: 0 provider_service_id leaks
+  - Services page: HTTP 200
+- **Deployed to:** staging.janjez.social (Lightsail, PM2 janjez-app)
+- **Commit:** `3c58e59`
+- **Remaining blockers:**
+  - P0: pending_mpesa DB migration — guest orders fail
+  - P1: DripFeed balance $0.00 — no orders can succeed
+  - P1: ZeptoMail token invalid — email auth broken
+  - P2: 0 Google Maps services in DB
