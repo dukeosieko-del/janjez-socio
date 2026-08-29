@@ -81,6 +81,12 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
     if (dripFeed && (parseInt(runs, 10) <= 0 || parseInt(intervalMin, 10) <= 0)) return;
 
+    if (total > walletBalance) {
+      setMpesaOpen(true);
+      setRequiredAmount(total);
+      return;
+    }
+
     if (!user) {
       if (isAnonymous) {
         if (!phoneNumber || !/^\d{9,15}$/.test(phoneNumber.replace(/\s+/g, ""))) {
@@ -135,12 +141,6 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       } else {
         window.location.href = "/auth/sign-in";
       }
-      return;
-    }
-
-    if (total > walletBalance) {
-      setMpesaOpen(true);
-      setRequiredAmount(total);
       return;
     }
 
