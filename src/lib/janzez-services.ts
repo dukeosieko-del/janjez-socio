@@ -82,7 +82,7 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
 
   let query = supabase
     .from("janjez_services")
-    .select("*")
+    .select("id, name, slug, category, subcategory, description, selling_price_ksh, min_quantity, max_quantity, is_active, display_order, supports_drip_feed, supports_refill, supports_cancel, show_sidebar, show_landing, show_guarded, show_anonymous, show_catalogue, created_at, updated_at")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
 

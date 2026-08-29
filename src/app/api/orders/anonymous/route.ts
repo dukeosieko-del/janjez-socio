@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveJanjezService } from "@/lib/smm/fulfillment";
+import { listJanjezServices } from "@/lib/janzez-services";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
 import { calculateOrderCost } from "@/lib/pricing";
@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
 
     const numQuantity = Number(quantity);
 
-    const janjezService = await resolveJanjezService(null, null, janjez_service_id);
+    const services = await listJanjezServices(true, "show_anonymous");
+    const janjezService = services.find((s) => s.id === janjez_service_id) || null;
     if (!janjezService) {
       return NextResponse.json({ error: "Service not found or not available" }, { status: 404 });
     }

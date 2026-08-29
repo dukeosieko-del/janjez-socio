@@ -15,10 +15,9 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await supabase
       .from("janjez_services")
-      .select("id, name, slug, category, subcategory, is_active, supports_drip_feed, provider_service_id")
+      .select("id, name, slug, category, subcategory, is_active, supports_drip_feed")
       .eq("is_active", true)
       .eq("supports_drip_feed", true)
-      .not("provider_service_id", "is", null)
       .order("id", { ascending: false });
 
     if (error) {

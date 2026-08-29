@@ -12,6 +12,7 @@ function makeChainable(result: Record<string, unknown> = {}) {
     update: vi.fn(() => chainable),
     eq: vi.fn(() => chainable),
     single: vi.fn(() => chainable),
+    order: vi.fn(() => chainable),
     ...result,
   };
   return chainable;
@@ -26,8 +27,11 @@ vi.mock("@/lib/server/rate-limiter", () => ({
 }));
 
 vi.mock("@/lib/smm/fulfillment", () => ({
-  resolveJanjezService: vi.fn(),
   fulfillOrder: vi.fn(),
+}));
+
+vi.mock("@/lib/janzez-services", () => ({
+  listJanjezServices: vi.fn(),
 }));
 
 vi.mock("@/lib/mpesa/client", () => ({
@@ -37,7 +41,7 @@ vi.mock("@/lib/mpesa/client", () => ({
 }));
 
 const { POST } = await import("@/app/api/orders/anonymous/route");
-const { resolveJanjezService } = await import("@/lib/smm/fulfillment");
+const { listJanjezServices } = await import("@/lib/janzez-services");
 const { initiateStkPush } = await import("@/lib/mpesa/client");
 
 function mockRequest(body: Record<string, unknown>) {
@@ -64,27 +68,42 @@ describe("POST /api/orders/anonymous - validation", () => {
         single: vi.fn().mockResolvedValue({ data: { id: "order-1", order_id: "ORD-TEST" }, error: null }),
       })),
     }));
-    const txChainable = makeChainable({ insert: vi.fn().mockResolvedValue({ data: {}, error: null }) });
+    const txChainable = makeChainable({});
+    txChainable.insert = vi.fn().mockResolvedValue({ data: {}, error: null });
     mockAdminClient.from.mockImplementation((table: string) => {
       if (table === "orders") return orderChainable;
       if (table === "wallet_transactions") return txChainable;
       return makeChainable({});
     });
-    (resolveJanjezService as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: "svc-1",
-      name: "YouTube Views",
-      slug: "youtube-views",
-      category: "youtube",
-      subcategory: null,
-      selling_price_ksh: 41.1,
-      provider_service_id: "12345",
-      min_quantity: 100,
-      max_quantity: 1000000,
-      supports_drip_feed: true,
-      supports_refill: true,
-      supports_cancel: false,
-      is_active: true,
-    });
+    (listJanjezServices as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: "svc-1",
+        name: "YouTube Views",
+        slug: "youtube-views",
+        category: "youtube",
+        subcategory: null,
+        selling_price_ksh: 41.1,
+        provider_service_id: "12345",
+        min_quantity: 100,
+        max_quantity: 1000000,
+        supports_drip_feed: true,
+        supports_refill: true,
+        supports_cancel: false,
+        is_active: true,
+        show_anonymous: true,
+        description: null,
+        display_order: 0,
+        supports_drip_feed: true,
+        supports_refill: true,
+        supports_cancel: false,
+        show_sidebar: false,
+        show_landing: false,
+        show_guarded: false,
+        show_catalogue: false,
+        created_at: "",
+        updated_at: "",
+      },
+    ]);
     (initiateStkPush as ReturnType<typeof vi.fn>).mockResolvedValue({
       CheckoutRequestID: "test-checkout-id",
       CustomerMessage: "STK push sent",
@@ -172,9 +191,19 @@ describe("POST /api/orders/anonymous - validation", () => {
       max_quantity: 1000000,
       supports_drip_feed: false,
       is_active: true,
+      show_anonymous: true,
+      description: null,
+      display_order: 0,
+      supports_refill: false,
+      supports_cancel: false,
+      show_sidebar: false,
+      show_landing: false,
+      show_guarded: false,
+      show_catalogue: false,
+      created_at: "",
+      updated_at: "",
     };
-    mockAdminClient.from.mockImplementation(() => makeChainable({ single: vi.fn().mockResolvedValue({ data: service, error: null }) }));
-    (resolveJanjezService as ReturnType<typeof vi.fn>).mockResolvedValue(service);
+    (listJanjezServices as ReturnType<typeof vi.fn>).mockResolvedValue([service]);
 
     const req = mockRequest({
       janjez_service_id: "svc-1",
@@ -191,18 +220,31 @@ describe("POST /api/orders/anonymous - validation", () => {
   });
 
   it("rejects unmapped service (no provider_service_id)", async () => {
-    (resolveJanjezService as ReturnType<typeof vi.fn>).mockResolvedValue({
-      id: "svc-1",
-      name: "Test",
-      slug: "test",
-      category: "test",
-      selling_price_ksh: 41.1,
-      provider_service_id: null,
-      min_quantity: 100,
-      max_quantity: 1000000,
-      supports_drip_feed: true,
-      is_active: true,
-    });
+    (listJanjezServices as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: "svc-1",
+        name: "Test",
+        slug: "test",
+        category: "test",
+        selling_price_ksh: 41.1,
+        provider_service_id: null,
+        min_quantity: 100,
+        max_quantity: 1000000,
+        supports_drip_feed: true,
+        is_active: true,
+        show_anonymous: true,
+        description: null,
+        display_order: 0,
+        supports_refill: false,
+        supports_cancel: false,
+        show_sidebar: false,
+        show_landing: false,
+        show_guarded: false,
+        show_catalogue: false,
+        created_at: "",
+        updated_at: "",
+      },
+    ]);
 
     const req = mockRequest({
       janjez_service_id: "svc-1",
@@ -216,8 +258,8 @@ describe("POST /api/orders/anonymous - validation", () => {
     expect(data.error).toContain("not configured for ordering");
   });
 
-  it("rejects inactive service (resolveJanjezService returns null)", async () => {
-    (resolveJanjezService as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+  it("rejects inactive service (listJanjezServices returns empty)", async () => {
+    (listJanjezServices as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const req = mockRequest({
       janjez_service_id: "svc-1",
@@ -290,8 +332,8 @@ describe("POST /api/orders/anonymous - validation", () => {
       if (table === "wallet_transactions") return txChainable;
       return makeChainable({});
     });
-    const service = { id: "svc-1", name: "YT", slug: "yt", category: "youtube", selling_price_ksh: 41.1, provider_service_id: "12345", min_quantity: 100, max_quantity: 1000000, supports_drip_feed: true, is_active: true };
-    (resolveJanjezService as ReturnType<typeof vi.fn>).mockResolvedValue(service);
+    const service = { id: "svc-1", name: "YT", slug: "yt", category: "youtube", selling_price_ksh: 41.1, provider_service_id: "12345", min_quantity: 100, max_quantity: 1000000, supports_drip_feed: true, is_active: true, show_anonymous: true, description: null, display_order: 0, supports_refill: false, supports_cancel: false, show_sidebar: false, show_landing: false, show_guarded: false, show_catalogue: false, created_at: "", updated_at: "" };
+    (listJanjezServices as ReturnType<typeof vi.fn>).mockResolvedValue([service]);
     (initiateStkPush as ReturnType<typeof vi.fn>).mockResolvedValue({ CheckoutRequestID: "test-id", CustomerMessage: "sent" });
 
     const req = mockRequest({

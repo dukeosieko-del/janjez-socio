@@ -132,3 +132,29 @@ export function categorizeServices(services: Array<{ category: string; id: strin
 export function getServiceById<T extends { id: string }>(services: Array<T>, id: string): T | null {
   return services.find((s) => s.id === id) || null;
 }
+
+export async function getAnonymousServices(): Promise<Array<{
+  id: string;
+  serviceId: string;
+  categoryId: string;
+  name: string;
+  description: string;
+  rate: number;
+  min: number;
+  max: number;
+  refill: string;
+  requiresLink: boolean;
+  requiresComments: boolean;
+  speed: string;
+  startTime: string;
+  notice: string;
+  monetizable: boolean;
+  slug: string;
+  subcategory: string | null;
+  supports_drip_feed: boolean;
+  supports_refill: boolean;
+  supports_cancel: boolean;
+  display_order: number;
+}>> {
+  return getServiceCatalogue("show_anonymous");
+}
