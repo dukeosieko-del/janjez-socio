@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { SIDEBAR_ITEMS, type SidebarItem } from "@/lib/data";
+import type { SidebarItem } from "@/lib/data";
 import { useAuth } from "./AuthContext";
 
 function SidebarIcon({ icon, label }: { icon: string; label: string }) {
@@ -82,15 +82,33 @@ function SidebarNavItem({ item, depth = 0 }: { item: SidebarItem; depth?: number
 }
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const [sidebarItems, setSidebarItems] = useState<SidebarItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/services/sidebar")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
+      .then((data) => {
+        if (!cancelled) {
+          setSidebarItems(data.items || []);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const expandableItems = useMemo(() => sidebarItems.filter((item) => item.children && item.children.length > 0), [sidebarItems]);
 
   const navItems = useMemo(() => {
     const baseItems = [
-      { label: "New Order", href: "/order", icon: "🛒", active: true },
+      { label: "New Order", href: "/services", icon: "🛒", active: true },
       { label: "Blog & News", href: "/blog", icon: "💬" },
     ];
-    const expandableItems = SIDEBAR_ITEMS.filter((item) => item.children && item.children.length > 0);
 
     if (user) {
       return [
@@ -106,46 +124,30 @@ export default function Sidebar() {
       { label: "Sign In", href: "/auth/sign-in#", icon: "🔑", trigger: "login" as const },
       ...expandableItems,
     ];
-  }, [user]);
+  }, [user, expandableItems]);
 
   return (
     <>
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
+      {/* Sidebar - desktop only */}
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen bg-kenya-black border-r border-kenya-white/10 transition-transform duration-300 w-64 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0`}
-      >
+        className={`fixed left-0 top-0 z-40 h-screen bg-kenya-black border-r border-kenya-white/10 transition-transform duration-300 w-64 hidden lg:block`}>
         <div className="flex flex-col h-full">
           {/* Logo area */}
           <div className="flex items-center justify-between p-4 border-b border-kenya-white/10">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/janjez-logo.png" alt="janjez.social" width={32} height={32} className="w-8 h-8 object-contain" />
+              <Image src="/janjez-logo.png" alt="janjez.social" width={28} height={32} quality={90} className="w-7 h-8 object-contain" />
               <span className="text-lg font-bold text-kenya-white">
                 janjez<span className="text-kenya-green">.social</span>
               </span>
             </Link>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-kenya-white/10 transition-colors text-kenya-white/60 hover:text-kenya-white"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {navItems.map((item, idx) => (
+            {loading && (
+              <p className="text-kenya-white/40 text-xs px-3 py-2">Loading menu…</p>
+            )}
+            {!loading && navItems.map((item, idx) => (
               <SidebarNavItem key={item.label + idx} item={item} />
             ))}
           </nav>
@@ -157,31 +159,19 @@ export default function Sidebar() {
                 onClick={() => signOut()}
                 className="flex items-center justify-center gap-2 w-full bg-kenya-red/10 text-kenya-red font-bold text-sm py-3 rounded-xl hover:bg-kenya-red/20 transition-colors border border-kenya-red/20"
               >
-                🚪 Sign Out
+                Sign Out
               </button>
             ) : (
-              <a
-                href="/order"
-                onClick={() => setIsOpen(false)}
+              <Link
+                href="/services"
                 className="flex items-center justify-center gap-2 w-full bg-kenya-green text-kenya-black font-bold text-sm py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
               >
-                🛒 Start Order
-              </a>
+                Start Order
+              </Link>
             )}
           </div>
         </div>
       </aside>
-
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-30 lg:hidden w-12 h-12 bg-kenya-green text-kenya-black rounded-full shadow-lg flex items-center justify-center hover:bg-kenya-green/90 transition-colors"
-        aria-label="Open menu"
-      >
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
     </>
   );
 }

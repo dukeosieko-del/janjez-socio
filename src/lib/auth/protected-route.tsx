@@ -16,7 +16,8 @@ export default function ProtectedRoute({ children, fallback }: ProtectedRoutePro
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/auth/sign-in");
+      const currentPath = window.location.pathname;
+      router.push(`/auth/sign-in?next=${encodeURIComponent(currentPath)}`);
     }
   }, [user, loading, router]);
 
