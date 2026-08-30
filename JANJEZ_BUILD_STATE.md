@@ -2774,3 +2774,17 @@ ALTER TABLE public.orders
   - Production API probe (direct URL): catalogue leaks=0, happy-hour leaks=0
 - **Commit:** `7c28632`
 - **Data gap status:** RESOLVED — all 10 show_anonymous services have valid provider_service_id mappings
+
+### 2026-08-29 — MILESTONE 27: Production Domain SSL Fix
+- **Task:** Fix 526 SSL error on www.janjez.social
+- **Operation type:** INFRASTRUCTURE FIX + VERIFICATION
+- **Root cause:** Origin certificate on Lightsail only covered `janjez.social`, not `www.janjez.social`. Cloudflare Full (Strict) mode rejected the mismatch.
+- **Fix:** Reissued Let's Encrypt certificate with `--expand` flag to include both `janjez.social` and `www.janjez.social`. Certbot auto-updated nginx config. New cert expires 2026-11-28.
+- **Verification:**
+  - `https://www.janjez.social` → 200 ✅
+  - `https://janjez.social` → 200 ✅
+  - `/services` → 200 ✅
+  - `/admin` → 307 ✅
+  - Catalogue `provider_service_id` leaks → 0 ✅
+  - Happy Hour `provider_service_id` leaks → 0 ✅
+- **Production tunnel probe:** ALL PASS
