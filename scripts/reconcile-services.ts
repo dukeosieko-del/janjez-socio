@@ -73,76 +73,29 @@ function parseCsv(text: string, delimiter = ",") {
 }
 
 async function reconcile() {
-  console.log("=== Starting Reconciliation & Import ===\n");
+  console.log("=== FULL RESET: Deleting ALL janjez_services ===\n");
 
+  // 1. Hard delete ALL existing services
   const { data: existingServices, error: fetchError } = await admin
     .from("janjez_services")
-    .select("id, provider_service_id, name, category, is_active, slug");
+    .delete()
+    .neq("id", "00000000-0000-0000-0000-000000000000")
+    .select("id");
 
   if (fetchError) {
-    console.error("Failed to fetch existing services:", fetchError);
+    console.error("Failed to delete existing services:", fetchError);
     process.exit(1);
   }
 
-  const existingByProviderId = new Map<string, any>();
-  const existingById = new Map<string, any>();
-  for (const svc of existingServices || []) {
-    if (svc.provider_service_id) {
-      existingByProviderId.set(String(svc.provider_service_id), svc);
-    }
-    existingById.set(svc.id, svc);
-  }
+  const deletedCount = existingServices?.length || 0;
+  console.log(`Deleted ${deletedCount} existing services\n`);
 
-  console.log(`DB state: ${existingServices?.length || 0} total services`);
-  console.log(`DB services with provider_service_id: ${existingByProviderId.size}`);
-  console.log();
-
+  // 2. Reimport all services from source of truth
   let totalAdded = 0;
   let totalUpdated = 0;
-  let totalRemoved = 0;
-  const servicesToRemove: any[] = [];
-
-  // Build expected slugs/names from source
-  const sourceProviderIds = new Set<string>();
-  const sourceSlugs = new Set<string>();
-  const sourceNames = new Set<string>();
-  for (const platform of PLATFORMS) {
-    const raw = await fetchGitHubRaw(`${platform.branch}/${encodeURIComponent(platform.file)}`);
-    const delim = platform.file.endsWith(".tsv") ? "\t" : ",";
-    const rows = parseCsv(raw, delim);
-    const dataRows = rows.slice(1);
-    for (const row of dataRows) {
-      if (!row[0] || !row[1]) continue;
-      const providerServiceId = row[0].trim();
-      const name = row[1].trim();
-      const category = platform.category;
-      const subcategory = extractSubcategory(name, category);
-      const slug = makeSlug(category, subcategory);
-      sourceProviderIds.add(providerServiceId);
-      sourceSlugs.add(slug);
-      sourceNames.add(name.toLowerCase());
-    }
-  }
-
-  for (const [providerId, svc] of existingByProviderId) {
-    if (!sourceProviderIds.has(providerId)) {
-      servicesToRemove.push(svc);
-    }
-  }
-
-  for (const svc of existingServices || []) {
-    if (svc.provider_service_id) continue;
-    const slug = String(svc.slug || "").toLowerCase();
-    const name = String(svc.name || "").toLowerCase();
-    if (!sourceSlugs.has(slug) && !sourceNames.has(name)) {
-      servicesToRemove.push(svc);
-    }
-  }
-
-  console.log(`Orphaned services to remove: ${servicesToRemove.length}`);
 
   for (const platform of PLATFORMS) {
-    console.log(`\n--- Processing ${platform.category} ---`);
+    console.log(`--- Processing ${platform.category} ---`);
     const raw = await fetchGitHubRaw(`${platform.branch}/${encodeURIComponent(platform.file)}`);
     const delim = platform.file.endsWith(".tsv") ? "\t" : ",";
     const rows = parseCsv(raw, delim);
@@ -164,57 +117,30 @@ async function reconcile() {
       const refill = (row[5] || "").trim();
       const averageTime = (row[6] || "").trim();
 
-      const existing = existingByProviderId.get(providerServiceId);
+      const { error: insertError } = await admin.from("janjez_services").insert({
+        name,
+        category,
+        subcategory,
+        slug,
+        provider_service_id: providerServiceId,
+        selling_price_ksh: rate,
+        min_quantity: Math.max(1, minQuantity),
+        max_quantity: Math.max(Math.max(1, minQuantity), maxQuantity),
+        supports_refill: /refill/i.test(refill),
+        supports_drip_feed: true,
+        average_time: averageTime || null,
+        is_active: true,
+        show_sidebar: false,
+        show_landing: true,
+        show_guarded: true,
+        show_anonymous: true,
+        show_catalogue: true,
+      });
 
-      if (existing) {
-        const { error: updateError } = await admin
-          .from("janjez_services")
-          .update({
-            name,
-            category,
-            subcategory,
-            slug,
-            selling_price_ksh: rate,
-            min_quantity: Math.max(1, minQuantity),
-            max_quantity: Math.max(Math.max(1, minQuantity), maxQuantity),
-            supports_refill: /refill/i.test(refill),
-            supports_drip_feed: true,
-            provider_service_id: providerServiceId,
-            average_time: averageTime || null,
-          })
-          .eq("id", existing.id);
-
-        if (updateError) {
-          console.error(`  Failed to update ${providerServiceId}:`, updateError.message);
-        } else {
-          updated++;
-        }
+      if (insertError) {
+        console.error(`  Failed to insert ${providerServiceId}:`, insertError.message);
       } else {
-        const { error: insertError } = await admin.from("janjez_services").insert({
-          name,
-          category,
-          subcategory,
-          slug,
-          provider_service_id: providerServiceId,
-          selling_price_ksh: rate,
-          min_quantity: Math.max(1, minQuantity),
-          max_quantity: Math.max(Math.max(1, minQuantity), maxQuantity),
-          supports_refill: /refill/i.test(refill),
-          supports_drip_feed: true,
-          average_time: averageTime || null,
-          is_active: true,
-          show_sidebar: false,
-          show_landing: true,
-          show_guarded: true,
-          show_anonymous: true,
-          show_catalogue: true,
-        });
-
-        if (insertError) {
-          console.error(`  Failed to insert ${providerServiceId}:`, insertError.message);
-        } else {
-          added++;
-        }
+        added++;
       }
     }
 
@@ -223,25 +149,11 @@ async function reconcile() {
     totalUpdated += updated;
   }
 
-  console.log(`\n--- Removing ${servicesToRemove.length} orphaned services ---`);
-  for (const svc of servicesToRemove) {
-    const { error: deleteError } = await admin
-      .from("janjez_services")
-      .delete()
-      .eq("id", svc.id);
-
-    if (deleteError) {
-      console.error(`  Failed to delete ${svc.id}:`, deleteError.message);
-    } else {
-      totalRemoved++;
-    }
-  }
-
   console.log(`\n=== Reconciliation Complete ===`);
+  console.log(`Total removed: ${deletedCount}`);
   console.log(`Total added: ${totalAdded}`);
   console.log(`Total updated: ${totalUpdated}`);
-  console.log(`Total removed: ${totalRemoved}`);
-  console.log(`Final DB count: ${(existingServices?.length || 0) - totalRemoved + totalAdded}`);
+  console.log(`Final DB count: ${totalAdded}`);
 }
 
 function extractSubcategory(name: string, category: string): string {
