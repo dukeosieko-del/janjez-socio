@@ -163,7 +163,11 @@ export async function fulfillOrder(orderId: string) {
       .update({ fulfillment_status: "failed", fulfillment_error: "No matching provider service found" })
       .eq("id", order.id);
 <<<<<<< ours
+<<<<<<< ours
     return { status: "failed", error: "No matching provider service" };
+=======
+    throw new Error("No provider mapping found for this service");
+>>>>>>> theirs
 =======
     throw new Error("No provider mapping found for this service");
 >>>>>>> theirs
@@ -173,6 +177,29 @@ export async function fulfillOrder(orderId: string) {
     Math.max(order.quantity || 1, parseInt(providerService.min, 10)),
     parseInt(providerService.max, 10)
   );
+
+  const expectedCharge = (providerRate * quantity) / 1000;
+  try {
+    const balance = await getProviderBalance();
+    const providerBalance = parseFloat((balance as { balance?: string } | undefined)?.balance || "0");
+    if (providerBalance < expectedCharge) {
+      const message = `Insufficient provider balance: ${providerBalance} USD (need ${expectedCharge} USD)`;
+      await logFulfillment(supabase, order.id, "place", "failed", null, null, message);
+      await supabase
+        .from("orders")
+        .update({ fulfillment_status: "failed", fulfillment_error: message })
+        .eq("id", order.id);
+      throw new Error(message);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Provider balance check failed";
+    await logFulfillment(supabase, order.id, "place", "error", null, null, message);
+    await supabase
+      .from("orders")
+      .update({ fulfillment_status: "failed", fulfillment_error: message })
+      .eq("id", order.id);
+    throw new Error(message);
+  }
 
   const expectedCharge = (providerRate * quantity) / 1000;
   try {
@@ -222,7 +249,11 @@ export async function fulfillOrder(orderId: string) {
         provider_order_id: String(response.order),
         provider_status: "pending",
 <<<<<<< ours
+<<<<<<< ours
          provider_charge: (parseFloat(providerService.rate) * quantity) / 1000,
+=======
+        provider_charge: expectedCharge,
+>>>>>>> theirs
 =======
         provider_charge: expectedCharge,
 >>>>>>> theirs

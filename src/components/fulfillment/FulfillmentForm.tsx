@@ -61,6 +61,58 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       setRequiredAmount(total);
       return;
     }
+<<<<<<< ours
+=======
+
+    if (!user) {
+      if (isAnonymous) {
+        if (!phoneNumber || !/^\d{9,15}$/.test(phoneNumber.replace(/\s+/g, ""))) {
+          setOrderError("Please enter a valid phone number for anonymous checkout.");
+          return;
+        }
+        if (!service) {
+          setOrderError("Anonymous checkout requires a Janjez service. Please sign in or select a mapped service.");
+          return;
+        }
+
+        setAnonymousPlacing(true);
+        setPlacing(true);
+        setOrderError(null);
+
+        try {
+          const result = await submitAnonymousOrder({
+            janjezServiceId: service.id,
+            link,
+            quantity: quantityNum,
+            phoneNumber,
+            runs: dripFeed ? parseInt(runs, 10) : null,
+            interval: dripFeed ? parseInt(intervalMin, 10) : null,
+          });
+
+          if (!result.ok) {
+            setOrderError(result.error || "Failed to start anonymous checkout.");
+            setPlacing(false);
+            setAnonymousPlacing(false);
+            return;
+          }
+
+          setOrderSuccess(true);
+          setPlacing(false);
+          setAnonymousPlacing(false);
+          const orderId = result.data.order_id;
+          void orderId; // Order ID tracked via checkout reference
+          const checkoutId = result.data.checkoutRequestId;
+          setTimeout(() => {
+            window.location.href = checkoutId ? `/orders/track?ref=${checkoutId}` : "/order/anonymous/created";
+          }, 2000);
+        } catch {
+          setOrderError("Unexpected error while starting anonymous checkout.");
+          setPlacing(false);
+          setAnonymousPlacing(false);
+        }
+        return;
+      }
+>>>>>>> theirs
 
 >>>>>>> theirs
     if (!user) {
@@ -73,11 +125,14 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     }
 
 <<<<<<< ours
+<<<<<<< ours
     if (total > walletBalance) {
       setMpesaOpen(true);
       return;
     }
 
+=======
+>>>>>>> theirs
 =======
 >>>>>>> theirs
     setPlacing(true);
