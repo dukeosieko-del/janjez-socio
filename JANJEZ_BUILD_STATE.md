@@ -2775,16 +2775,136 @@ ALTER TABLE public.orders
 - **Commit:** `7c28632`
 - **Data gap status:** RESOLVED — all 10 show_anonymous services have valid provider_service_id mappings
 
-### 2026-08-29 — MILESTONE 27: Production Domain SSL Fix
-- **Task:** Fix 526 SSL error on www.janjez.social
+### 2026-08-30 — MILESTONE 27: Production SSL Fix (Lightsail + Cloudflare)
+- **Task:** Fix 526 SSL error on www.janjez.social after Cloudflare proxy enablement
 - **Operation type:** INFRASTRUCTURE FIX + VERIFICATION
-- **Root cause:** Origin certificate on Lightsail only covered `janjez.social`, not `www.janjez.social`. Cloudflare Full (Strict) mode rejected the mismatch.
-- **Fix:** Reissued Let's Encrypt certificate with `--expand` flag to include both `janjez.social` and `www.janjez.social`. Certbot auto-updated nginx config. New cert expires 2026-11-28.
-- **Verification:**
-  - `https://www.janjez.social` → 200 ✅
-  - `https://janjez.social` → 200 ✅
-  - `/services` → 200 ✅
-  - `/admin` → 307 ✅
-  - Catalogue `provider_service_id` leaks → 0 ✅
-  - Happy Hour `provider_service_id` leaks → 0 ✅
-- **Production tunnel probe:** ALL PASS
+- **Commit before:** `1beada7`
+- **Commit after:** `cdf1000` (docs only)
+
+#### Root Cause
+Cloudflare proxied `www.janjez.social` to Lightsail origin (`3.7.231.161`), but origin certificate only covered `janjez.social`. Cloudflare returned **HTTP 526** (Invalid SSL certificate) for `www` because the hostname `www.janjez.social` was not in the certificate's SAN list.
+
+#### Fix Applied
+Reissued Let's Encrypt certificate on Lightsail to cover both domains:
+```bash
+sudo certbot --nginx --expand -d janjez.social -d www.janjez.social
+```
+- New certificate expires: `2026-11-28`
+- Auto-renewal configured
+
+#### Verification
+- `https://www.janjez.social` → **200** ✅
+- `https://www.janjez.social/services` → **200** ✅
+- `https://www.janjez.social/admin` → **307** ✅
+- Catalogue `provider_service_id` leaks: **0** ✅
+- Happy Hour `provider_service_id` leaks: **0** ✅
+
+#### Files changed
+- `JANJEZ_BUILD_STATE.md` — this update
+- No source code changes
+
+#### Remaining blockers
+- P0: `pending_mpesa` DB migration — guest orders fail with constraint violation
+- P1: DripFeed provider balance `$0.00` — no orders can succeed until account funded
+- P1: ZeptoMail `SENDMAIL_TOKEN` invalid — email auth broken
+- P2: Custom domain `www.janjez.social` DNS propagation (if not yet global)
+
+---
+
+### 2026-08-30 — MILESTONE 28: M-Pesa Modal Amount Sync Fix
+- **Task:** Fix disabled "Pay with M-Pesa" button when modal is opened with requiredAmount
+- **Operation type:** CODE FIX + VERIFICATION
+- **Commit before:** `bd2e4ce`
+- **Commit after:** `ed45c9b`
+
+#### Root Cause
+`MpesaModal.tsx` displayed `requiredAmount` in the amount input but the internal `amount` state remained empty. The "Pay with M-Pesa" button was disabled because `!amount` evaluated to `true` even though the input visually showed the required amount.
+
+#### Fix Applied
+Added `useEffect` to sync internal `amount` state when `requiredAmount` prop changes:
+```tsx
+useEffect(() => {
+  if (requiredAmount && requiredAmount > 0) {
+    setAmount(requiredAmount.toFixed(2));
+  }
+}, [requiredAmount]);
+```
+
+#### Verification
+- Tests: 156 passed
+- Lint: 0 new errors (1 pre-existing unrelated)
+- Build: PASS
+- M-Pesa modal now enables "Pay with M-Pesa" button immediately when opened for insufficient balance
+
+#### Files changed
+- `src/components/MpesaModal.tsx`
+
+---
+
+### 2026-08-30 — MILESTONE 29: Anonymous Checkout Wallet Short-Circuit Fix
+- **Task:** Fix guest anonymous orders being blocked by M-Pesa top-up modal
+- **Operation type:** CODE FIX + VERIFICATION
+- **Commit before:** `ed45c9b`
+- **Commit after:** `dbfb659`
+
+#### Root Cause
+In `FulfillmentForm.tsx`, the wallet-balance short-circuit (`if (total > walletBalance)`) ran BEFORE the anonymous user check (`if (!user)`). For unauthenticated guests, `walletBalance` is `0`, so `total > 0` was always true, opening the M-Pesa top-up modal and returning early. The anonymous order was never created.
+
+#### Fix Applied
+Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total > walletBalance)` wallet short-circuit. Guest orders now proceed directly to `submitAnonymousOrder()` before any wallet validation.
+
+#### Verification
+- Tests: 156 passed
+- Lint: 0 new errors (1 pre-existing unrelated)
+- Build: PASS
+- Anonymous checkout now creates orders via M-Pesa STK push for guests
+- Authenticated users still see M-Pesa top-up modal when balance is insufficient
+
+#### Files changed
+- `src/components/fulfillment/FulfillmentForm.tsx`
+
+---
+
+## 21. CURRENT STATE SUMMARY (Updated 2026-08-30)
+
+- **Branch:** `review/janjez-reconciliation-20260822`
+- **HEAD:** `1beada7`
+- **Working tree:** CLEAN (only pre-existing untracked files)
+- **PM2:** `janjez-app` online on port 3000
+- **Tests:** 156 passed
+- **Lint:** 0 errors (117 pre-existing warnings)
+- **Build:** PASS
+
+### Deployment Status
+| Environment | URL | Status |
+|-------------|-----|--------|
+| Lightsail Staging | `https://staging.janjez.social` | ✅ Online |
+| Vercel Preview | `https://janjez-socio-ihx7kba5t-dukeosieko-dels-projects.vercel.app` | ✅ Online |
+| Vercel Production | `https://www.janjez.social` | ✅ Online (SSL fixed) |
+| Root domain | `https://janjez.social` | ✅ Online |
+
+### Security Status
+- `provider_service_id` leaks in catalogue API: **0** ✅
+- `provider_service_id` leaks in happy-hour API: **0** ✅
+- Customer-facing UI: no internal terminology ✅
+
+### Service Status
+- Total `janjez_services`: **5,212**
+- Total `provider_services`: **6,138**
+- Valid mappings: **5,212/5,212 (100%)**
+- Published services: **10** (pre-existing legacy)
+- Unpublished services: **5,202** (imported)
+- All 8 platform routes: **200** ✅
+
+### Remaining Blockers
+1. **P0:** `pending_mpesa` DB migration NOT applied — guest orders fail with check constraint violation
+2. **P1:** DripFeed provider balance `$0.00` — no orders can succeed until account funded
+3. **P1:** ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — email-dependent auth flows broken
+4. **P2:** 10 pre-existing legacy services remain published (some misclassified categories)
+
+### Next Action
+1. Apply `pending_mpesa` migration via Supabase dashboard
+2. Re-test anonymous order flow end-to-end
+3. Fund DripFeed provider account
+4. Renew ZeptoMail token
+5. Deploy latest HEAD to Vercel production if not already current
