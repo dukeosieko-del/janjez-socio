@@ -8,6 +8,7 @@ import GlobalSearch from "./GlobalSearch";
 import CountdownTimer from "./CountdownTimer";
 import MpesaModal from "./MpesaModal";
 import AuthModal from "./AuthModal";
+import HappyHourButton from "./HappyHourButton";
 import { useAuth } from "./AuthContext";
 
 export default function Header() {
@@ -21,7 +22,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <Image src="/janjez-logo.png" alt="janjez.social" width={32} height={32} className="w-8 h-8 object-contain" />
+            <Image src="/janjez-logo.png" alt="janjez.social" width={28} height={32} quality={90} className="w-7 h-8 object-contain" />
             <span className="text-xl font-bold text-kenya-white">
               janjez<span className="text-kenya-green">.social</span>
             </span>
@@ -30,7 +31,7 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <Link
-              href="/order"
+              href="/services"
               className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
             >
               🛒 New Order
@@ -57,6 +58,7 @@ export default function Header() {
             >
               💬 Blog & News
             </Link>
+            <HappyHourButton />
           </nav>
 
           {/* Right Actions */}
@@ -71,17 +73,22 @@ export default function Header() {
               <Image src="/facebook-icon.png" alt="Facebook" width={20} height={20} className="w-5 h-5 object-contain" />
             </a>
             <div className="hidden lg:block">
-              <GlobalSearch />
+            <GlobalSearch />
             </div>
             <NotificationBell />
             <CountdownTimer />
-            <button
-              onClick={() => setMpesaOpen(true)}
-              className="hidden sm:flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-lg hover:bg-kenya-green/90 transition-colors animate-pulse-glow"
-            >
-              <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
-              Top Up
-            </button>
+            {user && (
+              <>
+                <Link
+                  href="/pay"
+                  className="hidden sm:flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-lg hover:bg-kenya-green/90 transition-colors animate-pulse-glow"
+                  aria-label="Top up wallet"
+                >
+                  <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
+                  <span className="hidden lg:inline">Top Up</span>
+                </Link>
+              </>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-kenya-white/10 transition-colors"
@@ -101,7 +108,7 @@ export default function Header() {
             </div>
             <div className="flex flex-col gap-2">
               <Link
-                href="/order"
+                href="/services"
                 className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
               >
                 🛒 New Order
@@ -112,6 +119,9 @@ export default function Header() {
               >
                 💬 Blog & News
               </Link>
+              <div className="px-4 py-3">
+                <HappyHourButton />
+              </div>
               {user ? (
                 <>
                   <Link

@@ -1,0 +1,70 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { KNOWN_PLATFORMS } from "@/lib/service-queries";
+
+interface JanjezServiceSummary {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  subcategory: string | null;
+}
+
+function resolvePlatform(category: string): string | null {
+  const lower = category.toLowerCase();
+  for (const platform of KNOWN_PLATFORMS) {
+    if (lower.includes(platform)) {
+      return platform;
+    }
+  }
+  return null;
+}
+
+export default function HappyHourButton() {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/services/happy-hour?count=1");
+      if (!res.ok) throw new Error("Failed to find Happy Hour service");
+      const { services } = await res.json();
+      if (!services || services.length === 0) {
+        alert("No Happy Hour services available right now. Check back later!");
+        setLoading(false);
+        return;
+      }
+      const svc = services[0] as JanjezServiceSummary;
+      const platform = resolvePlatform(svc.category);
+      if (platform) {
+        router.push(`/services/${platform}`);
+      } else {
+        router.push("/services");
+      }
+    } catch (err) {
+      console.error("Happy Hour error:", err);
+      alert("Could not find a Happy Hour service. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-2 bg-kenya-red/10 text-kenya-red font-bold text-sm px-4 py-2 rounded-xl hover:bg-kenya-red/20 transition-all border border-kenya-red/30 disabled:opacity-50"
+      aria-label="Happy Hour - get a random discounted service"
+    >
+      {loading ? (
+        <span className="w-4 h-4 border-2 border-kenya-red border-t-transparent rounded-full animate-spin" />
+      ) : (
+        <span>🎲</span>
+      )}
+      <span>{loading ? "Picking..." : "Happy Hour"}</span>
+    </button>
+  );
+}

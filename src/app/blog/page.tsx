@@ -4,8 +4,14 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import type { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: "Blog & News — janjez.social",
+  description: "Latest updates, guides, and insights from the janjez.social team. Tips on SMM, Instagram, YouTube, WhatsApp, and M-Pesa payments.",
+};
 
 export default function BlogPage() {
   const posts = [
@@ -19,19 +25,25 @@ export default function BlogPage() {
       title: "Maximizing Your YouTube Watch Time",
       excerpt: "Tips and tricks to increase watch time organically while using our high-retention view services.",
       date: "July 18, 2026",
-      href: "/order/youtube-watch-time",
+      href: "/services/youtube",
     },
     {
       title: "Why WhatsApp Channel Reactions Are Trending",
       excerpt: "Discover why channel post reactions are becoming the go-to growth metric for WhatsApp creators.",
       date: "July 15, 2026",
-      href: "/order/whatsapp-channel-post-reactions-instant-server-complete-in-1-minute",
+      href: "/services/whatsapp",
     },
     {
       title: "Happy Hour: Get 5% Off Every Order",
       excerpt: "Our Happy Hour promotion is live! Use the countdown timer in the header to catch limited-time discounts.",
       date: "July 12, 2026",
-      href: "/order",
+      href: "/services",
+    },
+    {
+      title: "How M-Pesa Top-Up Works on janjez.social",
+      excerpt: "Step-by-step guide on funding your janjez wallet via M-Pesa, minimum top-up amounts, and wallet remainder handling.",
+      date: "July 10, 2026",
+      href: "/how-it-works",
     },
   ];
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
-import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
+import { getServiceCatalogue, getServicesByPlatform, getServiceById } from "@/lib/service-queries";
 import { submitOrder } from "@/lib/order-log";
+import { calculateOrderCost } from "@/lib/pricing";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -29,8 +30,12 @@ export default function WhatsAppPollVotesClient() {
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   
-  const pollVotesServices = useMemo(() => getServicesByCategory(WHATSAPP_POLL_VOTES_CATEGORY), []);
-  const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
+  const [services, setServices] = useState<Array<{ id: string; name: string; rate: number; min: number; max: number; refill: string; requiresComments: boolean; description: string; speed: string; startTime: string; notice: string; monetizable: boolean; serviceId: string; supports_drip_feed: boolean; supports_refill: boolean; supports_cancel: boolean; display_order: number }>>([])
+  const selectedService = useMemo(() => getServiceById(services, selectedServiceId), [services, selectedServiceId])
+
+  useEffect(() => {
+    getServiceCatalogue().then(setServices).catch(() => setServices([]));
+  }, []);
 
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
@@ -39,13 +44,12 @@ export default function WhatsAppPollVotesClient() {
 
   const subtotal = useMemo(() => {
     if (!selectedService || quantityNum <= 0) return 0;
-    return selectedService.rate * quantityNum;
+    return calculateOrderCost(selectedService.rate, quantityNum);
   }, [selectedService, quantityNum]);
 
   const total = useMemo(() => {
     if (subtotal <= 0) return 0;
-    const discount = 0.95; // Happy Hour -5%
-    return subtotal * discount;
+        return subtotal;
   }, [subtotal]);
 
   const quantityError = useMemo(() => {
@@ -145,7 +149,7 @@ export default function WhatsAppPollVotesClient() {
 
             {/* Quick Order Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              {pollVotesServices.map((service) => (
+              {services.map((service) => (
                 <Link
                   key={service.id}
                   href={`/order/whatsapp-poll-votes/${service.id}`}
@@ -181,7 +185,7 @@ export default function WhatsAppPollVotesClient() {
                 <option value="" className="bg-kenya-black text-kenya-white/50">
                   -- Choose a service --
                 </option>
-                {pollVotesServices.map((service) => (
+                {services.map((service) => (
                   <option key={service.id} value={service.id} className="bg-kenya-black text-kenya-white">
                     {service.name}
                   </option>
@@ -311,11 +315,6 @@ export default function WhatsAppPollVotesClient() {
                       <span className="text-kenya-white/40 text-xs">Wallet balance: KES {walletBalance.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {total > 0 && (
-                        <span className="text-xs bg-kenya-red text-white font-bold px-2 py-0.5 rounded">
-                          -5% Happy Hour
-                        </span>
-                      )}
                       <span className="text-2xl font-bold text-kenya-green">
                         KES {total.toFixed(2)}
                       </span>

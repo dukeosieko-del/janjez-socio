@@ -5,22 +5,55 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { findCatalogItemBySlug, findSubcategoryBySlug, slugify } from "@/lib/service-routes";
-import type { ServiceCatalogItem, Subcategory } from "@/lib/service-catalog";
+import { listJanjezServices } from "@/lib/janjez-services";
+import { JanjezService } from "@/lib/janjez-services";
+import { getPlatformAvatar } from "@/lib/platform-avatars";
+import { isKnownPlatform, matchPlatform } from "@/lib/service-queries";
+import { normalizeSlug } from "@/lib/janzez-services";
+import ServiceDenseList from "@/components/ServiceDenseList";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
+import type { Metadata } from "next";
+
+export const revalidate = 0;
 
 interface SubcategoryPageProps {
-  params: { platform: string; subcategory: string };
+  params: Promise<{ platform: string; subcategory: string }>;
 }
 
-export default function SubcategoryPage({ params }: SubcategoryPageProps) {
-  const catalogItem = findCatalogItemBySlug(params.platform);
-  if (!catalogItem) notFound();
+export async function generateMetadata({ params }: SubcategoryPageProps): Promise<Metadata> {
+  const { platform, subcategory } = await params;
+  const { services, subcategoryName } = await getSubcategoryServices(platform, subcategory);
+  const platformName = platform.charAt(0).toUpperCase() + platform.slice(1).replace(/-/g, " ");
+  const title = `${subcategoryName} ${platformName} Services | Janjez`;
+  return {
+    title,
+    description: `Buy ${subcategoryName} for ${platformName}. Fast delivery with 30-day refill guarantee on Janjez.`,
+    alternates: { canonical: `https://janjez.social/services/${platform}/${subcategory}` },
+  };
+}
 
-  const subcategory = findSubcategoryBySlug(catalogItem, params.subcategory);
-  if (!subcategory) notFound();
+async function getSubcategoryServices(platform: string, subcategorySlug: string): Promise<{ services: JanjezService[]; subcategoryName: string }> {
+  const all = await listJanjezServices(true, "show_catalogue");
+  const filtered = isKnownPlatform(platform)
+    ? all.filter((s) => matchPlatform(s.category) === platform)
+    : all.filter((s) => !isKnownPlatform(s.category) && !matchPlatform(s.category));
+  const inSubcategory = filtered.filter((s) => {
+    const sub = s.subcategory || "General";
+    return normalizeSlug(sub) === subcategorySlug;
+  });
+  const subName = inSubcategory.length > 0 ? (inSubcategory[0].subcategory || "General") : subcategorySlug;
+  return { services: inSubcategory, subcategoryName: subName };
+}
 
-  const singleDeliverable = subcategory.deliverables.length === 1 ? subcategory.deliverables[0] : null;
+export default async function SubcategoryPage({ params }: SubcategoryPageProps) {
+  const { platform, subcategory } = await params;
+  const { services, subcategoryName } = await getSubcategoryServices(platform, subcategory);
+
+  if (services.length === 0) {
+    notFound();
+  }
+
+  const singleService = services.length === 1 ? services[0] : null;
 
   return (
     <div className="min-h-screen flex bg-kenya-black">
@@ -30,51 +63,29 @@ export default function SubcategoryPage({ params }: SubcategoryPageProps) {
         <LiveTicker />
         <Header />
         <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+            <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-4">
               <Link href="/services" className="hover:text-kenya-green transition-colors">Services</Link>
               <span>/</span>
-              <Link href={`/services/${params.platform}`} className="hover:text-kenya-green transition-colors capitalize">{params.platform.replace(/-/g, " ")}</Link>
+              <Link href={`/services/${platform}`} className="hover:text-kenya-green transition-colors capitalize">{platform.replace(/-/g, " ")}</Link>
               <span>/</span>
-              <span className="text-kenya-green font-medium">{subcategory.name}</span>
+              <span className="text-kenya-green font-medium">{subcategoryName}</span>
             </nav>
-            <div className="mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">{subcategory.name}</h1>
-              <p className="text-kenya-white/60">{subcategory.deliverables.length} deliverable{subcategory.deliverables.length !== 1 ? "s" : ""} available</p>
-              {subcategory.note && (
-                <div className="mt-3 bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3">
-                  <p className="text-kenya-white/50 text-xs italic">{subcategory.note}</p>
-                </div>
-              )}
+            <div className="mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-kenya-white mb-1">{subcategoryName}</h1>
+              <p className="text-kenya-white/60 text-sm">{services.length} deliverable{services.length !== 1 ? "s" : ""} available</p>
             </div>
 
-            {singleDeliverable ? (
+            {singleService ? (
               <FulfillmentForm
-                platformId={catalogItem.id}
-                platformName={catalogItem.name}
-                platformIcon={catalogItem.icon}
-                subcategoryName={subcategory.name}
-                deliverable={singleDeliverable}
+                platformId={singleService.category}
+                platformName={singleService.category}
+                platformIcon={getPlatformAvatar(singleService.category)}
+                subcategoryName={subcategoryName}
+                service={singleService}
               />
             ) : (
-              <div className="flex flex-col gap-4">
-                {subcategory.deliverables.map((del, idx) => (
-                  <Link
-                    key={del.name + idx}
-                    href={`/services/${params.platform}/${params.subcategory}/microcategory-${slugify(del.name)}`}
-                    className="flex items-center gap-4 bg-kenya-white/5 border border-kenya-white/10 rounded-2xl px-5 py-4 transition-all duration-300 hover:-translate-y-1 hover:border-kenya-white/20"
-                  >
-                    <div className="w-12 h-12 flex-shrink-0 bg-kenya-white/5 rounded-xl flex items-center justify-center">
-                      <span className="text-lg">📦</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-kenya-white font-semibold text-base truncate">{del.name}</p>
-                      <p className="text-kenya-green text-sm">{del.price}</p>
-                    </div>
-                    <span className="text-kenya-white/40 text-xs">→</span>
-                  </Link>
-                ))}
-              </div>
+              <ServiceDenseList services={services} />
             )}
           </div>
         </main>

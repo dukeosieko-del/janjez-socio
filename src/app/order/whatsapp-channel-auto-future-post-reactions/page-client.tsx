@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
-import { ORDER_SERVICES, getServicesByCategory } from "@/lib/data";
+import { getServiceCatalogue, getServicesByPlatform, getServiceById } from "@/lib/service-queries";
 import { submitOrder } from "@/lib/order-log";
+import { calculateOrderCost } from "@/lib/pricing";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -14,7 +15,6 @@ import Footer from "@/components/Footer";
 import MpesaModal from "@/components/MpesaModal";
 
 const WHATSAPP_CHANNEL_AUTO_FUTURE_POST_REACTIONS = "whatsapp-channel-auto-future-post-reactions";
-const HAPPY_HOUR_DISCOUNT = 0.95;
 
 export default function WhatsAppChannelAutoFuturePostReactionsClient() {
   const { user, session, openAuth, walletBalance } = useAuth();
@@ -29,8 +29,12 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   
-  const reactionsServices = useMemo(() => getServicesByCategory(WHATSAPP_CHANNEL_AUTO_FUTURE_POST_REACTIONS), []);
-  const selectedService = useMemo(() => ORDER_SERVICES.find((s) => s.id === selectedServiceId) || null, [selectedServiceId]);
+  const [services, setServices] = useState<Array<{ id: string; name: string; rate: number; min: number; max: number; refill: string; requiresComments: boolean; description: string; speed: string; startTime: string; notice: string; monetizable: boolean; serviceId: string; supports_drip_feed: boolean; supports_refill: boolean; supports_cancel: boolean; display_order: number }>>([])
+  const selectedService = useMemo(() => getServiceById(services, selectedServiceId), [services, selectedServiceId])
+
+  useEffect(() => {
+    getServiceCatalogue().then(setServices).catch(() => setServices([]));
+  }, []);
 
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
@@ -39,12 +43,12 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
 
   const subtotal = useMemo(() => {
     if (!selectedService || quantityNum <= 0) return 0;
-    return selectedService.rate * quantityNum;
+    return calculateOrderCost(selectedService.rate, quantityNum);
   }, [selectedService, quantityNum]);
 
   const total = useMemo(() => {
     if (subtotal <= 0) return 0;
-    return subtotal * HAPPY_HOUR_DISCOUNT;
+    return subtotal;
   }, [subtotal]);
 
   const quantityError = useMemo(() => {
@@ -140,7 +144,7 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-              {reactionsServices.map((service) => (
+              {services.map((service) => (
                 <Link
                   key={service.id}
                   href={`/order/whatsapp-channel-auto-future-post-reactions/${service.id}`}
@@ -154,7 +158,7 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
                   </div>
                   <p className="text-kenya-white/50 text-xs mb-3 line-clamp-2">{service.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="text-kenya-green font-bold text-sm">KES {(service.rate * HAPPY_HOUR_DISCOUNT).toFixed(2)}</span>
+                    <span className="text-kenya-green font-bold text-sm">KES {(service.rate).toFixed(2)}</span>
                     <svg className="h-4 w-4 text-kenya-green opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
@@ -175,7 +179,7 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
                 <option value="" className="bg-kenya-black text-kenya-white/50">
                   -- Choose a service --
                 </option>
-                {reactionsServices.map((service) => (
+                {services.map((service) => (
                   <option key={service.id} value={service.id} className="bg-kenya-black text-kenya-white">
                     {service.name}
                   </option>
@@ -197,7 +201,7 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
                     ⚡ Rate: KES {selectedService.rate.toFixed(2)} / reaction
                   </span>
                   <span className="inline-flex items-center gap-1.5 bg-kenya-red/20 text-kenya-red text-xs px-3 py-1.5 rounded-lg border border-kenya-red/30">
-                    🔥 Happy Hour: KES {(selectedService.rate * HAPPY_HOUR_DISCOUNT).toFixed(2)}
+                    🔥 Happy Hour: KES {(selectedService.rate).toFixed(2)}
                   </span>
                   <span className="inline-flex items-center gap-1.5 bg-kenya-black/60 text-kenya-white/60 text-xs px-3 py-1.5 rounded-lg border border-kenya-white/10">
                     Min: {selectedService.min.toLocaleString()} | Max: {selectedService.max.toLocaleString()}
@@ -281,11 +285,6 @@ export default function WhatsAppChannelAutoFuturePostReactionsClient() {
                       <span className="text-kenya-white/40 text-xs">Wallet balance: KES {walletBalance.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {total > 0 && (
-                        <span className="text-xs bg-kenya-red text-white font-bold px-2 py-0.5 rounded">
-                          -5% Happy Hour
-                        </span>
-                      )}
                       <span className="text-2xl font-bold text-kenya-green">
                         KES {total.toFixed(2)}
                       </span>

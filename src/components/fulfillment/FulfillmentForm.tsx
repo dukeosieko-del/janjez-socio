@@ -1,21 +1,26 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
 import MpesaModal from "@/components/MpesaModal";
-import { submitOrder } from "@/lib/order-log";
+import { submitOrder, submitAnonymousOrder } from "@/lib/order-log";
+import { JanjezService } from "@/lib/janjez-services";
+import { getDripFeedLimitsSync, type DripFeedLimits } from "@/lib/drip-feed-settings";
+import { calculateOrderCost } from "@/lib/pricing";
 
 export interface FulfillmentProps {
   platformId: string;
   platformName: string;
   platformIcon: string;
   subcategoryName: string;
-  deliverable: { name: string; price: string; note?: string; flag?: string; minQty?: number; maxQty?: number };
+  deliverable?: { name: string; price: string; note?: string; flag?: string; minQty?: number; maxQty?: number };
+  service?: JanjezService;
   onRequireAuth?: (tab?: "login" | "register") => void;
+  allowAnonymous?: boolean;
 }
 
-export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable, onRequireAuth }: FulfillmentProps) {
+export default function FulfillmentForm({ platformId, platformName, platformIcon, subcategoryName, deliverable, service, onRequireAuth, allowAnonymous = true }: FulfillmentProps) {
   const { user, walletBalance } = useAuth();
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -23,25 +28,45 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [mpesaOpen, setMpesaOpen] = useState(false);
+  const [requiredAmount, setRequiredAmount] = useState(0);
+  const [dripFeed, setDripFeed] = useState(false);
+  const [runs, setRuns] = useState("");
+  const [intervalMin, setIntervalMin] = useState("");
+  const [dripFeedLimits, setDripFeedLimits] = useState<DripFeedLimits>(getDripFeedLimitsSync);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [anonymousPlacing, setAnonymousPlacing] = useState(false);
 
-  const parsedAmount = useMemo(() => parseFloat(deliverable.price.replace(" Ksh", "") || "0"), [deliverable.price]);
+  useEffect(() => {
+    fetch("/api/admin/settings/drip-feed")
+      .then((r) => r.json())
+      .then((data) => setDripFeedLimits(data))
+      .catch(() => {});
+  }, []);
+
+  const ratePerUnit = useMemo(() => {
+    if (service) return Number(service.selling_price_ksh);
+    if (deliverable) {
+      const match = deliverable.price.replace(" Ksh", "").match(/([\d,.]+)/);
+      if (match) return parseFloat(match[1].replace(/,/g, "")) * 1000;
+    }
+    return 0;
+  }, [service, deliverable]);
+
   const quantityNum = useMemo(() => {
     const num = parseInt(quantity, 10);
     return Number.isNaN(num) ? 0 : num;
   }, [quantity]);
 
+  const qtyMin = service ? service.min_quantity : (deliverable?.minQty ?? 10);
+  const qtyMax = service ? service.max_quantity : (deliverable?.maxQty ?? 10000);
+
   const subtotal = useMemo(() => {
-    if (!parsedAmount || quantityNum <= 0) return 0;
-    return parsedAmount * quantityNum;
-  }, [parsedAmount, quantityNum]);
+    if (!ratePerUnit || quantityNum <= 0) return 0;
+    return calculateOrderCost(ratePerUnit, quantityNum);
+  }, [ratePerUnit, quantityNum]);
 
-  const total = useMemo(() => {
-    if (subtotal <= 0) return 0;
-    return subtotal * 0.95;
-  }, [subtotal]);
-
-  const qtyMin = deliverable.minQty ?? 10;
-  const qtyMax = deliverable.maxQty ?? 10000;
+  const total = subtotal;
 
   const quantityError = useMemo(() => {
     if (quantityNum <= 0) return "";
@@ -50,10 +75,10 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     return "";
   }, [quantityNum, qtyMin, qtyMax]);
 
+  const dripFeedDisabled = !service ? false : !service.supports_drip_feed;
+
   const handlePlaceOrder = useCallback(async () => {
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
-<<<<<<< ours
-=======
     if (dripFeed && (parseInt(runs, 10) <= 0 || parseInt(intervalMin, 10) <= 0)) return;
 
     if (total > walletBalance) {
@@ -61,8 +86,6 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       setRequiredAmount(total);
       return;
     }
-<<<<<<< ours
-=======
 
     if (!user) {
       if (isAnonymous) {
@@ -112,10 +135,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         }
         return;
       }
->>>>>>> theirs
 
->>>>>>> theirs
-    if (!user) {
       if (onRequireAuth) {
         onRequireAuth("login");
       } else {
@@ -124,17 +144,6 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       return;
     }
 
-<<<<<<< ours
-<<<<<<< ours
-    if (total > walletBalance) {
-      setMpesaOpen(true);
-      return;
-    }
-
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
     setPlacing(true);
     setOrderError(null);
     setOrderSuccess(false);
@@ -143,17 +152,27 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       const quantitySource: "preset" | "custom" = /^\d+$/.test(quantity) ? "preset" : "custom";
       const result = await submitOrder({
         categoryId: platformId,
-        serviceId: deliverable.name,
+        serviceId: deliverable?.name || service?.name || subcategoryName,
         quantity: quantityNum,
         link,
         amountPaid: total,
         quantitySource,
-        selectedSkuId: deliverable.name,
+        selectedSkuId: deliverable?.name || service?.slug,
+        janjezServiceId: service?.id || null,
+        categoryName: platformId.charAt(0).toUpperCase() + platformId.slice(1).replace(/-/g, " "),
+        subcategoryName: deliverable?.name || service?.name || subcategoryName,
+        refillGuarantee: service?.supports_refill ? "standard" : "none",
+        runs: dripFeed ? parseInt(runs, 10) : null,
+        interval: dripFeed ? parseInt(intervalMin, 10) : null,
       });
+
 
       if (!result.ok) {
         if (result.error?.includes("401") || result.error?.includes("Unauthorized")) {
           onRequireAuth?.("login");
+        } else if (result.error?.includes("Insufficient wallet balance")) {
+          setRequiredAmount(total);
+          setMpesaOpen(true);
         } else {
           setOrderError(result.error || "Failed to place order.");
         }
@@ -170,9 +189,22 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       setOrderError("Unexpected error while placing order.");
       setPlacing(false);
     }
-  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable.name]);
+  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable, service, subcategoryName, onRequireAuth, dripFeed, runs, intervalMin, isAnonymous, phoneNumber]);
 
-  const isValid = link.trim().length > 0 && quantityNum >= qtyMin && quantityNum <= qtyMax;
+  const isValid =
+    link.trim().length > 0 &&
+    quantityNum >= qtyMin &&
+    quantityNum <= qtyMax &&
+    (!dripFeed ||
+      (dripFeedLimits.enabled &&
+        parseInt(runs, 10) >= dripFeedLimits.min_runs &&
+        parseInt(runs, 10) <= dripFeedLimits.max_runs &&
+        parseInt(intervalMin, 10) >= dripFeedLimits.min_interval &&
+        parseInt(intervalMin, 10) <= dripFeedLimits.max_interval));
+
+  const displayName = service ? service.name : (deliverable?.name || subcategoryName);
+  const displayNote = service ? service.description : deliverable?.note;
+  const refillText = service ? (service.supports_refill ? "30 Days Refill Guarantee" : "No refill") : "No refill";
 
   return (
     <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
@@ -182,23 +214,20 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         </div>
         <div>
           <p className="text-kenya-white/50 text-xs uppercase tracking-wider">{platformName}</p>
-          <h3 className="text-kenya-white font-bold text-xl">{subcategoryName}</h3>
+          <h3 className="text-kenya-white font-bold text-xl">{displayName}</h3>
         </div>
       </div>
 
-      {deliverable.flag && (
-          <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-3">
-            <p className="text-kenya-red text-xs">{deliverable.flag}</p>
+        {displayNote && (
+          <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3 mb-3">
+            <p className="text-kenya-white/50 text-xs italic">{displayNote}</p>
           </div>
         )}
-        {deliverable.note && (
-          <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-xl p-3">
-            <p className="text-kenya-white/50 text-xs italic">{deliverable.note}</p>
-          </div>
-        )}
-        <div className="space-y-5">
+      <div className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-kenya-white/70 mb-2">🔗 Link</label>
+          <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+            Link / Username
+          </label>
           <input
             type="text"
             required
@@ -210,7 +239,9 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-kenya-white/70 mb-2">🔢 Quantity</label>
+          <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+            Quantity
+          </label>
           <input
             type="number"
             required
@@ -220,27 +251,135 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
             onChange={(e) => setQuantity(e.target.value)}
             placeholder={`Enter quantity (${qtyMin.toLocaleString()} - ${qtyMax.toLocaleString()})`}
             className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:ring-1 transition-all ${
-              quantityError ? "border-kenya-red focus:border-kenya-red focus:ring-kenya-red" : "border-kenya-white/20 focus:border-kenya-green focus:ring-kenya-green"
+              quantityError
+                ? "border-kenya-red focus:border-kenya-red focus:ring-kenya-red"
+                : "border-kenya-white/20 focus:border-kenya-green focus:ring-kenya-green"
             }`}
           />
           {quantityError && <p className="text-kenya-red text-sm mt-2">{quantityError}</p>}
         </div>
 
+        {service && service.supports_drip_feed && (
+          <div className="border-t border-kenya-white/10 pt-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="schedule-delivery-ff"
+                  checked={dripFeed}
+                  onChange={(e) => {
+                    setDripFeed(e.target.checked);
+                    if (!e.target.checked) {
+                      setRuns("");
+                      setIntervalMin("");
+                    }
+                  }}
+                  className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+                />
+                <label htmlFor="schedule-delivery-ff" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
+                  Schedule delivery
+                </label>
+              </div>
+              {dripFeed && <span className="text-xs text-kenya-green bg-kenya-green/10 px-2 py-1 rounded">Enabled</span>}
+            </div>
+            {dripFeed && (
+              <p className="text-kenya-white/50 text-xs mt-2">
+                Your total quantity will be delivered gradually over the scheduled period.
+              </p>
+            )}
+            {dripFeed && (
+              <>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-kenya-white/70 mb-2">Runs</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={runs}
+                    onChange={(e) => setRuns(e.target.value)}
+                    placeholder="Number of delivery runs"
+                    className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                  />
+                  {parseInt(runs, 10) <= 0 && <p className="text-kenya-red text-sm mt-2">Runs must be a positive integer</p>}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-kenya-white/70 mb-2">Interval (minutes)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={intervalMin}
+                    onChange={(e) => setIntervalMin(e.target.value)}
+                    placeholder="Interval between runs"
+                    className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                  />
+                  {parseInt(intervalMin, 10) <= 0 && <p className="text-kenya-red text-sm mt-2">Interval must be a positive integer</p>}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between bg-kenya-black/60 rounded-xl px-5 py-4 border border-kenya-white/10">
           <div>
             <span className="text-kenya-white/70 font-medium block">Total Charge</span>
-            <span className="text-kenya-white/40 text-xs">Wallet balance: KES {walletBalance.toLocaleString()}</span>
+            <span className="text-kenya-white/40 text-xs">Wallet balance: KES {walletBalance != null ? walletBalance.toLocaleString() : "—"}</span>
           </div>
           <div className="flex items-center gap-3">
-            {total > 0 && <span className="text-xs bg-kenya-red text-white font-bold px-2 py-0.5 rounded">-5% Happy Hour</span>}
             <span className="text-2xl font-bold text-kenya-green">KES {total.toFixed(2)}</span>
           </div>
         </div>
 
-        {total > walletBalance && total > 0 && (
+        {user && total > walletBalance && total > 0 && (
           <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4 flex items-center gap-3">
             <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
-            <p className="text-kenya-white/80 text-sm">Insufficient wallet balance. Click Place Order to top up via M-Pesa.</p>
+            <p className="text-kenya-white/80 text-sm">Insufficient wallet balance. Top up via M-Pesa to complete this order.</p>
+          </div>
+        )}
+
+        {!user && allowAnonymous && service && (
+          <div className="border-t border-kenya-white/10 pt-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="anonymous-checkout"
+                checked={isAnonymous}
+                onChange={(e) => {
+                  setIsAnonymous(e.target.checked);
+                  if (!e.target.checked) {
+                    setPhoneNumber("");
+                  }
+                }}
+                className="w-4 h-4 rounded border-kenya-white/20 bg-kenya-black text-kenya-green focus:ring-kenya-green"
+              />
+              <label htmlFor="anonymous-checkout" className="text-sm font-medium text-kenya-white/70 cursor-pointer">
+                Place order as guest (no account needed)
+              </label>
+            </div>
+
+            {isAnonymous && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-kenya-white/70 mb-2">
+                    Phone Number (for M-Pesa)
+                  </label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="07XXXXXXXX or 01XXXXXXXX"
+                    className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+                  />
+                </div>
+                <div className="bg-kenya-green/5 border border-kenya-green/20 rounded-xl p-4 flex items-start gap-3">
+                  <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain mt-0.5" />
+                  <p className="text-kenya-white/80 text-xs">
+                    You will receive an M-Pesa STK push for KES {Math.max(50, total).toFixed(2)}.
+                    The exact order cost is KES {total.toFixed(2)}.
+                    M-Pesa requires a minimum payment of KSh 50.
+                    Your order will be processed for the exact amount shown above.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -258,14 +397,22 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
 
         <button
           onClick={handlePlaceOrder}
-          disabled={!isValid || placing}
+          disabled={!isValid || placing || anonymousPlacing}
           className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2"
         >
-          {placing ? "Placing Order…" : "🛒 Place Order"}
+          {placing || anonymousPlacing ? "Processing…" : !user && isAnonymous ? "Place & Pay (Guest)" : "Place Order"}
         </button>
       </div>
 
-      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
+      <MpesaModal
+        isOpen={mpesaOpen}
+        onClose={() => setMpesaOpen(false)}
+        requiredAmount={requiredAmount}
+        onSuccess={() => {
+          setMpesaOpen(false);
+          handlePlaceOrder();
+        }}
+      />
     </div>
   );
 }

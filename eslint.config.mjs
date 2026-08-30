@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Node.js utility scripts (CommonJS)
     "scripts/**",
+    ".recon_src/**",
   ]),
 ]);
 

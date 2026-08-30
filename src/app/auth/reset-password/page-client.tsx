@@ -6,11 +6,38 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
+import SetPasswordForm from "./SetPasswordForm";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
+import { useSearchParams } from "next/navigation";
 
 export default function ResetPasswordClient() {
   const { supabaseError } = useAuth();
+  const searchParams = useSearchParams();
+  const token = searchParams?.get("token");
+
+  if (token) {
+    return (
+      <div className="min-h-screen flex bg-kenya-black">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+          <AnnouncementBanner />
+          <LiveTicker />
+          <Header />
+          <main className="flex-1">
+            <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-20">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">Set New Password</h1>
+                <p className="text-kenya-white/60">Enter your new password below</p>
+              </div>
+              <SetPasswordForm token={token} />
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-kenya-black">

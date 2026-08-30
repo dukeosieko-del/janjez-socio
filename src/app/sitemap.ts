@@ -9,7 +9,7 @@ export default function sitemap() {
       priority: 1,
     },
     {
-      url: `${SITE_URL}/order`,
+      url: `${SITE_URL}/services`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
@@ -69,22 +69,10 @@ export default function sitemap() {
       priority: 0.6,
     },
     {
-      url: `${SITE_URL}/orders/all`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
-    {
       url: `${SITE_URL}/instagram-setup-guide`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,
-    },
-    {
-      url: `${SITE_URL}/dashboard`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.7,
     },
   ];
 }

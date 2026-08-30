@@ -1,8 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/components/AuthContext";
+import { KNOWN_PLATFORMS } from "@/lib/service-queries";
+import { normalizeSlug } from "@/lib/janzez-services";
+
+interface IntegrationStatus {
+  provider: string;
+  api_url_configured: boolean;
+  api_key_configured: boolean;
+  provider_balance: { balance: number; currency: string } | null;
+  provider_service_count: number;
+  last_catalog_sync: string | null;
+}
 
 function authHeaders(session: { access_token?: string } | null): Record<string, string> {
   return session?.access_token
@@ -29,9 +40,15 @@ interface OrderShape {
   link?: string;
   quantity?: number;
   amount?: number | string;
+  runs?: number | null;
+  interval?: number | null;
   comments?: string | null;
   status?: string;
   payment_status?: string;
+  janjez_service_id?: string | null;
+  fulfillment_status?: string;
+  provider_status?: string;
+  provider_order_id?: string;
   created_at?: string;
   updated_at?: string;
   profiles?: { email?: string; full_name?: string | null } | null;
@@ -190,6 +207,33 @@ export function OrdersTab() {
       .catch(() => setLoading(false));
   }, []);
 
+  const handleAction = async (orderId: string, action: "cancel" | "refill") => {
+    const headers = { ...authHeaders(session), "Content-Type": "application/json" };
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/actions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action, order_id: orderId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Action result: ${JSON.stringify(data.result)}`);
+        loadOrders();
+      } else {
+        alert(`Error: ${data.error || "Failed to process action"}`);
+      }
+    } catch (err) {
+      alert(`Error: ${err instanceof Error ? err.message : "Failed to process action"}`);
+    }
+  };
+
+  const loadOrders = () => {
+    fetch("/api/admin/orders?limit=50", { headers: authHeaders(session) })
+      .then((r) => r.json())
+      .then((data) => setOrders(data.orders || []))
+      .catch(() => {});
+  };
+
   if (loading) return <div className="text-kenya-white/60 text-sm">Loading orders...</div>;
 
   const rows: TableRow[] = (orders || []).map((o) => [
@@ -197,15 +241,44 @@ export function OrdersTab() {
     o.profiles?.email || "—",
     o.service_name || "—",
     `KES ${Number(o.amount || 0).toFixed(2)}`,
+    o.runs && o.interval ? `${o.runs} runs / ${o.interval} min` : "Instant",
+    o.janjez_service_id ? o.janjez_service_id.slice(0, 8) : "—",
+    o.fulfillment_status || "—",
     o.status || "—",
     o.created_at ? new Date(o.created_at).toLocaleString() : "—",
+    <div key={o.id} className="flex gap-1">
+      {o.fulfillment_status === "processing" && o.provider_order_id && (
+        <>
+          <button
+            onClick={() => { if (confirm("Cancel this order?")) handleAction(o.id, "cancel"); }}
+            className="text-xs px-2 py-1 bg-kenya-red/20 text-kenya-red border border-kenya-red/30 rounded hover:bg-kenya-red/30"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => handleAction(o.id, "refill")}
+            className="text-xs px-2 py-1 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded hover:bg-kenya-white/20"
+          >
+            Refill
+          </button>
+        </>
+      )}
+      {o.fulfillment_status === "cancelled" && (
+        <button
+          onClick={() => handleAction(o.id, "refill")}
+          className="text-xs px-2 py-1 bg-kenya-white/10 text-kenya-white border border-kenya-white/20 rounded hover:bg-kenya-white/20"
+        >
+          Refill
+        </button>
+      )}
+    </div>,
   ]);
 
   return (
     <div>
       <h2 className="text-xl font-bold text-kenya-white mb-4">Orders</h2>
       <DataTable
-        headers={["Order ID", "User", "Service", "Amount", "Status", "Created"]}
+        headers={["Order ID", "User", "Service", "Amount", "Schedule", "Janjez Service", "Fulfillment", "Status", "Created", "Actions"]}
         rows={rows}
       />
       {orders.length === 0 && <p className="text-kenya-white/50 text-sm mt-4">No orders found.</p>}
@@ -289,8 +362,6 @@ export function LedgerTab() {
     </div>
   );
 }
-<<<<<<< ours
-=======
 
 interface ProviderServiceShape {
   id: string;
@@ -1517,4 +1588,3 @@ export function SettingsTab() {
   );
 }
 
->>>>>>> theirs

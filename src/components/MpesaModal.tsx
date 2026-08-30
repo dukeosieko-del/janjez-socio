@@ -8,12 +8,14 @@ import { useAuth } from "./AuthContext";
 interface MpesaModalProps {
   isOpen: boolean;
   onClose: () => void;
+  requiredAmount?: number;
+  onSuccess?: () => void;
 }
 
 const POLL_INTERVAL = 5000;
 const POLL_TIMEOUT = 120000;
 
-export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
+export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess }: MpesaModalProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"input" | "processing" | "success">("input");
@@ -21,6 +23,10 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
   const { session, walletBalance, refreshProfile } = useAuth();
+  const minTopUp = 50;
+  const suggestedAmount = requiredAmount
+    ? Math.max(minTopUp, Math.ceil((requiredAmount - Number(walletBalance || 0)) / 10) * 10)
+    : minTopUp;
 
   const resetAndClose = () => {
     setStep("input");
@@ -34,6 +40,7 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
 
   useEffect(() => {
     if (requiredAmount && requiredAmount > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAmount(requiredAmount.toFixed(2));
     }
   }, [requiredAmount]);
@@ -44,8 +51,8 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
     setStep("processing");
 
     const numAmount = Number(amount);
-    if (numAmount < 100) {
-      setError("Minimum top-up is KES 100");
+    if (numAmount < minTopUp) {
+      setError(`Minimum top-up is KES ${minTopUp}`);
       setStep("input");
       return;
     }
@@ -79,28 +86,34 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
       const token = session.access_token;
 
       const poll = async () => {
-        const statusRes = await fetch(
-          `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
-          {
-            method: "GET",
-            headers: { Authorization: `Bearer ${token}` },
+        try {
+          const statusRes = await fetch(
+            `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
+            {
+              method: "GET",
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+
+          const statusData = await statusRes.json();
+
+          if (statusData.paid) {
+            setTxId(checkoutId.slice(0, 10));
+            setStep("success");
+            await refreshProfile();
+            return;
           }
-        );
 
-        const statusData = await statusRes.json();
+          if (Date.now() - startTime >= POLL_TIMEOUT) {
+            throw new Error("Payment timed out. Please check your phone and try again.");
+          }
 
-        if (statusData.paid) {
-          setTxId(checkoutId.slice(0, 10));
-          setStep("success");
-          await refreshProfile();
-          return;
+          setTimeout(poll, POLL_INTERVAL);
+        } catch (pollErr) {
+          console.error("M-Pesa poll error:", pollErr);
+          setError(pollErr instanceof Error ? pollErr.message : "Payment processing failed. Please try again.");
+          setStep("input");
         }
-
-        if (Date.now() - startTime >= POLL_TIMEOUT) {
-          throw new Error("Payment timed out. Please check your phone and try again.");
-        }
-
-        setTimeout(poll, POLL_INTERVAL);
       };
 
       setTimeout(poll, POLL_INTERVAL);
@@ -165,33 +178,43 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
 
               <div>
                 <label className="block text-sm font-medium text-kenya-white/70 mb-2">
-                  Amount (KES)
+                  {requiredAmount ? "Order Amount (KES)" : "Amount (KES)"}
                 </label>
                 <input
                   type="number"
-                  placeholder="Enter amount (minimum KES 100)"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min="100"
-                  className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all"
+                  placeholder={requiredAmount ? `Required: KES ${requiredAmount.toFixed(2)}` : `Enter amount (minimum KES ${minTopUp})`}
+                  value={requiredAmount ? requiredAmount.toFixed(2) : amount}
+                  onChange={(e) => !requiredAmount && setAmount(e.target.value)}
+                  min={minTopUp}
+                  readOnly={!!requiredAmount}
+                  className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white focus:outline-none focus:ring-1 transition-all ${
+                    requiredAmount
+                      ? "border-kenya-green/30 bg-kenya-green/5 text-kenya-green cursor-not-allowed"
+                      : "border-kenya-white/20 placeholder-kenya-white/30 focus:border-green-500 focus:ring-green-500"
+                  }`}
                 />
+                {requiredAmount && (
+                  <p className="text-xs text-kenya-white/50 mt-1">Amount is calculated from your order and cannot be changed.</p>
+                )}
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
-                {[100, 500, 1000, 5000].map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => setAmount(preset.toString())}
-                    className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                      amount === preset.toString()
-                        ? "bg-kenya-green text-kenya-black"
-                        : "bg-kenya-white/5 text-kenya-white/70 hover:bg-kenya-white/10"
-                    }`}
-                  >
-                    KES {preset.toLocaleString()}
-                  </button>
-                ))}
-              </div>
+              {!requiredAmount && (
+                <div className="grid grid-cols-4 gap-2">
+                  {[suggestedAmount, 100, 500, 1000].filter((v, i, a) => a.indexOf(v) === i).map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => setAmount(preset.toString())}
+                      className={`py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                        amount === preset.toString()
+                          ? "bg-kenya-green text-kenya-black"
+                          : "bg-kenya-white/5 text-kenya-white/70 hover:bg-kenya-white/10"
+                      }`}
+                    >
+                      KES {preset.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
                 <div className="flex items-start gap-3">
@@ -219,7 +242,7 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
 
               <button
                 onClick={handleTopUp}
-                disabled={!phoneNumber || !amount || Number(amount) < 100}
+                disabled={!phoneNumber || !amount || Number(amount) < minTopUp}
                 className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 flex items-center justify-center gap-2"
               >
                 <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />
@@ -257,7 +280,10 @@ export default function MpesaModal({ isOpen, onClose }: MpesaModalProps) {
               Transaction ID: {txId}
             </p>
             <button
-              onClick={resetAndClose}
+              onClick={() => {
+                onSuccess?.();
+                resetAndClose();
+              }}
               className="bg-kenya-green text-kenya-black font-bold py-3 px-8 rounded-xl hover:bg-kenya-green/90 transition-colors"
             >
               Start Ordering

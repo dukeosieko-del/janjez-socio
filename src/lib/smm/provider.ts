@@ -11,6 +11,7 @@ export interface ProviderService {
   max: string;
   refill: boolean;
   cancel: boolean;
+  dripfeed?: boolean;
 }
 
 export interface ProviderOrderResponse {

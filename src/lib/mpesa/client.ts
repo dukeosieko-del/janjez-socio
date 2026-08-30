@@ -190,7 +190,7 @@ export async function completeStkPayment(
 
   const { data: pendingTx, error: findError } = await supabase
     .from("wallet_transactions")
-    .select("user_id, amount")
+    .select("user_id, amount, related_order_id")
     .eq("reference", checkoutRequestId)
     .eq("status", "pending")
     .single();
@@ -216,6 +216,37 @@ export async function completeStkPayment(
     throw new Error(updateError.message);
   }
 
+  let newBalance = 0;
+
+  // For anonymous orders (user_id is NULL), credit wallet is skipped.
+  // Instead, mark the related order as paid and trigger fulfillment.
+  if (pendingTx.user_id === null || pendingTx.user_id === undefined) {
+    if (pendingTx.related_order_id) {
+      const { error: orderUpdateError } = await supabase
+        .from("orders")
+        .update({
+          payment_status: "paid",
+          status: "processing",
+          fulfillment_status: "pending",
+        })
+        .eq("id", pendingTx.related_order_id)
+        .eq("payment_status", "pending_mpesa");
+
+      if (orderUpdateError) {
+        console.error("Failed to update anonymous order payment status:", orderUpdateError.message);
+      }
+
+      // Trigger async fulfillment for anonymous order
+      try {
+        const { fulfillOrder } = await import("@/lib/smm/fulfillment");
+        await fulfillOrder(pendingTx.related_order_id);
+      } catch (fulfillError) {
+        console.error("Anonymous order fulfillment failed:", fulfillError);
+      }
+    }
+    return { newBalance: 0, amount };
+  }
+
   const { data: creditData, error: creditError } = await supabase.rpc("credit_wallet", {
     p_user_id: pendingTx.user_id,
     p_amount: amount,
@@ -227,7 +258,7 @@ export async function completeStkPayment(
     throw new Error(creditError?.message || "Failed to credit wallet");
   }
 
-  const newBalance = Number(creditResult.new_balance) || 0;
+  newBalance = Number(creditResult.new_balance) || 0;
 
   const { error: notifError } = await supabase.from("notifications").insert({
     user_id: pendingTx.user_id,
@@ -248,7 +279,7 @@ export function formatPhoneNumber(phone: string): string {
   return formatPhone(phone);
 }
 
-export function getCallbackUrl(): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
+export function getCallbackUrl(origin?: string): string {
+  const siteUrl = origin || process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
   return `${siteUrl}/api/mpesa/callback`;
 }

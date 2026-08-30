@@ -607,58 +607,6 @@ export const SERVICE_CATALOG: ServiceCatalogItem[] = [
       },
     ],
   },
-  {
-    id: 'snapchat',
-    name: 'Snapchat',
-    icon: '/icons/services/snapchat.svg',
-    href: '/services/snapchat',
-    modalSize: 'small',
-    subcategories: [
-      {
-        name: 'Followers',
-        count: 5,
-        deliverables: [
-          { name: 'Europe', price: '2.50 Ksh' },
-          { name: 'USA', price: '2.80 Ksh' },
-          { name: 'UK', price: '2.60 Ksh' },
-          { name: 'France', price: '2.70 Ksh' },
-          { name: 'Germany', price: '2.65 Ksh' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'linkedin',
-    name: 'LinkedIn',
-    icon: '/icons/services/linkedin.svg',
-    href: '/services/linkedin',
-    modalSize: 'small',
-    subcategories: [
-      {
-        name: 'Connections',
-        count: 2,
-        deliverables: [
-          { name: '30 Connections', price: '5.50 Ksh' },
-          { name: '100 Connections', price: '15.00 Ksh' },
-        ],
-      },
-      {
-        name: 'Followers',
-        count: 2,
-        deliverables: [
-          { name: 'Profile Followers', price: '8.00 Ksh' },
-          { name: 'Company Followers', price: '12.00 Ksh' },
-        ],
-      },
-      {
-        name: 'Post Likes',
-        count: 1,
-        deliverables: [
-          { name: 'Post Likes', price: '3.00 Ksh' },
-        ],
-      },
-    ],
-  },
 ];
 
 export const SERVICE_JOURNEY = [

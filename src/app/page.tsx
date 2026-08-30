@@ -2,7 +2,7 @@ import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import ServiceCatalog from "@/components/ServiceCatalog";
+import ServiceCatalogClient from "@/components/ServiceCatalogClient";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import HomeRedirect from "@/components/HomeRedirect";
@@ -21,7 +21,7 @@ export default function Home() {
 
           <main className="flex-1">
             <Hero />
-            <ServiceCatalog />
+            <ServiceCatalogClient />
           </main>
 
           <Footer />

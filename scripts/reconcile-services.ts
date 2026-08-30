@@ -27,15 +27,15 @@ const PLATFORMS = [
   { file: "instagram.csv", category: "instagram" },
 ];
 
-async function loadCsv(filename) {
+async function loadCsv(filename: string) {
   const filePath = path.join(CLEANED_DIR, filename);
   const content = fs.readFileSync(filePath, "utf-8");
-  const lines = content.trim().splitlines();
+  const lines = content.trim().split("\n");
   const reader = lines.map((line) => line.split(","));
   return reader.slice(1); // skip header
 }
 
-function parseCsvValue(val) {
+function parseCsvValue(val: string | null | undefined) {
   const trimmed = (val || "").trim();
   if (trimmed === "") return null;
   const num = Number(trimmed);
@@ -112,9 +112,9 @@ async function reconcile() {
       const averageTime = (row[7] || "").trim();
       const displayOrder = parseInt(row[8]) || 1;
 
-      const sellingPriceKsh = Number.isFinite(rate) ? rate : null;
-      const minQtyInt = Number.isFinite(minQuantity) ? Math.max(1, Math.floor(minQuantity)) : 1;
-      const maxQtyInt = Number.isFinite(maxQuantity) ? Math.max(minQtyInt, Math.floor(maxQuantity)) : minQtyInt;
+      const sellingPriceKsh = Number.isFinite(rate as number) ? rate : null;
+      const minQtyInt = Number.isFinite(minQuantity as number) ? Math.max(1, Math.floor(minQuantity as number)) : 1;
+      const maxQtyInt = Number.isFinite(maxQuantity as number) ? Math.max(minQtyInt, Math.floor(maxQuantity as number)) : minQtyInt;
 
       const existing = existingByProviderId.get(providerServiceId);
 

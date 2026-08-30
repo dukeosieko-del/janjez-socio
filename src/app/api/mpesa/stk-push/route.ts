@@ -7,7 +7,7 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const rl = rateLimit(request, 20);
+  const rl = rateLimit(request, 5);
   if (!rl.ok && rl.response) return rl.response;
 
   const user = await getUserFromRequest(request);
@@ -18,13 +18,13 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { phoneNumber, amount } = body as { phoneNumber?: string; amount?: number };
 
-  if (!phoneNumber || !amount || amount < 100) {
-    return NextResponse.json({ error: "Valid phone number and amount (min 100 KES) required" }, { status: 400 });
+  if (!phoneNumber || !amount || amount < 50) {
+    return NextResponse.json({ error: "Valid phone number and amount (min 50 KES) required" }, { status: 400 });
   }
 
   const numAmount = Number(amount);
-  if (isNaN(numAmount) || numAmount < 100) {
-    return NextResponse.json({ error: "Invalid amount: minimum is KES 100" }, { status: 400 });
+  if (isNaN(numAmount) || numAmount < 50) {
+    return NextResponse.json({ error: "Invalid amount: minimum is KES 50" }, { status: 400 });
   }
 
   const supabase = createAdminClient();
@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const callbackUrl = getCallbackUrl();
+    const requestUrl = new URL(request.url);
+    const callbackUrl = getCallbackUrl(requestUrl.origin);
     const response = await initiateStkPush({
       phoneNumber,
       amount: numAmount,

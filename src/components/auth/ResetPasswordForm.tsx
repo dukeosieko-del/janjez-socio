@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?: () => void }) {
   const [email, setEmail] = useState("");
@@ -13,23 +12,26 @@ export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?:
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     setSuccess(false);
 
-    const supabase = createClient();
-    if (!supabase) {
-      setError("Supabase not configured");
-      setLoading(false);
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address");
       return;
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+    setLoading(true);
+
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
     });
 
-    if (error) {
-      setError(error.message);
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data?.error || "Failed to send reset link");
     } else {
       setSuccess(true);
       setTimeout(() => router.push("/auth/sign-in"), 2000);

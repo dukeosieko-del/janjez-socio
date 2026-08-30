@@ -14,12 +14,15 @@ interface Order {
   service_id?: string;
   payment_reference?: string;
   amount_paid?: number;
+  runs?: number | null;
+  interval?: number | null;
 
   id: string;
   order_id?: string;
   category?: string;
   subcategory?: string;
   sku_id?: string;
+  janjez_service_id?: string | null;
   link_submitted?: string;
   quantity?: number;
   amount?: number;
@@ -200,6 +203,7 @@ export default function MyOrdersPage() {
                         <th className="px-4 py-3 font-medium">Order</th>
                         <th className="px-4 py-3 font-medium">Date</th>
                         <th className="px-4 py-3 font-medium">Service</th>
+                        <th className="px-4 py-3 font-medium">Janjez ID</th>
                         <th className="px-4 py-3 font-medium">Link</th>
                         <th className="px-4 py-3 font-medium">SKU</th>
                         <th className="px-4 py-3 font-medium text-right">Amount</th>
@@ -246,8 +250,11 @@ export default function MyOrdersPage() {
                               <div className="text-kenya-white/50 text-xs">{order.category || "—"} / {order.subcategory || "—"}</div>
                             </td>
                             <td className="px-4 py-3 text-kenya-white/70 whitespace-nowrap">{created}</td>
-                            <td className="px-4 py-3 text-kenya-white/80">{order.service_name || order.sku_id || "—"}</td>
-                            <td className="px-4 py-3">
+                             <td className="px-4 py-3 text-kenya-white/80">{order.service_name || order.sku_id || "—"}</td>
+                             <td className="px-4 py-3 text-kenya-white/70 font-mono text-xs">
+                               {order.janjez_service_id ? order.janjez_service_id.slice(0, 8) : "—"}
+                             </td>
+                             <td className="px-4 py-3">
                               {order.link_submitted ? (
                                 <a href={order.link_submitted} target="_blank" rel="noreferrer" className="text-kenya-green hover:underline break-all">
                                   {order.link_submitted}
@@ -271,13 +278,18 @@ export default function MyOrdersPage() {
                             </span>
                              </td>
                              <td className="px-4 py-3 text-center">
-                               <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${fulfillmentStyles[fulfillmentStatus] || fulfillmentStyles.pending}`}>
-                                 {fulfillmentStatus}
-                               </span>
-                               {order.provider_order_id && (
-                                 <div className="text-kenya-white/40 text-xs mt-1 font-mono">{order.provider_order_id.slice(0, 8)}</div>
-                               )}
-                             </td>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${fulfillmentStyles[fulfillmentStatus] || fulfillmentStyles.pending}`}>
+                                  {fulfillmentStatus}
+                                </span>
+                                {order.provider_order_id && (
+                                  <div className="text-kenya-white/40 text-xs mt-1 font-mono">{order.provider_order_id.slice(0, 8)}</div>
+                                )}
+                                {order.runs && order.interval && (
+                                  <div className="text-kenya-white/40 text-xs mt-1">
+                                    Drip-feed: {order.runs} runs / {order.interval} min
+                                  </div>
+                                )}
+                              </td>
                            </tr>
                         );
                       })}

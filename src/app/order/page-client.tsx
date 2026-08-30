@@ -18,13 +18,19 @@ export default function OrderPageClient() {
   const anonymous = searchParams.get("mode") === "anonymous";
   const { openAuth } = useAuth();
   const [mpesaOpen, setMpesaOpen] = useState(false);
+  const [requiredAmount, setRequiredAmount] = useState(0);
 
   const handleRequireAuth = (tab: "login" | "register" = "login") => {
     openAuth(tab);
   };
 
-  const handleInsufficientBalance = () => {
+  const handleInsufficientBalance = (amount: number) => {
+    setRequiredAmount(amount);
     setMpesaOpen(true);
+  };
+
+  const handleMpesaSuccess = () => {
+    setMpesaOpen(false);
   };
 
   return (
@@ -54,7 +60,7 @@ export default function OrderPageClient() {
 
         <Footer />
       </div>
-      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} />
+      <MpesaModal isOpen={mpesaOpen} onClose={() => setMpesaOpen(false)} requiredAmount={requiredAmount} onSuccess={handleMpesaSuccess} />
     </div>
   );
 }

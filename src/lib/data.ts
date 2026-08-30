@@ -1,13 +1,14 @@
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { getPlatformSlug, getSubcategorySlug } from "@/lib/service-routes";
+import { getPlatformAvatar } from "@/lib/platform-avatars";
 
 export const PLATFORMS = [
   {
     id: "youtube",
     name: "YouTube",
-    icon: "/youtube-icon.png",
+    icon: getPlatformAvatar("youtube"),
     color: "bg-red-600",
-    href: "/order/youtube",
+    href: "/services/youtube",
     description: "High-retention Views, Monetizable Subscribers, Instant Likes",
     services: [
       { name: "High-retention Views", href: "/order/youtube-views" },
@@ -20,9 +21,9 @@ export const PLATFORMS = [
   {
     id: "whatsapp",
     name: "WhatsApp",
-    icon: "/whatsapp-icon.png",
+    icon: getPlatformAvatar("whatsapp"),
     color: "bg-green-500",
-    href: "/order?category=whatsapp",
+    href: "/services/whatsapp",
     description: "Channel Members, Status Views, Group Engagement Packs",
     services: [
       { name: "Channel Members", href: "/order?category=whatsapp" },
@@ -38,9 +39,9 @@ export const PLATFORMS = [
   {
     id: "instagram",
     name: "Instagram",
-    icon: "/instagram-icon.png",
+    icon: getPlatformAvatar("instagram"),
     color: "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600",
-    href: "/order?category=instagram",
+    href: "/services/instagram",
     description: "Followers [Refill/Country Targeted], Likes, Comments, Reels Views",
     services: [
       { name: "Followers [Refill]", href: "/order?category=instagram" },
@@ -53,9 +54,9 @@ export const PLATFORMS = [
   {
     id: "facebook",
     name: "Facebook",
-    icon: "/facebook-icon.png",
+    icon: getPlatformAvatar("facebook"),
     color: "bg-blue-600",
-    href: "/order?category=facebook",
+    href: "/services/facebook",
     description: "Page Followers, Profile Likes, Post Reactions, Video Views",
     services: [
       { name: "Page Followers", href: "/order?category=facebook" },
@@ -67,9 +68,9 @@ export const PLATFORMS = [
   {
     id: "tiktok",
     name: "TikTok",
-    icon: "/tiktok-icon.png",
+    icon: getPlatformAvatar("tiktok"),
     color: "bg-black border border-kenya-white",
-    href: "/order?category=tiktok",
+    href: "/services/tiktok",
     description: "Views [KES 10 tu promo], Non-Drop Followers, Live Stream Viewers",
     services: [
       { name: "Views [KES 10 tu]", href: "/order?category=tiktok" },
@@ -80,9 +81,9 @@ export const PLATFORMS = [
   {
     id: "telegram",
     name: "Telegram",
-    icon: "/telegram-icon.png",
+    icon: getPlatformAvatar("telegram"),
     color: "bg-sky-500",
-    href: "/order?category=telegram",
+    href: "/services/telegram",
     description: "Channel/Group Members, Post Views, Poll Votes",
     services: [
       { name: "Channel Members", href: "/order?category=telegram" },
@@ -92,11 +93,11 @@ export const PLATFORMS = [
     ],
   },
   {
-    id: "google-maps",
+    id: "google-maps-reviews",
     name: "Google Maps Reviews",
-    icon: "/google-reviews-icon.png",
+    icon: getPlatformAvatar("google-maps-reviews"),
     color: "bg-green-600",
-    href: "/order?category=google-maps",
+    href: "/services/google-maps-reviews",
     description: "5-Star Custom Reviews, Local Guide Feedback, Place Saves & Directions",
     services: [
       { name: "5-Star Custom Reviews", href: "/order?category=google-maps" },
@@ -105,43 +106,17 @@ export const PLATFORMS = [
     ],
   },
   {
-    id: "x-twitter",
+    id: "x",
     name: "X (Twitter)",
-    icon: "/x-icon.png",
+    icon: getPlatformAvatar("x"),
     color: "bg-black border border-kenya-white",
-    href: "/order/x",
+    href: "/services/x",
     description: "Followers, likes, retweets and more",
     services: [
       { name: "X Followers [High Quality]", href: "/order/x" },
       { name: "X Post Likes [Instant]", href: "/order/x" },
       { name: "X Retweets / Reposts", href: "/order/x" },
       { name: "Legacy Twitter Services", href: "/order?category=x-twitter" },
-    ],
-  },
-  {
-    id: "snapchat",
-    name: "Snapchat",
-    icon: "/snapchat-icon.png",
-    color: "bg-yellow-400",
-    href: "/order?category=snapchat",
-    description: "Snapchat Followers, Views, and Engagement",
-    services: [
-      { name: "Snapchat Followers", href: "/order?category=snapchat" },
-      { name: "Snapchat Views", href: "/order?category=snapchat" },
-      { name: "Snapchat Engagement", href: "/order?category=snapchat" },
-    ],
-  },
-  {
-    id: "linkedin",
-    name: "LinkedIn",
-    icon: "/linkedin-icon.png",
-    color: "bg-blue-700",
-    href: "/order?category=linkedin",
-    description: "LinkedIn Connections, Followers, and Post Engagement",
-    services: [
-      { name: "LinkedIn Connections", href: "/order?category=linkedin" },
-      { name: "LinkedIn Followers", href: "/order?category=linkedin" },
-      { name: "LinkedIn Post Likes", href: "/order?category=linkedin" },
     ],
   },
 ];
@@ -1919,8 +1894,8 @@ export const FOOTER_LINKS = {
   support: [
     { label: "👍 Google Reviews", href: "https://www.google.com/search?q=janjez.social" },
     { label: "👍 Facebook Page", href: "https://www.facebook.com/profile.php?id=61592028091844" },
-    { label: "💬 Join WhatsApp Channel", href: "https://wa.me/254101574056" },
-    { label: "🤝 Talk to Us (Direct WhatsApp)", href: "https://wa.me/254101574056" },
+    { label: "💬 Join WhatsApp Channel", href: "https://wa.me/2540117546224" },
+    { label: "🤝 Talk to Us (Direct WhatsApp)", href: "https://wa.me/2540117546224" },
     { label: "📜 Terms of Service", href: "/terms-of-service" },
     { label: "🔒 Privacy Policy", href: "/privacy-policy" },
   ],

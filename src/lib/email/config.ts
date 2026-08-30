@@ -1,13 +1,13 @@
 export const EMAIL_FORWARDING: Record<string, string> = {
-  "hellothad@janjez.social": "omoithaddaeus@gmail.com",
-  "customer@janjez.social": "dukeosieko@gmail.com",
-  "hr@janjez.social": "dukeosieko@gmail.com",
-  "billing@janjez.social": "dukeosieko@gmail.com",
-  "helloduke@janjez.social": "dukeosieko@gmail.com",
-  "affiliate@janjez.social": "dukeosieko@gmail.com",
-  "admin@janjez.social": "dukeosieko@gmail.com",
-  "support@janjez.social": "dukeosieko@gmail.com",
-  "info@janjez.social": "dukeosieko@gmail.com",
+  "hellothad@janjez.social": "osiekoduke@gmail.com",
+  "customer@janjez.social": "osiekoduke@gmail.com",
+  "hr@janjez.social": "osiekoduke@gmail.com",
+  "billing@janjez.social": "osiekoduke@gmail.com",
+  "helloduke@janjez.social": "osiekoduke@gmail.com",
+  "affiliate@janjez.social": "osiekoduke@gmail.com",
+  "admin@janjez.social": "osiekoduke@gmail.com",
+  "support@janjez.social": "osiekoduke@gmail.com",
+  "info@janjez.social": "osiekoduke@gmail.com",
 };
 
 export const EMAIL_ALIASES = Object.keys(EMAIL_FORWARDING);
@@ -28,8 +28,8 @@ export const HELLO_HAD_ADDRESS = `hellothad@${DOMAIN}`;
 export const SITE_NAME = "janjez.social";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
 
-export const SUPPORT_PHONE = "+254 101 574 056";
-export const SUPPORT_WHATSAPP = "https://wa.me/254101574056";
+export const SUPPORT_PHONE = "+254 011 754 6224";
+export const SUPPORT_WHATSAPP = "https://wa.me/2540117546224";
 
 export const EMAIL_DEPARTMENTS = [
   {
