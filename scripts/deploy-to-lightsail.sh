@@ -38,7 +38,7 @@ sleep 5
 # 6. Verify app is running
 echo "🔍 Verifying app status..."
 pm2 status
-curl -s -o /dev/null -w "Homepage HTTP status: %{http_code}\n" https://staging.janjez.social || true
+curl -s -o /dev/null -w "Homepage HTTP status: %{http_code}\n" https://janjez.social || true
 
 # 7. Check if cleaned CSV files exist
 echo "📋 Checking for cleaned CSV files..."
@@ -62,13 +62,13 @@ npx tsx scripts/reconcile-services.ts
 echo ""
 echo "=== Deployment Complete ==="
 echo "Branch: $BRANCH"
-echo "App: https://staging.janjez.social"
+echo "App: https://janjez.social"
 echo ""
 echo "Next steps:"
-echo "1. Verify services page: https://staging.janjez.social/services"
+echo "1. Verify services page: https://janjez.social/services"
 echo "2. Check new platforms:"
-echo "   - https://staging.janjez.social/services/snapchat"
-echo "   - https://staging.janjez.social/services/linkedin"
+echo "   - https://janjez.social/services/snapchat"
+echo "   - https://janjez.social/services/linkedin"
 echo "3. Test anonymous order flow"
 echo "4. Verify admin MappingTab at /admin"
 echo "5. Update JANJEZ_BUILD_STATE.md with reconciliation results"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateOrderCost, calculateProviderCharge, calculateJanjezRevenue, getJanjezSellingPrice, getDripFeedPrice } from "@/lib/pricing";
+import { calculateOrderCost, calculateProviderCharge, calculateJanjezRevenue, getJanjezSellingPrice, getDripFeedPrice, calculateMpesaAmount, SERVICE_CHARGE_KES } from "@/lib/pricing";
 
 describe("pricing", () => {
   describe("calculateOrderCost", () => {
@@ -105,40 +105,12 @@ describe("pricing", () => {
     });
   });
 
-  describe("KSh 50 minimum top-up", () => {
-    it("order cost below KSh 50 requires KSh 50 top-up", () => {
-      const orderCost = 41.1;
-      const minTopUp = 50;
-      const requiredTopUp = Math.max(minTopUp, orderCost);
-      expect(requiredTopUp).toBe(50);
-    });
-
-    it("removes wallet remainder correctly", () => {
-      const orderCost = 41.1;
-      const topUp = 50;
-      const remainder = topUp - orderCost;
-      expect(remainder).toBeCloseTo(8.9, 2);
-    });
-
-    it("order cost above KSh 50 uses exact amount", () => {
-      const orderCost = 205.5;
-      const minTopUp = 50;
-      const requiredTopUp = Math.max(minTopUp, orderCost);
-      expect(requiredTopUp).toBe(205.5);
-    });
-
-    it("forged client price below minimum is rejected server-side", () => {
-      const serverPrice = 41.1;
-      const forgedPrice = 41.1;
-      const tolerance = 0.01;
-      expect(Math.abs(serverPrice - forgedPrice)).toBeLessThanOrEqual(tolerance);
-    });
-
-    it("forged client price significantly different is rejected", () => {
-      const serverPrice = 41.1;
-      const forgedPrice = 999.99;
-      const tolerance = 0.01;
-      expect(Math.abs(serverPrice - forgedPrice)).toBeGreaterThan(tolerance);
+  describe("M-Pesa amount calculation", () => {
+    it("adds KES 7 service charge and rounds up to whole shillings", () => {
+      expect(calculateMpesaAmount(41.1)).toBe(49);
+      expect(calculateMpesaAmount(50)).toBe(57);
+      expect(calculateMpesaAmount(205.5)).toBe(213);
+      expect(calculateMpesaAmount(0)).toBe(7);
     });
   });
 });

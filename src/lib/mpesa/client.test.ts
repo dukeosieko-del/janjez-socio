@@ -48,7 +48,7 @@ describe("mpesa client", () => {
 
   describe("getCallbackUrl", () => {
     it("uses provided origin", () => {
-      expect(client.getCallbackUrl("https://staging.janjez.social")).toBe("https://staging.janjez.social/api/mpesa/callback");
+      expect(client.getCallbackUrl("https://janjez.social")).toBe("https://janjez.social/api/mpesa/callback");
     });
 
     it("falls back to NEXT_PUBLIC_SITE_URL", () => {

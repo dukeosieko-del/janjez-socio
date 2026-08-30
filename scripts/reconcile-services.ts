@@ -77,7 +77,7 @@ async function reconcile() {
 
   const { data: existingServices, error: fetchError } = await admin
     .from("janjez_services")
-    .select("id, provider_service_id, name, category, is_active");
+    .select("id, provider_service_id, name, category, is_active, slug");
 
   if (fetchError) {
     console.error("Failed to fetch existing services:", fetchError);
@@ -102,19 +102,39 @@ async function reconcile() {
   let totalRemoved = 0;
   const servicesToRemove: any[] = [];
 
+  // Build expected slugs/names from source
   const sourceProviderIds = new Set<string>();
+  const sourceSlugs = new Set<string>();
+  const sourceNames = new Set<string>();
   for (const platform of PLATFORMS) {
     const raw = await fetchGitHubRaw(`${platform.branch}/${encodeURIComponent(platform.file)}`);
     const delim = platform.file.endsWith(".tsv") ? "\t" : ",";
     const rows = parseCsv(raw, delim);
     const dataRows = rows.slice(1);
     for (const row of dataRows) {
-      if (row[0]) sourceProviderIds.add(row[0].trim());
+      if (!row[0] || !row[1]) continue;
+      const providerServiceId = row[0].trim();
+      const name = row[1].trim();
+      const category = platform.category;
+      const subcategory = extractSubcategory(name, category);
+      const slug = makeSlug(category, subcategory);
+      sourceProviderIds.add(providerServiceId);
+      sourceSlugs.add(slug);
+      sourceNames.add(name.toLowerCase());
     }
   }
 
   for (const [providerId, svc] of existingByProviderId) {
     if (!sourceProviderIds.has(providerId)) {
+      servicesToRemove.push(svc);
+    }
+  }
+
+  for (const svc of existingServices || []) {
+    if (svc.provider_service_id) continue;
+    const slug = String(svc.slug || "").toLowerCase();
+    const name = String(svc.name || "").toLowerCase();
+    if (!sourceSlugs.has(slug) && !sourceNames.has(name)) {
       servicesToRemove.push(svc);
     }
   }
@@ -225,7 +245,7 @@ async function reconcile() {
 }
 
 function extractSubcategory(name: string, category: string): string {
-  const parts = name.split();
+  const parts = name.split(" ");
   if (parts.length >= 3 && name.includes("|")) {
     const pipeIdx = name.indexOf("|");
     return name.slice(parts[0].length, pipeIdx).replace("|", "").trim();

@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { listJanjezServices } from "@/lib/janzez-services";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
-import { calculateOrderCost } from "@/lib/pricing";
+import { calculateOrderCost, calculateMpesaAmount } from "@/lib/pricing";
 import { getCallbackUrl, initiateStkPush } from "@/lib/mpesa/client";
 
 export const runtime = "nodejs";
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
-    const amountForMpesa = Math.max(50, expectedAmount);
+    const amountForMpesa = calculateMpesaAmount(expectedAmount);
 
     const { data: orderData, error: orderError } = await supabase
       .from("orders")

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const active = searchParams.get("active");
-    const activeOnly = active === "true";
+    const activeOnly = active !== "false";
 
     const services = await listJanjezServices(activeOnly);
     return NextResponse.json({ services, count: services.length });

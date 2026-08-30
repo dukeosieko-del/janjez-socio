@@ -7,7 +7,7 @@ import MpesaModal from "@/components/MpesaModal";
 import { submitOrder, submitAnonymousOrder } from "@/lib/order-log";
 import { JanjezService } from "@/lib/janjez-services";
 import { getDripFeedLimitsSync, type DripFeedLimits } from "@/lib/drip-feed-settings";
-import { calculateOrderCost } from "@/lib/pricing";
+import { calculateOrderCost, calculateMpesaAmount, SERVICE_CHARGE_KES } from "@/lib/pricing";
 
 export interface FulfillmentProps {
   platformId: string;
@@ -372,9 +372,8 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
                 <div className="bg-kenya-green/5 border border-kenya-green/20 rounded-xl p-4 flex items-start gap-3">
                   <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain mt-0.5" />
                   <p className="text-kenya-white/80 text-xs">
-                    You will receive an M-Pesa STK push for KES {Math.max(50, total).toFixed(2)}.
-                    The exact order cost is KES {total.toFixed(2)}.
-                    M-Pesa requires a minimum payment of KSh 50.
+                    You will receive an M-Pesa STK push for KES {calculateMpesaAmount(total).toLocaleString()}.
+                    The exact order cost is KES {total.toFixed(2)} including KES {SERVICE_CHARGE_KES} service charge.
                     Your order will be processed for the exact amount shown above.
                   </p>
                 </div>

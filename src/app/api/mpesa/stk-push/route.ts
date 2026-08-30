@@ -3,6 +3,7 @@ import { initiateStkPush, getCallbackUrl } from "@/lib/mpesa/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { rateLimit } from "@/lib/server/rate-limiter";
+import { calculateMpesaAmount } from "@/lib/pricing";
 
 export const runtime = "nodejs";
 
@@ -18,14 +19,11 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { phoneNumber, amount } = body as { phoneNumber?: string; amount?: number };
 
-  if (!phoneNumber || !amount || amount < 50) {
-    return NextResponse.json({ error: "Valid phone number and amount (min 50 KES) required" }, { status: 400 });
+  if (!phoneNumber || !amount || amount <= 0) {
+    return NextResponse.json({ error: "Valid phone number and positive amount required" }, { status: 400 });
   }
 
-  const numAmount = Number(amount);
-  if (isNaN(numAmount) || numAmount < 50) {
-    return NextResponse.json({ error: "Invalid amount: minimum is KES 50" }, { status: 400 });
-  }
+  const numAmount = calculateMpesaAmount(Number(amount));
 
   const supabase = createAdminClient();
   if (!supabase) {

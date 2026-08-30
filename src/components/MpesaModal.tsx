@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useAuth } from "./AuthContext";
+import { calculateMpesaAmount, SERVICE_CHARGE_KES } from "@/lib/pricing";
 
 interface MpesaModalProps {
   isOpen: boolean;
@@ -22,16 +23,17 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
   const [txId, setTxId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
+  const [chargedAmount, setChargedAmount] = useState<number | null>(null);
   const { session, walletBalance, refreshProfile } = useAuth();
-  const minTopUp = 50;
   const suggestedAmount = requiredAmount
-    ? Math.max(minTopUp, Math.ceil((requiredAmount - Number(walletBalance || 0)) / 10) * 10)
-    : minTopUp;
+    ? calculateMpesaAmount(Math.max(0, requiredAmount - Number(walletBalance || 0)))
+    : SERVICE_CHARGE_KES;
 
   const resetAndClose = () => {
     setStep("input");
     setPhoneNumber("");
     setAmount("");
+    setChargedAmount(null);
     setTxId("");
     setError(null);
     setCheckoutRequestId(null);
@@ -51,11 +53,8 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
     setStep("processing");
 
     const numAmount = Number(amount);
-    if (numAmount < minTopUp) {
-      setError(`Minimum top-up is KES ${minTopUp}`);
-      setStep("input");
-      return;
-    }
+    const mpesaAmount = calculateMpesaAmount(numAmount);
+    setChargedAmount(mpesaAmount);
 
     if (!session?.access_token) {
       setError("Please sign in to top up your wallet");
@@ -70,7 +69,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ phoneNumber, amount: numAmount }),
+        body: JSON.stringify({ phoneNumber, amount: mpesaAmount }),
       });
 
       const initiateData = await initiateRes.json();
@@ -182,10 +181,9 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
                 </label>
                 <input
                   type="number"
-                  placeholder={requiredAmount ? `Required: KES ${requiredAmount.toFixed(2)}` : `Enter amount (minimum KES ${minTopUp})`}
+                  placeholder={requiredAmount ? `Required: KES ${requiredAmount.toFixed(2)}` : "Enter amount"}
                   value={requiredAmount ? requiredAmount.toFixed(2) : amount}
                   onChange={(e) => !requiredAmount && setAmount(e.target.value)}
-                  min={minTopUp}
                   readOnly={!!requiredAmount}
                   className={`w-full bg-kenya-black border rounded-xl px-4 py-3 text-kenya-white focus:outline-none focus:ring-1 transition-all ${
                     requiredAmount
@@ -242,7 +240,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
 
               <button
                 onClick={handleTopUp}
-                disabled={!phoneNumber || !amount || Number(amount) < minTopUp}
+                disabled={!phoneNumber || !amount}
                 className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 flex items-center justify-center gap-2"
               >
                 <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />
@@ -274,7 +272,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
             </div>
             <h3 className="text-xl font-bold text-kenya-white mb-2">Payment Successful!</h3>
             <p className="text-kenya-white/60 text-sm mb-2">
-              KES {Number(amount).toLocaleString()} has been added to your wallet.
+              KES {chargedAmount !== null ? chargedAmount.toLocaleString() : "0"} has been added to your wallet.
             </p>
             <p className="text-kenya-green text-sm font-medium mb-6">
               Transaction ID: {txId}

@@ -286,10 +286,10 @@ describe("POST /api/orders/anonymous - validation", () => {
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data.amount).toBe(41.1);
-    expect(data.amountForMpesa).toBe(50);
+    expect(data.amountForMpesa).toBe(49);
   });
 
-  it("uses KSh 50 minimum for order below 50", async () => {
+  it("adds KES 7 service charge and rounds up for order", async () => {
     mockOrderSuccess();
     const req = mockRequest({
       janjez_service_id: "svc-1",
@@ -299,10 +299,10 @@ describe("POST /api/orders/anonymous - validation", () => {
     });
     const res = await POST(req);
     const data = await res.json();
-    expect(data.amountForMpesa).toBe(50);
+    expect(data.amountForMpesa).toBe(12);
   });
 
-  it("uses exact amount for order above 50", async () => {
+  it("uses exact rounded amount for larger order", async () => {
     mockOrderSuccess();
     const req = mockRequest({
       janjez_service_id: "svc-1",
@@ -312,7 +312,7 @@ describe("POST /api/orders/anonymous - validation", () => {
     });
     const res = await POST(req);
     const data = await res.json();
-    expect(data.amountForMpesa).toBe(205.5);
+    expect(data.amountForMpesa).toBe(213);
   });
 
   it("creates order with user_id NULL", async () => {
