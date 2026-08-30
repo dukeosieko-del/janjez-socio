@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import fs from "fs";
-import path from "path";
+import https from "https";
+import { URL } from "url";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -14,38 +14,67 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
-const CLEANED_DIR = "/tmp/cleaned";
+const REPO = "dukeosieko-del/services-the-only-source-of-truth-";
+
 const PLATFORMS = [
-  { file: "snapchat.csv", category: "snapchat" },
-  { file: "whatsapp.csv", category: "whatsapp" },
-  { file: "linkedin.csv", category: "linkedin" },
-  { file: "telegram.csv", category: "telegram" },
-  { file: "facebook.csv", category: "facebook" },
-  { file: "twitter.csv", category: "x" },
-  { file: "tiktok.csv", category: "tiktok" },
-  { file: "youtube.csv", category: "youtube" },
-  { file: "instagram.csv", category: "instagram" },
+  { branch: "snapchat", file: "snapchat - Sheet1.csv", category: "snapchat" },
+  { branch: "whatsapp", file: "whatsapp - Sheet1.csv", category: "whatsapp" },
+  { branch: "linkedin", file: "linkedin - Sheet1.csv", category: "linkedin" },
+  { branch: "telegram", file: "telegram - Sheet1.csv", category: "telegram" },
+  { branch: "facebook", file: "facebook - Sheet1.csv", category: "facebook" },
+  { branch: "twitter", file: "twitter  - Sheet1.csv", category: "x" },
+  { branch: "tiktok", file: "tiktok dedicated  - Sheet1.csv", category: "tiktok" },
+  { branch: "youtube-dedicated", file: "you tube  - Sheet1.csv", category: "youtube" },
+  { branch: "instagram", file: "instagram - Sheet1 (1).tsv", category: "instagram" },
 ];
 
-async function loadCsv(filename: string) {
-  const filePath = path.join(CLEANED_DIR, filename);
-  const content = fs.readFileSync(filePath, "utf-8");
-  const lines = content.trim().split("\n");
-  const reader = lines.map((line) => line.split(","));
-  return reader.slice(1); // skip header
+function fetchGitHubRaw(path: string): Promise<string> {
+  const url = `https://raw.githubusercontent.com/${REPO}/${path}`;
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        fetchGitHubRaw(new URL(res.headers.location, url).pathname.slice(1)).then(resolve, reject);
+        return;
+      }
+      const chunks: Buffer[] = [];
+      res.on("data", (d) => chunks.push(Buffer.from(d)));
+      res.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
+    }).on("error", reject);
+  });
 }
 
-function parseCsvValue(val: string | null | undefined) {
-  const trimmed = (val || "").trim();
-  if (trimmed === "") return null;
-  const num = Number(trimmed);
-  return Number.isFinite(num) ? num : trimmed;
+function parseCsv(text: string, delimiter = ",") {
+  const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim().split("\n");
+  const rows: string[][] = [];
+  for (const line of lines) {
+    const row: string[] = [];
+    let cell = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          cell += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === delimiter && !inQuotes) {
+        row.push(cell);
+        cell = "";
+      } else {
+        cell += char;
+      }
+    }
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows;
 }
 
 async function reconcile() {
   console.log("=== Starting Reconciliation & Import ===\n");
 
-  // 1. Get existing DB state
   const { data: existingServices, error: fetchError } = await admin
     .from("janjez_services")
     .select("id, provider_service_id, name, category, is_active");
@@ -55,8 +84,8 @@ async function reconcile() {
     process.exit(1);
   }
 
-  const existingByProviderId = new Map();
-  const existingById = new Map();
+  const existingByProviderId = new Map<string, any>();
+  const existingById = new Map<string, any>();
   for (const svc of existingServices || []) {
     if (svc.provider_service_id) {
       existingByProviderId.set(String(svc.provider_service_id), svc);
@@ -71,13 +100,15 @@ async function reconcile() {
   let totalAdded = 0;
   let totalUpdated = 0;
   let totalRemoved = 0;
-  const servicesToRemove = [];
+  const servicesToRemove: any[] = [];
 
-  // 2. Identify orphaned services (in DB but not in any source file)
-  const sourceProviderIds = new Set();
+  const sourceProviderIds = new Set<string>();
   for (const platform of PLATFORMS) {
-    const rows = await loadCsv(platform.file);
-    for (const row of rows) {
+    const raw = await fetchGitHubRaw(`${platform.branch}/${encodeURIComponent(platform.file)}`);
+    const delim = platform.file.endsWith(".tsv") ? "\t" : ",";
+    const rows = parseCsv(raw, delim);
+    const dataRows = rows.slice(1);
+    for (const row of dataRows) {
       if (row[0]) sourceProviderIds.add(row[0].trim());
     }
   }
@@ -90,53 +121,47 @@ async function reconcile() {
 
   console.log(`Orphaned services to remove: ${servicesToRemove.length}`);
 
-  // 3. Process each platform
   for (const platform of PLATFORMS) {
     console.log(`\n--- Processing ${platform.category} ---`);
-    const rows = await loadCsv(platform.file);
+    const raw = await fetchGitHubRaw(`${platform.branch}/${encodeURIComponent(platform.file)}`);
+    const delim = platform.file.endsWith(".tsv") ? "\t" : ",";
+    const rows = parseCsv(raw, delim);
+    const dataRows = rows.slice(1);
     let added = 0;
     let updated = 0;
 
-    for (const row of rows) {
+    for (const row of dataRows) {
       if (!row[0] || !row[1]) continue;
 
       const providerServiceId = row[0].trim();
       const name = row[1].trim();
       const category = platform.category;
-      const subcategory = (row[2] || "").trim() || category;
-      const slug = `${category}-${subcategory}`.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 80);
-      const rate = parseCsvValue(row[3]);
-      const minQuantity = parseCsvValue(row[4]);
-      const maxQuantity = parseCsvValue(row[5]);
-      const refill = (row[6] || "").trim();
-      const averageTime = (row[7] || "").trim();
-      const displayOrder = parseInt(row[8]) || 1;
-
-      const sellingPriceKsh = Number.isFinite(rate as number) ? rate : null;
-      const minQtyInt = Number.isFinite(minQuantity as number) ? Math.max(1, Math.floor(minQuantity as number)) : 1;
-      const maxQtyInt = Number.isFinite(maxQuantity as number) ? Math.max(minQtyInt, Math.floor(maxQuantity as number)) : minQtyInt;
+      const subcategory = extractSubcategory(name, category);
+      const slug = makeSlug(category, subcategory);
+      const rate = parseFloat(row[2] || "0") || 0;
+      const minQuantity = parseInt(row[3]?.replace(/[\s,]/g, "") || "1", 10) || 1;
+      const maxQuantity = parseInt(row[4]?.replace(/[\s,]/g, "") || "1", 10) || minQuantity;
+      const refill = (row[5] || "").trim();
+      const averageTime = (row[6] || "").trim();
 
       const existing = existingByProviderId.get(providerServiceId);
 
       if (existing) {
-        const updates: any = {
-          name,
-          category,
-          subcategory,
-          slug,
-          selling_price_ksh: sellingPriceKsh,
-          min_quantity: minQtyInt,
-          max_quantity: maxQtyInt,
-          supports_refill: refill && refill.toLowerCase().includes("refill"),
-          supports_drip_feed: true,
-          provider_service_id: providerServiceId,
-          display_order: displayOrder,
-          average_time: averageTime || null,
-        };
-
         const { error: updateError } = await admin
           .from("janjez_services")
-          .update(updates)
+          .update({
+            name,
+            category,
+            subcategory,
+            slug,
+            selling_price_ksh: rate,
+            min_quantity: Math.max(1, minQuantity),
+            max_quantity: Math.max(Math.max(1, minQuantity), maxQuantity),
+            supports_refill: /refill/i.test(refill),
+            supports_drip_feed: true,
+            provider_service_id: providerServiceId,
+            average_time: averageTime || null,
+          })
           .eq("id", existing.id);
 
         if (updateError) {
@@ -151,12 +176,11 @@ async function reconcile() {
           subcategory,
           slug,
           provider_service_id: providerServiceId,
-          selling_price_ksh: sellingPriceKsh,
-          min_quantity: minQtyInt,
-          max_quantity: maxQtyInt,
-          supports_refill: refill && refill.toLowerCase().includes("refill"),
+          selling_price_ksh: rate,
+          min_quantity: Math.max(1, minQuantity),
+          max_quantity: Math.max(Math.max(1, minQuantity), maxQuantity),
+          supports_refill: /refill/i.test(refill),
           supports_drip_feed: true,
-          display_order: displayOrder,
           average_time: averageTime || null,
           is_active: true,
           show_sidebar: false,
@@ -179,7 +203,6 @@ async function reconcile() {
     totalUpdated += updated;
   }
 
-  // 4. Remove orphaned services
   console.log(`\n--- Removing ${servicesToRemove.length} orphaned services ---`);
   for (const svc of servicesToRemove) {
     const { error: deleteError } = await admin
@@ -199,6 +222,22 @@ async function reconcile() {
   console.log(`Total updated: ${totalUpdated}`);
   console.log(`Total removed: ${totalRemoved}`);
   console.log(`Final DB count: ${(existingServices?.length || 0) - totalRemoved + totalAdded}`);
+}
+
+function extractSubcategory(name: string, category: string): string {
+  const parts = name.split();
+  if (parts.length >= 3 && name.includes("|")) {
+    const pipeIdx = name.indexOf("|");
+    return name.slice(parts[0].length, pipeIdx).replace("|", "").trim();
+  }
+  if (parts.length >= 3) return parts.slice(1, 4).join(" ");
+  if (parts.length >= 2) return parts[1];
+  return category;
+}
+
+function makeSlug(category: string, subcategory: string): string {
+  const raw = `${category}-${subcategory}`.toLowerCase();
+  return raw.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 }
 
 reconcile().catch((err) => {
