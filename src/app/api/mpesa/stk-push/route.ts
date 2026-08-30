@@ -7,7 +7,7 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const rl = rateLimit(request, 5);
+  const rl = rateLimit(request, 20);
   if (!rl.ok && rl.response) return rl.response;
 
   const user = await getUserFromRequest(request);
