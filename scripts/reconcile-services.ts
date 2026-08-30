@@ -75,7 +75,6 @@ function parseCsv(text: string, delimiter = ",") {
 async function reconcile() {
   console.log("=== FULL RESET: Deleting ALL janjez_services ===\n");
 
-  // 1. Hard delete ALL existing services
   const { data: existingServices, error: fetchError } = await admin
     .from("janjez_services")
     .delete()
@@ -90,9 +89,8 @@ async function reconcile() {
   const deletedCount = existingServices?.length || 0;
   console.log(`Deleted ${deletedCount} existing services\n`);
 
-  // 2. Reimport all services from source of truth
   let totalAdded = 0;
-  let totalUpdated = 0;
+  const seenProviderIds = new Set<string>();
 
   for (const platform of PLATFORMS) {
     console.log(`--- Processing ${platform.category} ---`);
@@ -101,13 +99,14 @@ async function reconcile() {
     const rows = parseCsv(raw, delim);
     const dataRows = rows.slice(1);
     let added = 0;
-    let updated = 0;
 
     for (const row of dataRows) {
       if (!row[0] || !row[1]) continue;
 
       const providerServiceId = row[0].trim();
       const name = row[1].trim();
+      if (!providerServiceId || !name) continue;
+
       const category = platform.category;
       const subcategory = extractSubcategory(name, category);
       const slug = makeSlug(category, subcategory);
@@ -116,6 +115,12 @@ async function reconcile() {
       const maxQuantity = parseInt(row[4]?.replace(/[\s,]/g, "") || "1", 10) || minQuantity;
       const refill = (row[5] || "").trim();
       const averageTime = (row[6] || "").trim();
+
+      if (seenProviderIds.has(providerServiceId)) {
+        console.warn(`  Skipping duplicate provider_service_id: ${providerServiceId}`);
+        continue;
+      }
+      seenProviderIds.add(providerServiceId);
 
       const { error: insertError } = await admin.from("janjez_services").insert({
         name,
@@ -144,16 +149,18 @@ async function reconcile() {
       }
     }
 
-    console.log(`  Added: ${added}, Updated: ${updated}`);
+    console.log(`  Added: ${added}`);
     totalAdded += added;
-    totalUpdated += updated;
   }
+
+  const { count: finalCount } = await admin
+    .from("janjez_services")
+    .select("*", { count: "exact", head: true });
 
   console.log(`\n=== Reconciliation Complete ===`);
   console.log(`Total removed: ${deletedCount}`);
   console.log(`Total added: ${totalAdded}`);
-  console.log(`Total updated: ${totalUpdated}`);
-  console.log(`Final DB count: ${totalAdded}`);
+  console.log(`Final DB count: ${finalCount ?? "unknown"}`);
 }
 
 function extractSubcategory(name: string, category: string): string {
