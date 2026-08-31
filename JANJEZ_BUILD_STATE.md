@@ -2924,8 +2924,8 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - Total `provider_services`: **6,138**
 - Valid mappings: **3,499/3,499 (100%)**
 - All 9 platform routes: **200** ✅
-- Sidebar services (`show_sidebar=true`): **0** ✅
-- Guarded page services (`show_guarded=true`): **0** ✅
+- Sidebar services (`show_sidebar=true`, price ≤1500 KSH): **2,596** ✅
+- Guarded page services (`show_guarded=true`, price ≤3500 KSH): **3,172** ✅
 - Corrupted service names: **0** ✅
 - High prices (>9999 KSH): **0** ✅
 
