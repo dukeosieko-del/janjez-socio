@@ -82,7 +82,7 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
 
   let query = supabase
     .from("janjez_services")
-    .select("*")
+    .select("id, name, slug, category, subcategory, description, selling_price_ksh, provider_service_id, min_quantity, max_quantity, is_active, display_order, supports_drip_feed, supports_refill, supports_cancel, show_sidebar, show_landing, show_guarded, show_anonymous, show_catalogue, created_at, updated_at")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
 
@@ -94,13 +94,24 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
     query = query.eq(placement, true);
   }
 
-  const { data, error } = await query;
-  if (error) {
-    console.error("listJanjezServices error:", error);
-    return [];
+  const all: JanjezService[] = [];
+  let page = 0;
+  const pageSize = 1000;
+  while (true) {
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
+    const { data, error } = await query.range(from, to);
+    if (error) {
+      console.error("listJanjezServices error:", error);
+      return [];
+    }
+    if (!data || data.length === 0) break;
+    all.push(...(data as unknown as JanjezService[]));
+    if (data.length < pageSize) break;
+    page++;
   }
 
-  return (data || []) as unknown as JanjezService[];
+  return all;
 }
 
 export async function getJanjezService(id: string): Promise<JanjezService | null> {

@@ -119,6 +119,32 @@ export const PLATFORMS = [
       { name: "Legacy Twitter Services", href: "/order?category=x-twitter" },
     ],
   },
+  {
+    id: "snapchat",
+    name: "Snapchat",
+    icon: getPlatformAvatar("snapchat"),
+    color: "bg-yellow-400",
+    href: "/services/snapchat",
+    description: "Followers, views, story engagement and more",
+    services: [
+      { name: "Snapchat Followers", href: "/order?category=snapchat" },
+      { name: "Snapchat Views", href: "/order?category=snapchat" },
+      { name: "Snapchat Story Views", href: "/order?category=snapchat" },
+    ],
+  },
+  {
+    id: "linkedin",
+    name: "LinkedIn",
+    icon: getPlatformAvatar("linkedin"),
+    color: "bg-blue-700",
+    href: "/services/linkedin",
+    description: "Connections, followers, post likes and more",
+    services: [
+      { name: "LinkedIn Connections", href: "/order?category=linkedin" },
+      { name: "LinkedIn Followers", href: "/order?category=linkedin" },
+      { name: "LinkedIn Post Likes", href: "/order?category=linkedin" },
+    ],
+  },
 ];
 
 export const ORDER_SERVICES = [
