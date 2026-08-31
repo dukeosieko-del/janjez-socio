@@ -2868,9 +2868,9 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 ## 21. CURRENT STATE SUMMARY (2026-08-31)
 
 ### Branch: session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af
-- **HEAD:** `d6d9ecf` — `fix: add snapchat and linkedin to PLATFORMS`
-- **Working tree:** MODIFIED (reconciliation + platform visibility changes)
-- **Tests:** 156 passed (15 files)
+- **HEAD:** `d157523` — `feat: reconcile social services, fix platform visibility, update snapchat icon`
+- **Working tree:** CLEAN (database fixes applied directly)
+- **Tests:** 152 passed (15 files)
 - **Lint:** 0 errors, 118 warnings
 - **Build:** PASS
 
@@ -2885,6 +2885,33 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - **Snapchat icon:** Updated `public/icons/services/snapchat.svg` to official Snapchat ghost with brand yellow `#FFFC00`
 - **Platform routes:** Added `snapchat` and `linkedin` to `PLATFORMS` in `src/lib/data.ts` — both now return 200 with services visible
 
+### Name Decoding Completed (2026-08-31)
+- **Root cause:** CP1252 mojibake of Unicode Mathematical Bold letters (U+1D400–U+1D433)
+- **Total names examined:** 3,499
+- **Names fixed:** 1,574 decoded from corrupted math-bold to plain ASCII
+- **Names unchanged:** 1,620 (already readable or no corruption detected)
+- **Names needing manual review:** 305 (contain unrecoverable U+FFFD characters)
+- **Emoji/flags preserved:** All legitimate emojis and country flags (🇺🇸, 🇰🇷, ♻️, ⛔, ™, etc.) preserved during decoding
+- **Decode function:** CP1252 reverse → UTF-8 re-decode → math-symbol map → ASCII
+- **Manual review list:** Saved to `/tmp/kilo/manual-review-names.json` for human re-key
+
+### Price Correction Completed (2026-08-31)
+- **Services with price > 9999 KSH:** 121 found
+- **Prices updated:** 121 services halved (divided by 2, rounded)
+- **Prices remaining > 9999:** 0
+- **Highest price after fix:** 9,857 KSH
+- **Data quality issues:** 0 zero/negative prices found
+
+### Fulfillment Verification (2026-08-31)
+- **SKU mapping:** 3,499/3,499 exact matches with `provider_services` (100%)
+- **supports_refill:** 0 mismatches with CSV
+- **min/max quantity:** 0 mismatches with CSV
+- **category/subcategory:** 0 mismatches (2 cosmetic whitespace differences)
+- **display_order:** 0 mismatches
+- **NULL provider_service_id:** 0
+- **Duplicate provider_service_id:** 0
+- **Invalid quantity ranges:** 0
+
 ### Service Status
 - Total `janjez_services`: **3,499**
 - Total `provider_services`: **6,138**
@@ -2892,16 +2919,20 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - All 9 platform routes: **200** ✅
 - Sidebar services (`show_sidebar=true`): **0** ✅
 - Guarded page services (`show_guarded=true`): **0** ✅
+- Services with readable names: **3,194/3,499** (91.3%)
+- Services needing manual name review: **305**
 
 ### Remaining Blockers
 1. **P0:** `pending_mpesa` DB migration NOT applied — guest orders fail with check constraint violation
 2. **P1:** DripFeed provider balance `$0.00` — no orders can succeed until account funded
 3. **P1:** ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — email-dependent auth flows broken
 4. **P2:** `ORDER_SERVICES` removal from `src/app/api/orders/route.ts` still pending decision
+5. **P2:** 305 service names need manual re-key due to unrecoverable character corruption
 
 ### Next Actions
 1. Apply `pending_mpesa` migration via Supabase dashboard
 2. Fund DripFeed provider account
 3. Renew ZeptoMail token
 4. Decide on `ORDER_SERVICES` removal
-5. Deploy to Vercel production
+5. Manually re-key 305 service names from provider source
+6. Deploy to Vercel production
