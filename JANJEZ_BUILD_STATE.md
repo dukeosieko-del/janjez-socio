@@ -2895,6 +2895,13 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - **Decode function:** CP1252 reverse → UTF-8 re-decode → math-symbol map → ASCII
 - **Final verification:** 0 corrupted names remaining in database
 
+### Subcategory Decoding Completed (2026-08-31)
+- **Root cause:** Same CP1252 mojibake as service names
+- **Total subcategories examined:** 3,499
+- **Subcategories fixed:** 977 via direct decode + 35 via reconstruction from service names = 1,012 total
+- **Subcategories unchanged:** 2,487
+- **Final verification:** 0 corrupted subcategories remaining in database
+
 ### Price Correction Completed (2026-08-31)
 - **Services with price > 9999 KSH:** 121 found
 - **Prices updated:** 121 services halved (divided by 2, rounded)
