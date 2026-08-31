@@ -86,4 +86,64 @@ describe("mpesa client", () => {
       expect(params.amount).toBe(500);
     });
   });
+
+  describe("initiateStkPush error handling", () => {
+    it("throws M-Pesa error message from response body on 400", async () => {
+      const tokenFetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          text: async () => JSON.stringify({ access_token: "test_token", expires_in: 3600 }),
+          json: async () => ({ access_token: "test_token", expires_in: 3600 }),
+        } as unknown as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          text: async () => JSON.stringify({ errorMessage: "Invalid phone number" }),
+          json: async () => ({}),
+        } as unknown as Response);
+
+      await expect(
+        client.initiateStkPush({
+          phoneNumber: "0712345678",
+          amount: 100,
+          callbackUrl: "https://test.com/callback",
+        })
+      ).rejects.toThrow("Invalid phone number");
+
+      tokenFetchMock.mockRestore();
+    });
+
+    it("falls back to statusText when response body is empty", async () => {
+      const tokenFetchMock = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          text: async () => JSON.stringify({ access_token: "test_token", expires_in: 3600 }),
+          json: async () => ({ access_token: "test_token", expires_in: 3600 }),
+        } as unknown as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          text: async () => "",
+          json: async () => ({}),
+        } as unknown as Response);
+
+      await expect(
+        client.initiateStkPush({
+          phoneNumber: "0712345678",
+          amount: 100,
+          callbackUrl: "https://test.com/callback",
+        })
+      ).rejects.toThrow("Bad Request");
+
+      tokenFetchMock.mockRestore();
+    });
+  });
 });

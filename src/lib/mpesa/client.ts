@@ -112,7 +112,7 @@ export async function initiateStkPush(params: StkPushParams): Promise<StkPushRes
     Password: password,
     Timestamp: timestamp,
     TransactionType: "CustomerPayBillOnline",
-    Amount: params.amount,
+    Amount: Math.round(params.amount),
     PartyA: phone,
     PartyB: shortCode,
     PhoneNumber: phone,
@@ -132,7 +132,19 @@ export async function initiateStkPush(params: StkPushParams): Promise<StkPushRes
   });
 
   if (!res.ok) {
-    throw new Error(`M-Pesa STK push failed: ${res.status} ${res.statusText}`);
+    const errorText = await res.text();
+    let errorJson: Record<string, unknown> = {};
+    try {
+      errorJson = JSON.parse(errorText);
+    } catch {
+      // ignore parse error
+    }
+    const message =
+      (errorJson as { errorMessage?: string; errorCode?: string }).errorMessage ||
+      (errorJson as { message?: string }).message ||
+      errorText ||
+      res.statusText;
+    throw new Error(`M-Pesa STK push failed: ${res.status} ${message}`);
   }
 
   return (await res.json()) as StkPushResponse;

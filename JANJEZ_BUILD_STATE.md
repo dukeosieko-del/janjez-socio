@@ -2929,6 +2929,16 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - Corrupted service names: **0** ✅
 - High prices (>9999 KSH): **0** ✅
 
+### M-Pesa STK Push Fix (2026-08-31)
+- **Issue:** STK push returned `400 Bad Request` with no actionable error details
+- **Root cause:** `src/lib/mpesa/client.ts` discarded the M-Pesa response body on failure, so the real `errorMessage` was lost; additionally `Amount` was not explicitly rounded to an integer before sending
+- **Fix applied:**
+  - Parse and include M-Pesa `errorMessage` in the thrown error
+  - Fall back to `statusText` when the body is empty
+  - Force `Amount: Math.round(params.amount)` in the STK push request body
+- **Tests updated:** `src/lib/mpesa/client.test.ts` — added 2 tests for 400 error handling and fallback behavior
+- **Tests:** 154 passed
+
 ### Remaining Blockers
 1. **P0:** `pending_mpesa` DB migration NOT applied — guest orders fail with check constraint violation
 2. **P1:** DripFeed provider balance `$0.00` — no orders can succeed until account funded
