@@ -2945,6 +2945,14 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 3. **P1:** ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid — email-dependent auth flows broken
 4. **P2:** `ORDER_SERVICES` removal from `src/app/api/orders/route.ts` still pending decision
 
+### Happy Hour Fix (2026-08-31)
+- **Issue:** Happy Hour button returned no services because it filtered on `supports_drip_feed=true`, which was `false` for all 3,499 imported services
+- **Fix applied:**
+  - Changed `src/app/api/services/happy-hour/route.ts` to query `show_catalogue=true` instead of `supports_drip_feed=true`
+  - Happy Hour now randomly selects from actual catalogue services
+- **Tests updated:** `src/app/api/services/happy-hour/route.test.ts` — added test verifying `show_catalogue=true` filter
+- **Tests:** 155 passed
+
 ### Next Actions
 1. Apply `pending_mpesa` migration via Supabase dashboard
 2. Fund DripFeed provider account

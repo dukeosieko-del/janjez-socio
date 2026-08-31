@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       .from("janjez_services")
       .select("id, name, slug, category, subcategory, is_active, supports_drip_feed")
       .eq("is_active", true)
-      .eq("supports_drip_feed", true)
+      .eq("show_catalogue", true)
       .order("id", { ascending: false });
 
     if (error) {
