@@ -26,7 +26,7 @@ interface AuthContextType {
   openAuth: (tab?: "login" | "register") => void;
   closeAuth: () => void;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
-  customSignUp: (email: string, password: string, full_name?: string, phone?: string) => Promise<{ error: Error | null; message?: string }>;
+  customSignUp: (email: string, password: string, full_name?: string, phone?: string, username?: string) => Promise<{ error: Error | null; message?: string }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -342,12 +342,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
-  const customSignUp = async (email: string, password: string, full_name?: string, phone?: string) => {
+  const customSignUp = async (email: string, password: string, full_name?: string, phone?: string, username?: string) => {
     try {
       const res = await fetchWithTimeout("/api/auth/send-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, full_name, phone }),
+        body: JSON.stringify({ email, password, full_name, phone, username }),
       });
 
       const data = await res.json();

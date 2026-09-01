@@ -95,6 +95,60 @@ describe("POST /api/auth/send-verification", () => {
     expect(data.error).toBe("Password must be at least 6 characters");
   });
 
+  it("rejects invalid username", async () => {
+    const req = mockRequest({ email: "test@example.com", password: "password123", username: "A!" });
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(400);
+    expect(data.error).toContain("Username must be");
+  });
+
+  it("rejects username that is too short", async () => {
+    const req = mockRequest({ email: "test@example.com", password: "password123", username: "ab" });
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(400);
+    expect(data.error).toContain("Username must be");
+  });
+
+  it("creates new user with username and updates profile", async () => {
+    mockAdminClient.auth.admin.listUsers.mockResolvedValue({ data: { users: [] } });
+    mockAdminClient.auth.admin.createUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "test@example.com" } },
+      error: null,
+    });
+    mockAdminClient.from.mockReturnValue(
+      makeChainable({
+        update: vi.fn(() => makeChainable({ eq: vi.fn(() => makeChainable({ error: null })) })),
+      })
+    );
+
+    const req = mockRequest({ email: "test@example.com", password: "password123", username: "john_doe" });
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(true);
+    expect(mockAdminClient.auth.admin.createUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_metadata: expect.objectContaining({ username: "john_doe" }),
+      })
+    );
+  });
+
+  it("creates new user without username", async () => {
+    mockAdminClient.auth.admin.listUsers.mockResolvedValue({ data: { users: [] } });
+    mockAdminClient.auth.admin.createUser.mockResolvedValue({
+      data: { user: { id: "user-123", email: "test@example.com" } },
+      error: null,
+    });
+
+    const req = mockRequest({ email: "test@example.com", password: "password123" });
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(true);
+  });
+
   it("creates new user and sends verification", async () => {
     mockAdminClient.auth.admin.listUsers.mockResolvedValue({ data: { users: [] } });
     mockAdminClient.auth.admin.createUser.mockResolvedValue({

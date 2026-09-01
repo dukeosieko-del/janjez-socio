@@ -3,8 +3,10 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 
 export default function SignUpForm() {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -14,11 +16,22 @@ export default function SignUpForm() {
   const { customSignUp } = useAuth();
   const router = useRouter();
 
+  const handleUsernameChange = (value: string) => {
+    const cleaned = value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30);
+    setUsername(cleaned);
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    if (username && (username.length < 3 || !/^[a-z0-9_]+$/.test(username))) {
+      setError("Username must be 3-30 characters, lowercase letters, numbers, and underscores only");
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -32,7 +45,7 @@ export default function SignUpForm() {
       return;
     }
 
-    const { error, message } = await customSignUp(email, password);
+    const { error, message } = await customSignUp(email, password, undefined, undefined, username || undefined);
     if (error) {
       setError(error.message);
       setLoading(false);
@@ -44,8 +57,18 @@ export default function SignUpForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
+    <>
+      <GoogleAuthButton />
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-kenya-white/10"></div>
+        </div>
+        <div className="relative flex justify-center text-xs text-kenya-white/50">
+          <span className="px-2 bg-kenya-black">OR SIGN UP WITH EMAIL</span>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
         <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
           <p className="text-kenya-red text-sm">{error}</p>
         </div>
@@ -55,6 +78,17 @@ export default function SignUpForm() {
           <p className="text-kenya-green text-sm">{success}</p>
         </div>
       )}
+      <div>
+        <label className="block text-sm font-medium text-kenya-white/70 mb-2">Username</label>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => handleUsernameChange(e.target.value)}
+          className="w-full bg-kenya-black border border-kenya-white/20 rounded-xl px-4 py-3 text-kenya-white placeholder-kenya-white/30 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green transition-all"
+          placeholder="your_username"
+        />
+        <p className="text-xs text-kenya-white/40 mt-1">3-30 chars, lowercase letters, numbers, underscores</p>
+      </div>
       <div>
         <label className="block text-sm font-medium text-kenya-white/70 mb-2">Email</label>
         <input
@@ -95,6 +129,7 @@ export default function SignUpForm() {
       >
         {loading ? "Creating account..." : "Sign Up"}
       </button>
-    </form>
+      </form>
+    </>
   );
 }

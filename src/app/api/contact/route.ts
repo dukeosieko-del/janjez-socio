@@ -86,6 +86,19 @@ export async function POST(request: NextRequest) {
       console.error("Mail delivery failed:", mailError);
     }
 
+    if (!mailSent) {
+      return NextResponse.json(
+        {
+          ok: false,
+          mailSent: false,
+          error: "We're having trouble sending your message right now. Please try again in a few minutes or email us directly.",
+          departmentEmail: forwardTo,
+          supportEmail: SUPPORT_ADDRESS,
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       mailSent,

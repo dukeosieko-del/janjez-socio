@@ -2988,10 +2988,75 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
   - 2 FAILs fixed (admin SELECT policy + matcher typos); 5 hardening notes recorded (CSP `unsafe-inline/eval`, `X-XSS-Protection` deprecation, password_reset_tokens admin-role access is broader than service-role-only intent, first-admin seeding commented out, `sync_email_verified` doesn't handle revocation)
 - **Tests:** 161 passed (16 files; +6 profile tests, 0 lint errors)
 
+### Brevo SMTP Migration (2026-09-01)
+- **Commit:** `354d323 feat(email): migrate from ZeptoMail to Brevo SMTP via nodemailer`
+- **What changed:**
+  - Added `nodemailer@9.1.0` + `@types/nodemailer@8.0.1`; removed all ZeptoMail code
+  - New centralized transport: `src/lib/email/mailer.ts` (nodemailer SMTP, cached transporter, `sendEmail()` + `verifyMailer()`)
+  - Refactored `src/lib/email/templates.ts`: WELCOME, VERIFICATION, PASSWORD_RESET, PASSWORD_RESET_CONFIRMATION (plus retained contact templates)
+  - Migrated 5 endpoints to `sendEmail()`:
+    - `POST /api/auth/send-verification` (signup + resend)
+    - `GET /api/auth/verify-email` — now also sends WELCOME after `email_confirm: true`
+    - `POST /api/auth/reset-password` (custom token, 1h expiry, atomic consume)
+    - `POST /api/auth/set-password` — now also sends PASSWORD_RESET_CONFIRMATION
+    - `POST /api/contact` (admin notify + user confirmation; 503 on SMTP fail instead of silent `mailSent:false`)
+  - Deleted `src/lib/email/transport.ts` (old Brevo HTTP-API transport)
+  - Deleted `archived/zeptomail/` (legacy SDK; was already excluded from build)
+  - `.env` cleaned: removed duplicate/garbled BREVO_FROM_EMAIL and BREVO_API_KEY entries; appended clean Brevo SMTP block
+  - `.env.example`: documented Brevo SMTP env vars (placeholders only, no real credentials)
+- **Auth system:** Supabase Auth with custom `password_reset_tokens` table; recovery flow is application-controlled (not Supabase's built-in `resetPasswordForEmail`); 32-byte hex tokens, 60-min expiry, atomic `.update({used:true}).eq('used',false)` in `consumeResetToken()`.
+- **Welcome email flow:** Sent by `verify-email` route AFTER `supabase.auth.admin.updateUserById({email_confirm: true})` succeeds. Failure is logged but does not block verification.
+- **Reset confirmation flow:** Sent by `set-password` route AFTER `consumeResetToken()` + `setPassword()` succeed. Failure is logged but does not block the password change.
+- **Tests:** 165 passed (16 files; +4 username tests; 0 lint errors)
+- **Build:** PASS
+- **Live integration test results (2026-09-01 18:51):**
+  - `GET /`, `/auth/sign-in`, `/auth/sign-up`, `/auth/reset-password` → 200 ✓
+  - `GET /api/auth/verify-email?token=fake` → 307 to `?error=invalid_token` ✓
+  - `POST /api/auth/send-verification` → 500 (SMTP blocked)
+  - `POST /api/auth/reset-password` → 200 (silent SMTP failure)
+  - `POST /api/contact` → was 200 with `mailSent:false`; **now 503 with friendly error**
+
+### Username Field (2026-09-01)
+- **Migration:** `supabase/migrations/20250101000026_add_username_to_profiles.sql`
+  - Adds `username TEXT` column to `public.profiles`
+  - Case-insensitive UNIQUE INDEX on `LOWER(username) WHERE username IS NOT NULL`
+  - CHECK constraint: 3-30 chars, `^[a-z0-9_]+$`
+  - RLS: users can update own row, authenticated users can read
+  - All idempotent (IF NOT EXISTS / DROP IF EXISTS)
+- **API:** `POST /api/auth/send-verification` accepts optional `username` field
+  - Validates 3-30 chars, lowercase alphanumeric + underscore
+  - Stored in `auth.users.user_metadata.username` and copied to `profiles.username`
+- **UI:** New "Username" input on signup form (`src/components/auth/SignUpForm.tsx`)
+  - Above email field, with help text and live lowercase filtering
+  - Forwarded via `customSignUp(email, password, full_name, phone, username)`
+- **Tests:** +4 (invalid format, too short, valid signup-with-username, idempotency)
+
+### Remaining Blockers
+1. **P0 (external):** Brevo SMTP IP allowlist blocks EC2 instance — `525 5.7.1 Unauthorized IP address` from `smtp-relay.brevo.com:587`. EC2 public IP `3.7.231.161` must be added at `app.brevo.com > Settings > Senders & IP > Authorized IPs`. Until this is done, ALL transactional email (signup verification, password reset, password reset confirmation, welcome, contact) will fail at the SMTP layer.
+2. **P0 (DB):** `pending_mpesa` migration NOT applied — guest orders fail with check constraint violation
+3. **P0 (DB):** `20250101000024_password_reset_tokens.sql` and `20250101000025_profiles_admin_policies.sql` NOT applied — admin profile access broken
+4. **P0 (DB):** `20250101000026_add_username_to_profiles.sql` NOT applied — username column doesn't exist yet
+5. **P1:** DripFeed provider balance `$0.00` — no orders can succeed until account funded
+6. **P2:** `ORDER_SERVICES` removal from `src/app/api/orders/route.ts` still pending decision
+7. **P3:** Old "Renew ZeptoMail token" blocker **CLOSED** — ZeptoMail completely removed, Brevo SMTP is the new transport (pending IP allowlist for actual delivery)
+
 ### Next Actions
-1. Apply `pending_mpesa` migration via Supabase dashboard
-2. Apply `20250101000024_password_reset_tokens.sql` and `20250101000025_profiles_admin_policies.sql` via Supabase dashboard
-3. Fund DripFeed provider account
-4. Renew ZeptoMail/Brevo token (transport was switched to Brevo; verify key configured)
-5. Decide on `ORDER_SERVICES` removal
-6. Deploy to Vercel production
+1. **Authorize EC2 IP `3.7.231.161` in Brevo dashboard** (highest priority — unblocks all email)
+2. Apply `pending_mpesa` migration via Supabase dashboard
+3. Apply `20250101000024`, `20250101000025`, `20250101000026` migrations via Supabase dashboard
+4. Fund DripFeed provider account
+5. Verify `BREVO_FROM_EMAIL=info@janjez.social` is a verified sender in Brevo
+6. Decide on `ORDER_SERVICES` removal
+7. Deploy to Vercel production
+
+### Build State Snapshot
+- **Latest commit:** `354d323 feat(email): migrate from ZeptoMail to Brevo SMTP via nodemailer`
+- **Tests:** 165 passed (16 files)
+- **Lint:** 0 errors, 120 warnings (pre-existing, all unused-vars)
+- **Build:** PASS
+- **PM2 process:** `0 | janjez-app` online, PID 1220759
+- **Public IP:** `3.7.231.161` (Brevo IP allowlist PENDING)
+- **Auth:** Supabase Auth, custom token tables, admin client
+- **Email:** Brevo SMTP via nodemailer (centralized in `src/lib/email/mailer.ts`)
+- **Database:** Supabase project `snkgkcdnmhqaejpqftxn` (Preview), `rousjavuooduvicaobuv` (Production)
+- **Deployment target:** AWS Lightsail (PM2-managed) + Vercel (pending)

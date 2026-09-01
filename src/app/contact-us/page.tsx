@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import Image from "next/image";
 import { EMAIL_DEPARTMENTS, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_WHATSAPP } from "@/lib/email/config";
+import { fetchJSON } from "@/lib/client/fetchWithTimeout";
 
 export default function ContactUsPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "", department: SUPPORT_ADDRESS });
@@ -23,18 +24,11 @@ export default function ContactUsPage() {
     setFallbackEmail(null);
 
     try {
-      const res = await fetch("/api/contact", {
+      const result = await fetchJSON<{ mailSent?: boolean; departmentEmail?: string; error?: string }>("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to send message");
-      }
-
-      const result = await res.json().catch(() => ({ ok: true, mailSent: true }));
 
       if (!result.mailSent && result.departmentEmail) {
         setFallbackEmail(result.departmentEmail);
@@ -43,7 +37,9 @@ export default function ContactUsPage() {
       setStatus("success");
       setForm({ name: "", email: "", subject: "", message: "", department: form.department });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const raw = err instanceof Error ? err.message : "Something went wrong";
+      const friendly = raw.match(/"error":"([^"]+)"/)?.[1] || "We're having trouble sending your message right now. Please try again in a few minutes.";
+      setError(friendly);
       setStatus("error");
     }
   };
