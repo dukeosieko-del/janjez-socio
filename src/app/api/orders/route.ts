@@ -6,8 +6,14 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { calculateOrderCost } from "@/lib/pricing";
+import { sendEmail } from "@/lib/email/mailer";
+import { getOrderReceivedEmail, getOrderFailedEmail, getLowWalletBalanceEmail } from "@/lib/email/templates";
+import { SITE_URL } from "@/lib/email/config";
 
 export const runtime = "nodejs";
+
+const LOW_BALANCE_THRESHOLD_KES = 100;
+const LOW_BALANCE_DEBOUNCE_MS = 24 * 60 * 60 * 1000;
 
 function validateDripFeedField(value: unknown, field: string): string | null {
   if (value === undefined || value === null) return null;
@@ -18,6 +24,73 @@ function validateDripFeedField(value: unknown, field: string): string | null {
     return `${field} must be greater than 0`;
   }
   return null;
+}
+
+function fireAndForgetEmail(
+  promise: Promise<{ ok: boolean; error?: string }>,
+  label: string
+) {
+  promise
+    .then((result) => {
+      if (!result.ok) {
+        console.error(`[email] ${label} failed:`, result.error);
+      }
+    })
+    .catch((err) => {
+      console.error(`[email] ${label} threw:`, err);
+    });
+}
+
+async function maybeSendLowBalanceEmail(
+  supabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  userId: string,
+  email: string,
+  fullName: string | null,
+  newBalance: number
+) {
+  if (newBalance >= LOW_BALANCE_THRESHOLD_KES) return;
+
+  try {
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("last_low_balance_email_at")
+      .eq("id", userId)
+      .single();
+
+    if (profileErr) {
+      console.error("[email] failed to read low-balance debounce:", profileErr);
+      return;
+    }
+
+    const lastSent = profile?.last_low_balance_email_at
+      ? new Date(profile.last_low_balance_email_at as string).getTime()
+      : 0;
+    if (lastSent && Date.now() - lastSent < LOW_BALANCE_DEBOUNCE_MS) {
+      return;
+    }
+
+    const { subject, html, text } = getLowWalletBalanceEmail({
+      fullName,
+      balance: newBalance,
+      topUpUrl: `${SITE_URL}/pay`,
+    });
+    const result = await sendEmail({
+      to: { address: email, name: fullName || "" },
+      subject,
+      html,
+      text,
+    });
+    if (result.ok) {
+      await supabase
+        .from("profiles")
+        .update({ last_low_balance_email_at: new Date().toISOString() })
+        .eq("id", userId);
+    } else {
+      console.error("[email] low-balance email failed:", result.error);
+    }
+  } catch (err) {
+    console.error("[email] low-balance email threw:", err);
+  }
 }
 
 function calculateExpectedAmount(
@@ -193,6 +266,14 @@ export async function POST(request: NextRequest) {
       }, { status: 402 });
     }
 
+    const newBalance = Number(debitResult.new_balance) || 0;
+    fireAndForgetEmail(
+      maybeSendLowBalanceEmail(supabase, user.id, user.email, null, newBalance).then(
+        () => ({ ok: true })
+      ),
+      "low-wallet-balance"
+    );
+
     const { data, error } = await supabase
       .from("orders")
       .insert({
@@ -264,6 +345,30 @@ export async function POST(request: NextRequest) {
         } catch (refundError) {
           console.error("Wallet refund failed for order", data.id, refundError);
         }
+
+        fireAndForgetEmail(
+          (async () => {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", user.id)
+              .single();
+            const fullName = (profile?.full_name as string | null | undefined) || null;
+            const { subject, html, text } = getOrderFailedEmail({
+              customerName: fullName,
+              orderId: data.order_id || data.id.slice(0, 8),
+              reason: errorMessage,
+              link: sanitizeString(link_submitted, 500),
+            });
+            return sendEmail({
+              to: { address: user.email, name: fullName || "" },
+              subject,
+              html,
+              text,
+            });
+          })(),
+          "order-failed"
+        );
       }
 
       try {
@@ -277,6 +382,32 @@ export async function POST(request: NextRequest) {
       } catch (notifErr) {
         console.error("Failed to create notification for order", data.id, notifErr);
       }
+
+      fireAndForgetEmail(
+        (async () => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .single();
+          const fullName = (profile?.full_name as string | null | undefined) || null;
+          const { subject, html, text } = getOrderReceivedEmail({
+            customerName: fullName,
+            orderId: data.order_id || data.id.slice(0, 8),
+            service: janjezService?.name || subcategory || "Service",
+            quantity: numQuantity,
+            amount: expectedAmount,
+            link: sanitizeString(link_submitted, 500),
+          });
+          return sendEmail({
+            to: { address: user.email, name: fullName || "" },
+            subject,
+            html,
+            text,
+          });
+        })(),
+        "order-received"
+      );
     }
 
     return NextResponse.json({ order: data }, { status: 201 });

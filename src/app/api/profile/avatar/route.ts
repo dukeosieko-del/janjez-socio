@@ -5,7 +5,6 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
-const PNG_SIGNATURE = "iVBORw0KGgo";
 const DATA_URL_RE = /^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/;
 
 export async function POST(request: NextRequest) {

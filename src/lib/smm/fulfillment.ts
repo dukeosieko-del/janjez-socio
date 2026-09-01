@@ -8,6 +8,70 @@ import {
   getProviderBalance,
 } from "./provider";
 import type { ProviderService } from "./provider";
+import { sendEmail } from "@/lib/email/mailer";
+import { getOrderCompletedEmail, getOrderFailedEmail } from "@/lib/email/templates";
+
+function fireAndForgetEmail(
+  promise: Promise<{ ok: boolean; error?: string }>,
+  label: string
+) {
+  promise
+    .then((result) => {
+      if (!result.ok) {
+        console.error(`[email] ${label} failed:`, result.error);
+      }
+    })
+    .catch((err) => {
+      console.error(`[email] ${label} threw:`, err);
+    });
+}
+
+async function maybeSendOrderStatusEmail(
+  supabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  order: { id: string; order_id?: string | null; user_id: string | null; service_name?: string | null; subcategory?: string | null; link_submitted?: string | null; link?: string | null; fulfillment_error?: string | null },
+  prevStatus: string | null,
+  newStatus: string
+) {
+  if (!order.user_id) return;
+  if (newStatus === prevStatus) return;
+
+  try {
+    const { data: authUser } = await supabase.auth.admin.getUserById(order.user_id);
+    const email = authUser?.user?.email;
+    if (!email) return;
+    const profileMeta = (authUser?.user?.user_metadata as { full_name?: string } | undefined) || {};
+    const fullName = profileMeta.full_name || null;
+    const orderLabel = order.order_id || order.id.slice(0, 8);
+    const serviceName = order.service_name || order.subcategory || "Service";
+    const link = order.link_submitted || order.link || "";
+
+    if (newStatus === "fulfilled") {
+      const { subject, html, text } = getOrderCompletedEmail({
+        customerName: fullName,
+        orderId: orderLabel,
+        service: serviceName,
+        link,
+      });
+      fireAndForgetEmail(
+        sendEmail({ to: { address: email, name: fullName || "" }, subject, html, text }),
+        "order-completed"
+      );
+    } else if (newStatus === "failed" || newStatus === "cancelled") {
+      const { subject, html, text } = getOrderFailedEmail({
+        customerName: fullName,
+        orderId: orderLabel,
+        reason: order.fulfillment_error || `Order ${newStatus}`,
+        link,
+      });
+      fireAndForgetEmail(
+        sendEmail({ to: { address: email, name: fullName || "" }, subject, html, text }),
+        "order-failed"
+      );
+    }
+  } catch (err) {
+    console.error("[email] status email lookup threw:", err);
+  }
+}
 
 export async function syncProviderCatalog() {
   const supabase = createAdminClient();
@@ -389,7 +453,7 @@ export async function syncOrderStatuses(orderIds?: string[]) {
 
   let query = supabase
     .from("orders")
-    .select("id, order_id, user_id, provider_order_id, fulfillment_status, provider_status")
+    .select("id, order_id, user_id, provider_order_id, fulfillment_status, provider_status, service_name, subcategory, link_submitted, link, fulfillment_error")
     .not("provider_order_id", "is", null);
 
   if (orderIds && orderIds.length > 0) {
@@ -437,6 +501,12 @@ export async function syncOrderStatuses(orderIds?: string[]) {
     }
 
     await supabase.from("orders").update(updates).eq("id", order.id);
+    fireAndForgetEmail(
+      maybeSendOrderStatusEmail(supabase, order, prevStatus || null, newStatus).then(
+        () => ({ ok: true })
+      ),
+      "order-status-sync"
+    );
     if (unknown) {
       await logFulfillment(supabase, order.id, "status", "unknown_status", null, status, `Unknown provider status: ${status.status}`);
     } else {

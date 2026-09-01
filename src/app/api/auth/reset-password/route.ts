@@ -1,9 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email/mailer";
-import { getPasswordResetEmail } from "@/lib/email/templates";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { sanitizeString } from "@/lib/server/validation";
+import { sendTransactional } from "@/lib/transactional";
 import crypto from "crypto";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,16 +54,15 @@ export async function POST(request: NextRequest) {
     const resetUrl = `${requestUrl.origin}/auth/reset-password?token=${token}`;
     const fullName = (user.user_metadata?.full_name as string | undefined) || null;
 
-    const { subject, html, text } = getPasswordResetEmail({ fullName, resetUrl, expiresInMinutes: 60 });
-
-    const result = await sendEmail({
-      to: { address: sanitizedEmail, name: fullName || "" },
-      subject,
-      html,
-      text,
+    const { emailOk } = await sendTransactional({
+      name: "user.password_reset",
+      userId: user.id,
+      email: sanitizedEmail,
+      fullName,
+      data: { fullName, resetUrl, expiresInMinutes: 60 },
     });
 
-    if (!result.ok) {
+    if (!emailOk) {
       return NextResponse.json({ error: "Failed to send reset email. Please try again later." }, { status: 500 });
     }
 

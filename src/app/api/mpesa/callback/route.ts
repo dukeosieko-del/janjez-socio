@@ -2,6 +2,9 @@ import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { completeStkPayment, StkCallbackMetadata } from "@/lib/mpesa/client";
 import { rateLimit } from "@/lib/server/rate-limiter";
+import { sendEmail } from "@/lib/email/mailer";
+import { getPaymentReceivedEmail } from "@/lib/email/templates";
+import { SITE_URL } from "@/lib/email/config";
 
 export const runtime = "nodejs";
 
@@ -64,7 +67,43 @@ export async function POST(request: NextRequest) {
   const metadata = extractMetadata(body);
 
   try {
-    await completeStkPayment(checkoutRequestID, metadata);
+    const result = await completeStkPayment(checkoutRequestID, metadata);
+    if (result.amount > 0) {
+      try {
+        const { data: pendingTx } = await supabase
+          .from("wallet_transactions")
+          .select("user_id, reference")
+          .eq("reference", checkoutRequestID)
+          .single();
+        const txUserId = pendingTx?.user_id;
+        if (txUserId) {
+          const { data: authUser } = await supabase.auth.admin.getUserById(txUserId);
+          const email = authUser?.user?.email;
+          if (email) {
+            const fullName =
+              ((authUser?.user?.user_metadata as { full_name?: string } | undefined)?.full_name) || null;
+            const { subject, html, text } = getPaymentReceivedEmail({
+              customerName: fullName,
+              amount: result.amount,
+              method: "M-Pesa",
+              reference: pendingTx?.reference || checkoutRequestID,
+              link: `${SITE_URL}/wallet`,
+            });
+            const emailResult = await sendEmail({
+              to: { address: email, name: fullName || "" },
+              subject,
+              html,
+              text,
+            });
+            if (!emailResult.ok) {
+              console.error("[email] payment-received failed:", emailResult.error);
+            }
+          }
+        }
+      } catch (emailErr) {
+        console.error("[email] payment-received threw:", emailErr);
+      }
+    }
   } catch (error) {
     console.error("Failed to complete STK payment:", error);
     await supabase

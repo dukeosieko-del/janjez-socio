@@ -1,10 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email/mailer";
-import { getVerificationEmail } from "@/lib/email/templates";
-import { SITE_NAME, SITE_URL } from "@/lib/email/config";
+import { SITE_URL } from "@/lib/email/config";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { sanitizeString } from "@/lib/server/validation";
+import { sendTransactional } from "@/lib/transactional";
 import crypto from "crypto";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,16 +46,15 @@ async function sendVerificationEmail(
   }
 
   const verifyUrl = `${SITE_URL}/api/auth/verify-email?token=${token}`;
-  const { subject, html, text } = getVerificationEmail({ fullName, verifyUrl, expiresInHours: 24 });
-
-  const result = await sendEmail({
-    to: { address: email, name: fullName || "" },
-    subject,
-    html,
-    text,
+  const { emailOk } = await sendTransactional({
+    name: "user.verify_email",
+    userId,
+    email,
+    fullName,
+    data: { fullName, verifyUrl, expiresInHours: 24 },
   });
 
-  if (!result.ok) {
+  if (!emailOk) {
     return { ok: false, error: "Failed to send verification email" };
   }
   return { ok: true };

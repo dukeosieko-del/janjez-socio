@@ -2,6 +2,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchProviderServices } from "@/lib/smm/provider";
 import { getJanjezSellingPrice } from "@/lib/pricing";
 
+const SERVICES_CACHE = new Map<string, { services: JanjezService[]; timestamp: number }>();
+const SERVICES_CACHE_TTL_MS = 30_000;
+
 export interface JanjezService {
   id: string;
   name: string;
@@ -77,6 +80,12 @@ export async function listProviderServices(params: {
 }
 
 export async function listJanjezServices(activeOnly: boolean = false, placement?: keyof Pick<JanjezService, "show_sidebar" | "show_landing" | "show_guarded" | "show_anonymous" | "show_catalogue">): Promise<JanjezService[]> {
+  const cacheKey = `${activeOnly}:${placement ?? ""}`;
+  const cached = SERVICES_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < SERVICES_CACHE_TTL_MS) {
+    return cached.services;
+  }
+
   const supabase = createAdminClient();
   if (!supabase) return [];
 
@@ -94,7 +103,6 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
     query = query.eq(placement, true);
   }
 
-<<<<<<< ours
   const all: JanjezService[] = [];
   let page = 0;
   const pageSize = 1000;
@@ -112,16 +120,8 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
     page++;
   }
 
+  SERVICES_CACHE.set(cacheKey, { services: all, timestamp: Date.now() });
   return all;
-=======
-  const { data, error } = await query;
-  if (error) {
-    console.error("listJanjezServices error:", error);
-    return [];
-  }
-
-  return (data || []) as unknown as JanjezService[];
->>>>>>> theirs
 }
 
 export async function getJanjezService(id: string): Promise<JanjezService | null> {

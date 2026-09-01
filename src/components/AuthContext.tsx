@@ -311,10 +311,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     if (!supabase) return { error: new Error("Authentication service is temporarily unavailable.") };
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    if (!error && data?.session?.access_token) {
+      try {
+        await fetch("/api/auth/security-alert", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.session.access_token}`,
+          },
+          body: JSON.stringify({}),
+        });
+      } catch (alertError) {
+        console.error("Failed to send security alert:", alertError);
+      }
+    }
     return { error };
   };
 

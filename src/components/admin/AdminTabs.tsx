@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/components/AuthContext";
+import AdminNotifications from "@/components/admin/AdminNotifications";
 import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 import { normalizeSlug } from "@/lib/janzez-services";
+import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 
 interface IntegrationStatus {
   provider: string;
@@ -101,7 +103,7 @@ export function OverviewTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/stats", { headers: authHeaders(session) })
+    fetchWithTimeout("/api/admin/stats", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setStats(data);
@@ -159,7 +161,7 @@ export function UsersTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/users?limit=50", { headers: authHeaders(session) })
+    fetchWithTimeout("/api/admin/users?limit=50", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setUsers(data.users || []);
@@ -198,7 +200,7 @@ export function OrdersTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/orders?limit=50", { headers: authHeaders(session) })
+    fetchWithTimeout("/api/admin/orders?limit=50", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setOrders(data.orders || []);
@@ -210,7 +212,7 @@ export function OrdersTab() {
   const handleAction = async (orderId: string, action: "cancel" | "refill") => {
     const headers = { ...authHeaders(session), "Content-Type": "application/json" };
     try {
-      const res = await fetch(`/api/admin/orders/${orderId}/actions`, {
+      const res = await fetchWithTimeout(`/api/admin/orders/${orderId}/actions`, {
         method: "POST",
         headers,
         body: JSON.stringify({ action, order_id: orderId }),
@@ -228,7 +230,7 @@ export function OrdersTab() {
   };
 
   const loadOrders = () => {
-    fetch("/api/admin/orders?limit=50", { headers: authHeaders(session) })
+    fetchWithTimeout("/api/admin/orders?limit=50", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => setOrders(data.orders || []))
       .catch(() => {});
@@ -292,7 +294,7 @@ export function LogsTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/logs?limit=100", { headers: authHeaders(session) })
+    fetchWithTimeout("/api/admin/logs?limit=100", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setLogs(data.logs || []);
@@ -330,7 +332,7 @@ export function LedgerTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/admin/ledger?limit=100", { headers: authHeaders(session) })
+    fetchWithTimeout("/api/admin/ledger?limit=100", { headers: authHeaders(session) })
       .then((r) => r.json())
       .then((data) => {
         setLedger(data.ledger || []);
@@ -434,8 +436,8 @@ export function ServicesTab() {
     const headers = authHeaders(session);
     try {
       const [provRes, janRes] = await Promise.all([
-        fetch(`/api/admin/provider-services?search=${encodeURIComponent(search)}`, { headers }),
-        fetch(`/api/admin/services`, { headers }),
+        fetchWithTimeout(`/api/admin/provider-services?search=${encodeURIComponent(search)}`, { headers }),
+        fetchWithTimeout(`/api/admin/services`, { headers }),
       ]);
       const provData = await provRes.json();
       const janData = await janRes.json();
@@ -456,7 +458,7 @@ export function ServicesTab() {
   const handleSyncCatalog = async () => {
     const headers = authHeaders(session);
     try {
-      await fetch("/api/smm/catalog", { method: "POST", headers });
+      await fetchWithTimeout("/api/smm/catalog", { method: "POST", headers });
       load();
     } catch {
       /* ignore */
@@ -466,7 +468,7 @@ export function ServicesTab() {
   const handlePublishToggle = async (svc: JanjezServiceShape) => {
     const headers = { ...authHeaders(session), "Content-Type": "application/json" };
     try {
-      await fetch(`/api/admin/services/${svc.id}`, {
+      await fetchWithTimeout(`/api/admin/services/${svc.id}`, {
         method: "PATCH",
         headers,
         body: JSON.stringify({ is_active: !svc.is_active }),
@@ -524,13 +526,13 @@ export function ServicesTab() {
     try {
       let res: Response;
       if (editId) {
-        res = await fetch(`/api/admin/services/${editId}`, {
+        res = await fetchWithTimeout(`/api/admin/services/${editId}`, {
           method: "PATCH",
           headers,
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch("/api/admin/services", {
+        res = await fetchWithTimeout("/api/admin/services", {
           method: "POST",
           headers,
           body: JSON.stringify(payload),
@@ -991,8 +993,8 @@ export function MappingTab() {
     const headers = authHeaders(session);
     try {
       const [janRes, provRes] = await Promise.all([
-        fetch(`/api/admin/services`, { headers }),
-        fetch(`/api/admin/provider-services?search=${encodeURIComponent(search)}`, { headers }),
+        fetchWithTimeout(`/api/admin/services`, { headers }),
+        fetchWithTimeout(`/api/admin/provider-services?search=${encodeURIComponent(search)}`, { headers }),
       ]);
       const janData = await janRes.json();
       const provData = await provRes.json();
@@ -1051,7 +1053,7 @@ export function MappingTab() {
   const handleToggle = async (svc: JanjezServiceShape, field: string, value: boolean) => {
     const headers = { ...authHeaders(session), "Content-Type": "application/json" };
     try {
-      await fetch(`/api/admin/services/${svc.id}`, {
+      await fetchWithTimeout(`/api/admin/services/${svc.id}`, {
         method: "PATCH",
         headers,
         body: JSON.stringify({ [field]: value }),
@@ -1068,32 +1070,32 @@ export function MappingTab() {
     try {
       const ids = filtered.map((s) => s.id);
       if (action === "publish") {
-        await fetch("/api/admin/services/bulk", {
+        await fetchWithTimeout("/api/admin/services/bulk", {
           method: "PATCH",
           headers,
           body: JSON.stringify({ ids, updates: { is_active: true } }),
         });
       } else if (action === "unpublish") {
-        await fetch("/api/admin/services/bulk", {
+        await fetchWithTimeout("/api/admin/services/bulk", {
           method: "PATCH",
           headers,
           body: JSON.stringify({ ids, updates: { is_active: false } }),
         });
       } else if (action === "catalogue_show") {
-        await fetch("/api/admin/services/bulk", {
+        await fetchWithTimeout("/api/admin/services/bulk", {
           method: "PATCH",
           headers,
           body: JSON.stringify({ ids, updates: { show_catalogue: true } }),
         });
       } else if (action === "catalogue_hide") {
-        await fetch("/api/admin/services/bulk", {
+        await fetchWithTimeout("/api/admin/services/bulk", {
           method: "PATCH",
           headers,
           body: JSON.stringify({ ids, updates: { show_catalogue: false } }),
         });
       } else if (action === "sync") {
         setSyncing(true);
-        await fetch("/api/admin/services/sync-prices", {
+        await fetchWithTimeout("/api/admin/services/sync-prices", {
           method: "POST",
           headers,
           body: JSON.stringify({
@@ -1366,7 +1368,7 @@ export function SettingsTab() {
   const loadIntegrationStatus = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/integrations", { headers });
+      const res = await fetchWithTimeout("/api/admin/integrations", { headers });
       const data = await res.json();
       setIntegrationStatus(data);
     } catch {
@@ -1378,7 +1380,7 @@ export function SettingsTab() {
 
   const loadDripFeedSettings = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/settings/drip-feed", { headers });
+      const res = await fetchWithTimeout("/api/admin/settings/drip-feed", { headers });
       const data = await res.json();
       setDripFeedSettings(data);
     } catch {
@@ -1465,7 +1467,7 @@ export function SettingsTab() {
               <div className="mt-4 flex gap-3">
                 <button
                   onClick={async () => {
-                    await fetch("/api/smm/catalog", { method: "POST", headers });
+                    await fetchWithTimeout("/api/smm/catalog", { method: "POST", headers });
                     loadIntegrationStatus();
                   }}
                   className="px-3 py-1.5 bg-kenya-green text-kenya-black font-bold text-sm rounded-lg hover:bg-kenya-green/90 transition-colors"
@@ -1544,7 +1546,7 @@ export function SettingsTab() {
           </div>
           <button
             onClick={async () => {
-              await fetch("/api/admin/settings/drip-feed", {
+              await fetchWithTimeout("/api/admin/settings/drip-feed", {
                 method: "PATCH",
                 headers: { ...headers, "Content-Type": "application/json" },
                 body: JSON.stringify(dripFeedSettings),
@@ -1586,5 +1588,9 @@ export function SettingsTab() {
       )}
     </div>
   );
+}
+
+export function NotificationsTab() {
+  return <AdminNotifications />;
 }
 

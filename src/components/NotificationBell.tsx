@@ -1,83 +1,25 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthContext";
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  link: string | null;
-  read: boolean;
-  created_at: string;
-}
+import { useNotifications } from "@/lib/supabase/realtime";
 
 export default function NotificationBell() {
   const { user, session } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!user || !session?.access_token) return;
-    setLoading(true);
-    try {
-      const res = await fetch("/api/notifications", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount || 0);
-    } catch {
-      // Silently fail - notifications are non-critical
-    } finally {
-      setLoading(false);
-    }
-  }, [user, session]);
+  const { notifications, unreadCount, markAllRead, markRead } = useNotifications(
+    user?.id ?? null,
+    session?.access_token ?? null,
+    { audience: "user", limit: 8 }
+  );
 
-  useEffect(() => {
-    if (!user || !session?.access_token) return;
-    let cancelled = false;
-    void (async () => {
-      await fetchNotifications();
-      if (cancelled) return;
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [user, session?.access_token, fetchNotifications]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, [isOpen, fetchNotifications]);
-
-  const markAllRead = useCallback(async () => {
-    if (!session?.access_token) return;
-    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
-    if (unreadIds.length === 0) return;
-
-    await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ ids: unreadIds, read: true }),
-    });
-
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
-  }, [notifications, session]);
-
-  const handleOpen = () => {
+  const handleOpen = async () => {
     setIsOpen(true);
-    markAllRead();
+    if (unreadCount > 0) {
+      await markAllRead();
+    }
   };
 
   const close = () => setIsOpen(false);
@@ -85,6 +27,20 @@ export default function NotificationBell() {
   if (!user) {
     return null;
   }
+
+  const severityDot = (severity: string | undefined, read: boolean) => {
+    if (read) return "bg-kenya-white/20";
+    switch (severity) {
+      case "success":
+        return "bg-kenya-green";
+      case "warning":
+        return "bg-yellow-500";
+      case "error":
+        return "bg-kenya-red";
+      default:
+        return "bg-kenya-white/40";
+    }
+  };
 
   return (
     <>
@@ -114,71 +70,113 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={close}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={close}
+        >
           <div
             className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 border-b border-kenya-white/10">
-              <h2 className="text-xl font-bold text-kenya-white">Notifications</h2>
+              <h2 className="text-xl font-bold text-kenya-white">
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="ml-2 text-sm font-normal text-kenya-white/50">
+                    ({unreadCount} new)
+                  </span>
+                )}
+              </h2>
               <button
                 onClick={close}
                 className="text-kenya-white/50 hover:text-kenya-white transition-colors"
+                aria-label="Close"
               >
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
+
             <div className="max-h-96 overflow-y-auto">
-              {loading && notifications.length === 0 && (
-                <div className="p-8 text-center text-kenya-white/50 text-sm">Loading notifications…</div>
-              )}
-              {!loading && notifications.length === 0 && (
-                <div className="p-8 text-center text-kenya-white/50 text-sm">No notifications yet.</div>
+              {notifications.length === 0 && (
+                <div className="p-8 text-center text-kenya-white/50 text-sm">
+                  No notifications yet.
+                </div>
               )}
               {notifications.map((notif) => (
                 <Link
                   key={notif.id}
                   href={notif.link || "/orders/all"}
-                  onClick={close}
+                  onClick={(e) => {
+                    close();
+                    if (!notif.read_at) {
+                      void markRead(notif.id);
+                    }
+                    if (notif.link) {
+                      // let navigation happen
+                    } else {
+                      e.preventDefault();
+                    }
+                  }}
                   className="block p-4 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
-                        notif.read
-                          ? "bg-kenya-white/20"
-                          : notif.type === "topup" || notif.type === "success"
-                          ? "bg-kenya-green"
-                          : notif.type === "order_failed" || notif.type === "order_update"
-                          ? "bg-yellow-500"
-                          : "bg-kenya-white/40"
-                      }`}
+                      className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${severityDot(
+                        notif.severity,
+                        !!notif.read_at
+                      )}`}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h3 className={`font-semibold text-sm ${notif.read ? "text-kenya-white/50" : "text-kenya-white"}`}>
+                        <h3
+                          className={`font-semibold text-sm ${
+                            notif.read_at
+                              ? "text-kenya-white/50"
+                              : "text-kenya-white"
+                          }`}
+                        >
                           {notif.title}
                         </h3>
                         <span className="text-xs text-kenya-white/40 flex-shrink-0">
-                          {new Date(notif.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          {new Date(notif.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
                         </span>
                       </div>
-                      <p className="text-sm text-kenya-white/60 mt-1 line-clamp-2">{notif.message}</p>
+                      {notif.body && (
+                        <p className="text-sm text-kenya-white/60 mt-1 line-clamp-2">
+                          {notif.body}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
-            <div className="p-4 border-t border-kenya-white/10">
+
+            <div className="p-4 border-t border-kenya-white/10 flex gap-2">
               <Link
-                href="/orders/all"
+                href="/dashboard/notifications"
                 onClick={close}
-                className="block w-full text-center py-2.5 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors"
+                className="flex-1 text-center py-2.5 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors"
               >
-                View All Orders
+                View All
               </Link>
+              <button
+                onClick={() => void markAllRead()}
+                disabled={unreadCount === 0}
+                className="px-4 py-2.5 bg-kenya-white/10 text-kenya-white rounded-lg hover:bg-kenya-white/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Mark all read
+              </button>
             </div>
           </div>
         </div>

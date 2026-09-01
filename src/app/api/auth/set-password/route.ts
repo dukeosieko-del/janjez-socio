@@ -1,10 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email/mailer";
-import { getPasswordResetConfirmationEmail } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/email/config";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { consumeResetToken, setPassword } from "@/lib/auth/reset-helpers";
+import { sendTransactional } from "@/lib/transactional";
 
 export const runtime = "nodejs";
 
@@ -44,18 +43,18 @@ export async function POST(request: NextRequest) {
       const email = authUser?.user?.email;
       const fullName = (authUser?.user?.user_metadata?.full_name as string | undefined) || null;
       if (email) {
-        const { subject, html, text } = getPasswordResetConfirmationEmail({
+        const result = await sendTransactional({
+          name: "user.password_reset_confirmation",
+          userId: consumed.user_id,
+          email,
           fullName,
-          signInUrl: `${SITE_URL}/auth/sign-in`,
+          data: {
+            fullName,
+            signInUrl: `${SITE_URL}/auth/sign-in`,
+          },
         });
-        const result = await sendEmail({
-          to: { address: email, name: fullName || "" },
-          subject,
-          html,
-          text,
-        });
-        if (!result.ok) {
-          console.error("Reset confirmation email send failed:", result.error);
+        if (!result.emailOk) {
+          console.error("Reset confirmation email send failed");
         }
       }
     } catch (notifyError) {

@@ -5,6 +5,8 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
 import { calculateOrderCost, calculateMpesaAmount } from "@/lib/pricing";
 import { getCallbackUrl, initiateStkPush } from "@/lib/mpesa/client";
+import { sendEmail } from "@/lib/email/mailer";
+import { getOrderReceivedEmail } from "@/lib/email/templates";
 
 export const runtime = "nodejs";
 
@@ -14,6 +16,8 @@ function validateDripFeedField(value: unknown, name: string): string | null {
   if (isNaN(num) || !Number.isInteger(num) || num < 1) return `${name} must be a positive integer`;
   return null;
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: NextRequest) {
   const rl = rateLimit(request, 20);
@@ -28,6 +32,7 @@ export async function POST(request: NextRequest) {
       phone_number,
       runs,
       interval,
+      email,
     } = body as {
       janjez_service_id?: string;
       link_submitted?: string;
@@ -35,6 +40,7 @@ export async function POST(request: NextRequest) {
       phone_number?: string;
       runs?: number | null;
       interval?: number | null;
+      email?: string;
     };
 
     const errors: string[] = [];
@@ -42,6 +48,9 @@ export async function POST(request: NextRequest) {
     if (!janjez_service_id) errors.push("janjez_service_id is required");
     if (!phone_number || !/^\d{9,15}$/.test(phone_number.replace(/\s+/g, ""))) {
       errors.push("A valid phone number is required");
+    }
+    if (email !== undefined && email !== null && email !== "" && !EMAIL_RE.test(email)) {
+      errors.push("A valid email address is required when provided");
     }
 
     const quantityErr = validateNumber(quantity, "quantity", { min: 1 });
@@ -126,6 +135,33 @@ export async function POST(request: NextRequest) {
     if (orderError || !orderData) {
       console.error("Anonymous order insert error:", orderError?.message);
       return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+    }
+
+    const sanitizedEmail = email && EMAIL_RE.test(email) ? sanitizeString(email, 254) : null;
+    if (sanitizedEmail) {
+      const linkValue = sanitizeString(link_submitted, 500);
+      const { subject, html, text } = getOrderReceivedEmail({
+        customerName: null,
+        orderId: orderData.order_id || orderData.id.slice(0, 8),
+        service: janjezService.name,
+        quantity: numQuantity,
+        amount: expectedAmount,
+        link: linkValue,
+      });
+      sendEmail({
+        to: { address: sanitizedEmail },
+        subject,
+        html,
+        text,
+      })
+        .then((result) => {
+          if (!result.ok) {
+            console.error("[email] anonymous order-received failed:", result.error);
+          }
+        })
+        .catch((err) => {
+          console.error("[email] anonymous order-received threw:", err);
+        });
     }
 
     const requestUrl = new URL(request.url);

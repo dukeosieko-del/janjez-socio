@@ -1,9 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail } from "@/lib/email/mailer";
-import { getWelcomeEmail } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/email/config";
 import { rateLimit } from "@/lib/server/rate-limiter";
+import { sendTransactional } from "@/lib/transactional";
 
 export const runtime = "nodejs";
 
@@ -65,18 +64,18 @@ export async function GET(request: NextRequest) {
 
     const { data: authUser } = await supabase.auth.admin.getUserById(verification.user_id);
     const fullName = (authUser?.user?.user_metadata?.full_name as string | undefined) || null;
-    const { subject, html, text } = getWelcomeEmail({
+    const welcomeResult = await sendTransactional({
+      name: "user.welcome",
+      userId: verification.user_id,
+      email: profile.email,
       fullName,
-      signInUrl: `${SITE_URL}/auth/sign-in`,
+      data: {
+        fullName,
+        signInUrl: `${SITE_URL}/auth/sign-in`,
+      },
     });
-    const welcomeResult = await sendEmail({
-      to: { address: profile.email, name: fullName || "" },
-      subject,
-      html,
-      text,
-    });
-    if (!welcomeResult.ok) {
-      console.error("Welcome email send failed:", welcomeResult.error);
+    if (!welcomeResult.emailOk) {
+      console.error("Welcome email send failed");
     }
 
     await supabase.from("email_verifications").delete().eq("id", verification.id);
