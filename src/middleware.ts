@@ -99,7 +99,7 @@ export const config = {
     "/admin/:path*",
     "/orders/:path*",
     "/pay",
-    "/wallet:path*",
-    "/settings:path*",
+    "/wallet/:path*",
+    "/settings/:path*",
   ],
 };

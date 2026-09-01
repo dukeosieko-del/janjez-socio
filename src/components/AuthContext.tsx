@@ -1,8 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 
 interface Profile {
   id: string;
@@ -27,12 +28,18 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   customSignUp: (email: string, password: string, full_name?: string, phone?: string) => Promise<{ error: Error | null; message?: string }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithOAuth: (provider?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  clearAllLocalCaches: () => Promise<void>;
   isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+const ACTIVITY_EVENTS = ["mousedown", "keydown", "touchstart"] as const;
+const REFRESH_DEBOUNCE_MS = 500;
 
 async function fetchProfile(supabase: ReturnType<typeof createClient>, userId: string): Promise<Profile | null> {
   if (!supabase) return null;
@@ -71,11 +78,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const supabaseError = !createClient()
+  const supabase = useMemo(() => createClient(), []);
+  const supabaseError = !supabase
     ? "Authentication service is temporarily unavailable. Please contact support or try again later."
     : null;
 
-  const supabase = createClient();
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activityListenersRef = useRef<boolean>(false);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const signOutRef = useRef<() => Promise<void>>(async () => {});
 
   const loadProfile = useCallback(async (userId: string) => {
     const client = supabase;
@@ -97,23 +108,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [supabase]);
 
+  const clearAllLocalCaches = useCallback(async () => {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error("AuthContext: signOut failed during cache clear", err);
+      }
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && key.startsWith("sb-")) keysToRemove.push(key);
+        }
+        for (const key of keysToRemove) window.localStorage.removeItem(key);
+        window.sessionStorage.clear();
+      } catch (err) {
+        console.error("AuthContext: failed to clear storage", err);
+      }
+    }
+  }, [supabase]);
+
+  const signOut = useCallback(async () => {
+    await clearAllLocalCaches();
+  }, [clearAllLocalCaches]);
+
   useEffect(() => {
+    signOutRef.current = signOut;
+  }, [signOut]);
+
+  useEffect(() => {
+    const controller = new AbortController();
     const getSession = async () => {
       const client = supabase;
       if (!client) {
         setLoading(false);
         return;
       }
-      const { data: { session } } = await client.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await loadProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setWalletBalance(0);
+      try {
+        const { data: { session } } = await Promise.race([
+          client.auth.getSession(),
+          new Promise<{ data: { session: Session | null } }>((_, reject) =>
+            setTimeout(() => reject(new Error("getSession timeout")), 5000)
+          ),
+        ]);
+        if (controller.signal.aborted) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          await loadProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setWalletBalance(0);
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setWalletBalance(0);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-      setLoading(false);
     };
 
     getSession();
@@ -125,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!client) return;
 
       const { data: { subscription: sub } } = client.auth.onAuthStateChange(async (event, session) => {
+        if (controller.signal.aborted) return;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -135,6 +195,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
         }
         setLoading(false);
+
+        if (event === "SIGNED_OUT") {
+          if (typeof window !== "undefined") {
+            try {
+              const keysToRemove: string[] = [];
+              for (let i = 0; i < window.localStorage.length; i++) {
+                const key = window.localStorage.key(i);
+                if (key && key.startsWith("sb-")) keysToRemove.push(key);
+              }
+              for (const key of keysToRemove) window.localStorage.removeItem(key);
+              window.sessionStorage.clear();
+            } catch (err) {
+              console.error("AuthContext: failed to clear storage on SIGNED_OUT", err);
+            }
+          }
+        }
       });
 
       subscription = sub;
@@ -143,14 +219,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuthListener();
 
     return () => {
+      controller.abort();
       subscription?.unsubscribe();
     };
   }, [supabase, loadProfile]);
 
-  const refreshProfile = async () => {
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = setTimeout(() => {
+      void signOutRef.current();
+    }, INACTIVITY_TIMEOUT_MS);
+  }, []);
+
+  const handleActivity = useCallback(() => {
+    resetInactivityTimer();
+  }, [resetInactivityTimer]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!user) {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      if (activityListenersRef.current) {
+        for (const ev of ACTIVITY_EVENTS) {
+          window.removeEventListener(ev, handleActivity);
+        }
+        activityListenersRef.current = false;
+      }
+      return;
+    }
+
+    if (!activityListenersRef.current) {
+      for (const ev of ACTIVITY_EVENTS) {
+        window.addEventListener(ev, handleActivity, { passive: true });
+      }
+      activityListenersRef.current = true;
+    }
+    resetInactivityTimer();
+
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+      if (activityListenersRef.current) {
+        for (const ev of ACTIVITY_EVENTS) {
+          window.removeEventListener(ev, handleActivity);
+        }
+        activityListenersRef.current = false;
+      }
+    };
+  }, [user, handleActivity, resetInactivityTimer]);
+
+  const refreshProfile = useCallback(async () => {
     if (!user) return;
-    await loadProfile(user.id);
-  };
+    const userId = user.id;
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = setTimeout(async () => {
+      refreshTimerRef.current = null;
+      await loadProfile(userId);
+    }, REFRESH_DEBOUNCE_MS);
+  }, [user, loadProfile]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+        refreshTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const openAuth = (tab: "login" | "register" = "login") => {
     setAuthModal({ open: true, tab });
@@ -178,14 +318,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signOut = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+  const signInWithOAuth = async (provider: string = "google") => {
+    if (!supabase) return { error: new Error("Authentication service is temporarily unavailable.") };
+
+    if (typeof window === "undefined") {
+      return { error: new Error("OAuth sign-in is only available in the browser.") };
+    }
+
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: provider as "google",
+      options: {
+        redirectTo,
+      },
+    });
+
+    if (error) return { error };
+
+    if (data?.url) {
+      window.location.assign(data.url);
+    }
+
+    return { error: null };
   };
 
   const customSignUp = async (email: string, password: string, full_name?: string, phone?: string) => {
     try {
-      const res = await fetch("/api/auth/send-verification", {
+      const res = await fetchWithTimeout("/api/auth/send-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, full_name, phone }),
@@ -202,7 +361,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, customSignUp, signIn, signOut, refreshProfile, supabaseError, isAdmin }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, customSignUp, signIn, signInWithOAuth, signOut, refreshProfile, clearAllLocalCaches, supabaseError, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
