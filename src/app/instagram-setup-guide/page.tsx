@@ -5,8 +5,138 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import Image from "next/image";
+import { SITE_URL } from "../lib/config";
 
 export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: "Instagram Flag for Review Guide — SMM Kenya | janjez.social",
+  description: "Resolve Instagram 'Flag for Review' notices. Step-by-step guide to configure your account before buying Instagram followers in Kenya. M-Pesa payments.",
+  keywords: ["Instagram followers Kenya", "SMM panel Kenya", "M-Pesa SMM panel", "social media marketing Nairobi", "Pata clout chapchap", "cheap SMM panel East Africa", "buy YouTube views Kenya", "TikTok views Kenya", "instant SMM delivery", "refill guarantee SMM", "WhatsApp channel members Kenya", "drip-feed social media", "Kenyan influencer boost", "SMM reseller Kenya", "M-Pesa payment SMM"],
+  category: "business",
+  publisher: "janjez.social",
+  applicationName: "janjez.social",
+  openGraph: {
+    title: "Instagram Flag for Review Guide — SMM Kenya | janjez.social",
+    description: "Resolve Instagram 'Flag for Review' notices. Step-by-step guide to configure your account before buying Instagram followers in Kenya. M-Pesa payments.",
+    url: `${SITE_URL}/instagram-setup-guide`,
+    siteName: "janjez.social",
+    locale: "en_KE",
+    type: "article",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Instagram Flag for Review Guide — SMM Kenya | janjez.social",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Instagram Flag for Review Guide — SMM Kenya | janjez.social",
+    description: "Resolve Instagram 'Flag for Review' notices. Step-by-step guide to configure your account before buying Instagram followers in Kenya. M-Pesa payments.",
+    images: ["/og-image.png"],
+    creator: "@janjez_social",
+  },
+  alternates: {
+    canonical: `${SITE_URL}/instagram-setup-guide`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+function JsonLd() {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Article",
+              headline: "Instagram Account Flag for Review & Resolution Guide",
+              description: "Learn how to resolve Instagram 'Flag for Review' notices and properly configure your account before submitting SMM promotion orders.",
+              image: `${SITE_URL}/instagram-setup-guide-feature.jpg`,
+              datePublished: "2026-07-20",
+              author: {
+                "@type": "Organization",
+                name: "janjez.social",
+                url: SITE_URL,
+              },
+              publisher: {
+                "@type": "Organization",
+                name: "janjez.social",
+                url: SITE_URL,
+              },
+            },
+            {
+              "@type": "HowTo",
+              name: "How to Resolve Instagram Flag for Review",
+              description: "Step-by-step guide to configure your Instagram account before placing SMM orders.",
+              step: [
+                {
+                  "@type": "HowToStep",
+                  name: "Check Account Privacy Settings",
+                  text: "Ensure your account is set to Public. Private accounts block automated delivery of followers and likes.",
+                },
+                {
+                  "@type": "HowToStep",
+                  name: "Clear Platform Restrictions",
+                  text: "Check Account Status in Instagram settings to ensure no active community guideline flags or shadowbans.",
+                },
+                {
+                  "@type": "HowToStep",
+                  name: "Correct Link Formatting",
+                  text: "Use clean profile URLs without tracking parameters or shortened URLs.",
+                },
+                {
+                  "@type": "HowToStep",
+                  name: "Avoid Simultaneous Orders",
+                  text: "Do not stack multiple providers on the same link concurrently to prevent delivery conflicts.",
+                },
+              ],
+            },
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Home",
+                  item: SITE_URL,
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: "Blog & News",
+                  item: `${SITE_URL}/blog`,
+                },
+                {
+                  "@type": "ListItem",
+                  position: 3,
+                  name: "Instagram Account Flag for Review & Resolution Guide",
+                  item: `${SITE_URL}/instagram-setup-guide`,
+                },
+              ],
+            },
+          ],
+        }),
+      }}
+    />
+  );
+}
+export { JsonLd };
 
 export default function InstagramSetupGuidePage() {
   return (
@@ -19,6 +149,7 @@ export default function InstagramSetupGuidePage() {
         <Header />
 
         <main className="flex-1">
+          <JsonLd />
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">

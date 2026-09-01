@@ -1,9 +1,9 @@
-import type { MetadataRoute } from "next";
-import { SITE_URL } from "@/app/lib/config";
-
-export default function robots(): MetadataRoute.Robots {
-  return {
-    rules: [
+/** @type {import('next-sitemap').IConfig} */
+module.exports = {
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social",
+  generateRobotsTxt: true,
+  robotsTxtOptions: {
+    policies: [
       { userAgent: "*", allow: "/", disallow: ["/api/", "/admin/", "/dashboard/", "/auth/"] },
       { userAgent: "Googlebot", allow: "/", disallow: ["/api/", "/admin/", "/dashboard/"] },
       { userAgent: "Bingbot", allow: "/", disallow: ["/api/", "/admin/"] },
@@ -18,7 +18,10 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Bytespider", disallow: "/" },
       { userAgent: "FacebookBot", allow: "/" },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
-  };
-}
+    additionalSitemaps: [],
+  },
+  exclude: ["/api/*", "/admin/*", "/dashboard/*", "/auth/*"],
+  generateIndexSitemap: false,
+  outDir: "public",
+  sourceDir: ".next/server/app",
+};

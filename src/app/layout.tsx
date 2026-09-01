@@ -2,17 +2,22 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/AuthContext";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { SITE_URL } from "./lib/config";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 export const viewport: Viewport = {
@@ -97,6 +102,14 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="janjez" />
+        <meta httpEquiv="x-dns-prefetch-control" content="on" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://api.brevo.com" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+        <link rel="preload" as="image" href="/og-image.png" />
       </head>
       <body suppressHydrationWarning>
         <div className="min-h-full flex flex-col bg-kenya-black text-kenya-white">
@@ -105,6 +118,7 @@ export default function RootLayout({
           </AuthProvider>
         </div>
         <ServiceWorkerRegistrar />
+        <GoogleAnalytics />
       </body>
     </html>
   );

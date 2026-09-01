@@ -4,8 +4,79 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { SITE_URL } from "../lib/config";
 
 export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: "Privacy Policy — SMM Panel Kenya | janjez.social",
+  description: "Privacy Policy for janjez.social. Learn how we protect your data for M-Pesa transactions and social media growth services in Kenya.",
+  keywords: ["SMM panel Kenya", "M-Pesa SMM panel", "social media marketing Nairobi", "privacy policy Kenya", "cheap SMM panel East Africa", "Pata clout chapchap", "instant SMM delivery", "refill guarantee SMM", "buy YouTube views Kenya", "Instagram followers Kenya"],
+  category: "business",
+  publisher: "janjez.social",
+  applicationName: "janjez.social",
+  openGraph: {
+    title: "Privacy Policy — SMM Panel Kenya | janjez.social",
+    description: "Privacy Policy for janjez.social. Learn how we protect your data for M-Pesa transactions and social media growth services in Kenya.",
+    url: `${SITE_URL}/privacy-policy`,
+    siteName: "janjez.social",
+    locale: "en_KE",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "janjez.social — Pata Clout Chapchap",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy — SMM Panel Kenya | janjez.social",
+    description: "Privacy Policy for janjez.social. Learn how we protect your data for M-Pesa transactions and social media growth services in Kenya.",
+    images: ["/og-image.png"],
+    creator: "@janjez_social",
+  },
+  alternates: {
+    canonical: `${SITE_URL}/privacy-policy`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+function JsonLd() {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          name: "Privacy Policy",
+          description: "Privacy Policy for janjez.social SMM panel.",
+          url: `${SITE_URL}/privacy-policy`,
+          publisher: {
+            "@type": "Organization",
+            name: "janjez.social",
+            url: SITE_URL,
+          },
+          inLanguage: "en-KE",
+        }),
+      }}
+    />
+  );
+}
+export { JsonLd };
 
 export default function PrivacyPolicyPage() {
   return (
@@ -16,6 +87,7 @@ export default function PrivacyPolicyPage() {
         <LiveTicker />
         <Header />
         <main className="flex-1">
+          <JsonLd />
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
               <Link href="/" className="hover:text-kenya-green transition-colors">Home</Link>

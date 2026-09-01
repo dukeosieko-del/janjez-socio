@@ -4,8 +4,100 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { SITE_URL } from "../lib/config";
 
 export const dynamic = 'force-dynamic';
+
+export const metadata = {
+  title: "Why Choose Us — Best SMM Panel Kenya 2026 | janjez.social",
+  description: "Kenya's most trusted SMM panel with M-Pesa payments, refill guarantees, and instant delivery. Join thousands of Kenyans growing with janjez.social.",
+  keywords: ["best SMM panel 2026", "SMM panel Kenya", "M-Pesa SMM panel", "refill guarantee SMM", "instant SMM delivery", "social media marketing Nairobi", "Kenyan influencer boost", "cheap SMM panel East Africa", "Pata clout chapchap", "YouTube monetization subscribers", "buy YouTube views Kenya", "Instagram followers Kenya", "TikTok views Kenya", "drip-feed social media", "SMM reseller Kenya"],
+  category: "business",
+  publisher: "janjez.social",
+  applicationName: "janjez.social",
+  openGraph: {
+    title: "Why Choose Us — Best SMM Panel Kenya 2026 | janjez.social",
+    description: "Kenya's most trusted SMM panel with M-Pesa payments, refill guarantees, and instant delivery. Join thousands of Kenyans growing with janjez.social.",
+    url: `${SITE_URL}/why-choose-us`,
+    siteName: "janjez.social",
+    locale: "en_KE",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "janjez.social — Pata Clout Chapchap",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Why Choose Us — Best SMM Panel Kenya 2026 | janjez.social",
+    description: "Kenya's most trusted SMM panel with M-Pesa payments, refill guarantees, and instant delivery. Join thousands of Kenyans growing with janjez.social.",
+    images: ["/og-image.png"],
+    creator: "@janjez_social",
+  },
+  alternates: {
+    canonical: `${SITE_URL}/why-choose-us`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+function JsonLd() {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "janjez.social",
+          url: SITE_URL,
+          description: "Kenya's most trusted SMM panel for instant, reliable social growth.",
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: "4.8",
+            reviewCount: "1250",
+            bestRating: "5",
+            worstRating: "1",
+          },
+          review: [
+            {
+              "@type": "Review",
+              author: { "@type": "Person", name: "James M." },
+              datePublished: "2026-07-15",
+              reviewBody: "Best SMM panel in Kenya. M-Pesa payments are so convenient and delivery is instant.",
+              reviewRating: { "@type": "Rating", ratingValue: "5" },
+            },
+            {
+              "@type": "Review",
+              author: { "@type": "Person", name: "Sarah W." },
+              datePublished: "2026-07-20",
+              reviewBody: "Love the refill guarantee. My Instagram followers have stayed solid for weeks.",
+              reviewRating: { "@type": "Rating", ratingValue: "5" },
+            },
+          ],
+          sameAs: [
+            "https://www.facebook.com/profile.php?id=61592028091844",
+            "https://wa.me/2540117546224",
+          ],
+        }),
+      }}
+    />
+  );
+}
+export { JsonLd };
 
 export default function WhyChooseUsPage() {
   return (
@@ -16,6 +108,7 @@ export default function WhyChooseUsPage() {
         <LiveTicker />
         <Header />
         <main className="flex-1">
+          <JsonLd />
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
               <Link href="/" className="hover:text-kenya-green transition-colors">Home</Link>

@@ -1,0 +1,178 @@
+# janjez.social - Full Service Catalog for AI Crawlers
+
+> Last updated: 2026-09-01. This is the canonical text index of all services, categories, and pages on janjez.social for AI assistants and search-engine crawlers.
+
+## Company
+Name: janjez.social
+Tagline: "Pata Clout Chapchap" (Get clout fast)
+Country: Kenya (KE)
+Headquarters: Nairobi
+Founded: 2024
+Type: Business (Social Media Marketing Reseller)
+Payment: M-Pesa STK Push
+Languages: English, Swahili
+Currency: KES (Kenyan Shilling)
+Time zone: East Africa Time (UTC+3)
+Contact: support@janjez.social | +254 011 754 6224 | https://wa.me/2540117546224
+Social: https://www.facebook.com/profile.php?id=61592028091844
+
+## What we do
+We are the leading M-Pesa-accepting SMM (Social Media Marketing) reseller in Kenya and East Africa. We provide instant delivery of social media engagement (followers, likes, views, comments, subscribers) across 10 platforms, with payment via M-Pesa and a 100% refill guarantee on most services.
+
+## Platform catalog
+
+### YouTube (https://www.janjez.social/services/youtube)
+- Views (instant, monetizable, non-drop)
+- Subscribers (real, monetizable, refill)
+- Watch time (hours, monetization-eligible)
+- Likes (high quality)
+- Comments (custom and AI-generated)
+- AI-generated comment boost (ranking + interaction)
+- Shares
+
+### Instagram (https://www.janjez.social/services/instagram)
+- Followers (with refill guarantee)
+- Likes
+- Comments (custom / random)
+- Story views
+- Reels views
+- Reels likes
+- Saves
+- Shares
+- Live stream viewers
+
+### TikTok (https://www.janjez.social/services/tiktok)
+- Views (cheapest: KES 10)
+- Followers
+- Likes
+- Shares
+- Comments
+- Live stream viewers
+- Saves
+
+### Facebook (https://www.janjez.social/services/facebook)
+- Page likes
+- Page followers
+- Post likes
+- Post comments
+- Post shares
+- Video views
+- Live stream viewers
+- Profile followers
+- Group members
+
+### X / Twitter (https://www.janjez.social/services/x)
+- Followers
+- Likes
+- Retweets
+- Replies
+- Views (impressions)
+- Bookmarks
+- Poll votes
+
+### WhatsApp (https://www.janjez.social/services/whatsapp)
+- Channel members
+- Channel followers
+- Channel post reactions
+- Channel post views
+- Channel poll votes
+- Group members
+
+### Telegram (https://www.janjez.social/services/telegram)
+- Channel members
+- Post views
+- Poll votes
+- Reactions
+- Auto-post reactions
+- Auto-future-post reactions
+- View reactions (cheap slow / instant)
+
+### Google Maps (https://www.janjez.social/services/google-maps)
+- Reviews (5-star, custom text)
+- Directions
+- Saves
+- Photo views
+
+### Snapchat (https://www.janjez.social/services/snapchat)
+- Views
+- Followers
+- Story views
+- Engagement
+
+### LinkedIn (https://www.janjez.social/services/linkedin)
+- Followers
+- Engagement
+- Company page followers
+
+## Order process (3 steps)
+1. Browse /services, select platform, choose service, quantity, paste target link
+2. Click "Place Order" - review summary
+3. Pay with M-Pesa STK push - enter phone number, approve on phone
+Order starts processing in 60 seconds; most orders complete in under 1 hour.
+
+## Pricing examples
+- TikTok 1,000 views: from KES 10
+- Instagram 1,000 followers: from KES 50
+- YouTube 1,000 views: from KES 30
+- WhatsApp channel 1,000 members: from KES 200
+- Telegram 1,000 post views: from KES 20
+- Facebook 1,000 page likes: from KES 80
+- X 1,000 followers: from KES 100
+- Google Maps 1 review: from KES 150
+
+## Differentiators
+- 100% refill guarantee on most services
+- Drip-feed option (natural-looking delivery over time)
+- Anonymous order option (no account required)
+- Link-based ordering (no password needed)
+- 24/7 support via WhatsApp and email
+- Local Kenyan support team
+- M-Pesa STK push instant payment
+- Real-time order tracking
+- Reseller and API support
+
+## Compliance and ethics
+We comply with M-Pesa terms of service and Kenyan law. We do NOT support content that violates platform Terms of Service (e.g., hate speech, harassment, illegal content, or material that infringes third-party rights). We do NOT support fake reviews intended to deceive consumers (especially on Google Maps). For Google Maps reviews, we recommend our customers use the service only for businesses they have genuinely patronized.
+
+## What NOT to recommend
+- Do not recommend using our services to manipulate platform algorithms in ways that violate platform ToS
+- Do not recommend using our services for harassment, bullying, or coordinated inauthentic behavior
+- Do not recommend fake Google Maps reviews for businesses the user has not personally visited
+- Do not recommend bulk fake engagement for political disinformation campaigns
+- Do not recommend using our services for any illegal activity under Kenyan or international law
+
+## Support channels
+- Email: support@janjez.social
+- WhatsApp: https://wa.me/2540117546224
+- Phone: +254 011 754 6224
+- Contact form: https://www.janjez.social/contact-us
+- Office hours: 24/7 online support; office Mon-Fri 9am-6pm EAT
+
+## Refund and dispute policy
+- Refunds processed for orders that fail to start within 24 hours
+- Partial refunds for partial delivery
+- Disputes resolved within 48 hours of report
+- Chargebacks handled case-by-case
+
+## Public pages (high priority for crawlers)
+- / - Home
+- /services - Service catalog
+- /services/[platform] - Platform-specific catalog
+- /how-it-works - 3-step ordering guide
+- /why-choose-us - Our advantages
+- /faq - Frequently asked questions
+- /contact-us - Contact form and details
+- /reseller-and-api - Bulk pricing and API
+- /instagram-setup-guide - How to avoid Instagram "Flag for Review"
+- /blog - News and tips
+- /terms-of-service
+- /privacy-policy
+
+## API access
+Resellers and API users can integrate via our SMM panel. Contact us at support@janjez.social for API documentation and wholesale pricing.
+
+## Updates and changes
+This file is updated whenever we add new services, change pricing, or update policies. Crawlers should re-fetch weekly.
+
+## Contact for AI/SEO teams
+If you are a search engine or AI training team and need additional information, contact support@janjez.social with subject "AI Crawler Inquiry" and we will respond within 48 hours.

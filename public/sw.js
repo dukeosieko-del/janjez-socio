@@ -1,13 +1,9 @@
-const CACHE_NAME = 'janjez-social-v1';
-const urlsToCache = [
-  '/',
-  '/manifest.json'
-];
+const CACHE_NAME = 'janjez-social-v2';
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+      .then(cache => cache.addAll(['/', '/manifest.json']))
       .then(() => self.skipWaiting())
   );
 });
@@ -28,27 +24,58 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then(response => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
+
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  if (url.pathname.startsWith('/_next/static/')) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached;
+        return fetch(request).then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
           }
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME)
-            .then(cache => cache.put(event.request, responseToCache));
           return response;
         });
       })
-      .catch(() => {
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith('/icons/') || url.pathname.startsWith('/images/')) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        const fetchPromise = fetch(request).then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+          }
+          return response;
+        }).catch(() => cached);
+        return cached || fetchPromise;
       })
+    );
+    return;
+  }
+
+  event.respondWith(
+    fetch(request).then(response => {
+      if (response && response.status === 200 && response.type === 'basic') {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+      }
+      return response;
+    }).catch(() => {
+      if (request.mode === 'navigate') {
+        return caches.match('/');
+      }
+    })
   );
 });

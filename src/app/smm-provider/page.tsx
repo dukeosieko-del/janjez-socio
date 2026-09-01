@@ -5,7 +5,9 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import SMMProviderControls from "@/components/smm/SMMProviderControls";
 import Link from "next/link";
+import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 import { createClient } from "@/lib/supabase/server";
+import { SITE_URL } from "../lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,7 @@ async function getProviderBalance() {
   try {
     const base = process.env.NEXT_PUBLIC_SITE_URL || "";
     const token = await getAuthToken();
-    const res = await fetch(`${base}/api/smm/balance`, {
+    const res = await fetchWithTimeout(`${base}/api/smm/balance`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       cache: "no-store",
     });
@@ -34,13 +36,93 @@ async function getProviderBalance() {
 async function getRecentLogs() {
   const base = process.env.NEXT_PUBLIC_SITE_URL || "";
   const token = await getAuthToken();
-  const res = await fetch(`${base}/api/admin/fulfillment-logs?limit=20`, {
+  const res = await fetchWithTimeout(`${base}/api/admin/fulfillment-logs?limit=20`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     cache: "no-store",
   });
   if (!res.ok) return { logs: [], total: 0 };
   return res.json();
 }
+
+export const metadata = {
+  title: "SMM Provider — B2B API Reseller Kenya | janjez.social",
+  description: "B2B SMM provider dashboard for Kenyan resellers. API access, auto-fulfillment, and bulk pricing for social media marketing agencies in Nairobi.",
+  keywords: ["SMM reseller Kenya", "SMM panel Kenya", "M-Pesa SMM panel", "bulk social media followers", "social media marketing Nairobi", "YouTube monetization subscribers", "TikTok viral boost", "cheap SMM panel East Africa", "Pata clout chapchap", "best SMM panel 2026", "instant SMM delivery", "refill guarantee SMM", "buy YouTube views Kenya", "Instagram followers Kenya", "drip-feed social media"],
+  category: "business",
+  publisher: "janjez.social",
+  applicationName: "janjez.social",
+  openGraph: {
+    title: "SMM Provider — B2B API Reseller Kenya | janjez.social",
+    description: "B2B SMM provider dashboard for Kenyan resellers. API access, auto-fulfillment, and bulk pricing for social media marketing agencies in Nairobi.",
+    url: `${SITE_URL}/smm-provider`,
+    siteName: "janjez.social",
+    locale: "en_KE",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "janjez.social — Pata Clout Chapchap",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SMM Provider — B2B API Reseller Kenya | janjez.social",
+    description: "B2B SMM provider dashboard for Kenyan resellers. API access, auto-fulfillment, and bulk pricing for social media marketing agencies in Nairobi.",
+    images: ["/og-image.png"],
+    creator: "@janjez_social",
+  },
+  alternates: {
+    canonical: `${SITE_URL}/smm-provider`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+function JsonLd() {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Service",
+          name: "SMM Provider & Auto-Fulfillment",
+          description: "B2B SMM provider dashboard with API access, auto-fulfillment, and bulk pricing for Kenyan agencies.",
+          provider: {
+            "@type": "Organization",
+            name: "janjez.social",
+            url: SITE_URL,
+          },
+          areaServed: {
+            "@type": "Country",
+            name: "Kenya",
+          },
+          serviceType: "Social Media Marketing Automation",
+          offers: {
+            "@type": "Offer",
+            name: "Bulk SMM Services",
+            description: "Tailored pricing for bulk campaigns and enterprise clients in Kenya.",
+            price: "0",
+            priceCurrency: "KES",
+          },
+        }),
+      }}
+    />
+  );
+}
+export { JsonLd };
 
 export default async function SMMProviderPage() {
   const [balance, logs] = await Promise.all([getProviderBalance(), getRecentLogs()]);
@@ -53,6 +135,7 @@ export default async function SMMProviderPage() {
         <LiveTicker />
         <Header />
         <main className="flex-1">
+          <JsonLd />
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
               <Link href="/" className="hover:text-kenya-green transition-colors">Home</Link>

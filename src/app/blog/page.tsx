@@ -5,13 +5,111 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { SITE_URL } from "../lib/config";
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: "Blog & News — janjez.social",
-  description: "Latest updates, guides, and insights from the janjez.social team. Tips on SMM, Instagram, YouTube, WhatsApp, and M-Pesa payments.",
+  title: "Blog & News — SMM Panel Kenya Guides | janjez.social",
+  description: "Latest SMM tips, Instagram guides, YouTube growth, and M-Pesa payment news from janjez.social team. Grow your social media in Kenya.",
+  keywords: ["SMM panel Kenya", "social media marketing Nairobi", "Instagram followers Kenya", "buy YouTube views Kenya", "TikTok views Kenya", "M-Pesa SMM panel", "Pata clout chapchap", "cheap SMM panel East Africa", "best SMM panel 2026", "social media growth service", "drip-feed social media", "refill guarantee SMM", "instant SMM delivery", "Kenyan influencer boost", "WhatsApp channel members Kenya"],
+  category: "business",
+  publisher: "janjez.social",
+  applicationName: "janjez.social",
+  openGraph: {
+    title: "Blog & News — SMM Panel Kenya Guides | janjez.social",
+    description: "Latest SMM tips, Instagram guides, YouTube growth, and M-Pesa payment news from janjez.social team. Grow your social media in Kenya.",
+    url: `${SITE_URL}/blog`,
+    siteName: "janjez.social",
+    locale: "en_KE",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "janjez.social — Pata Clout Chapchap",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog & News — SMM Panel Kenya Guides | janjez.social",
+    description: "Latest SMM tips, Instagram guides, YouTube growth, and M-Pesa payment news from janjez.social team. Grow your social media in Kenya.",
+    images: ["/og-image.png"],
+    creator: "@janjez_social",
+  },
+  alternates: {
+    canonical: `${SITE_URL}/blog`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
+
+function JsonLd() {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Blog",
+          name: "janjez.social Blog & News",
+          description: "Latest updates, guides, and insights from the janjez.social team.",
+          url: `${SITE_URL}/blog`,
+          publisher: {
+            "@type": "Organization",
+            name: "janjez.social",
+            url: SITE_URL,
+          },
+          inLanguage: "en-KE",
+          blogPost: [
+            {
+              "@type": "BlogPosting",
+              headline: "How to Avoid Instagram Flag for Review",
+              datePublished: "2026-07-20",
+              url: `${SITE_URL}/instagram-setup-guide`,
+            },
+            {
+              "@type": "BlogPosting",
+              headline: "Maximizing Your YouTube Watch Time",
+              datePublished: "2026-07-18",
+              url: `${SITE_URL}/services/youtube`,
+            },
+            {
+              "@type": "BlogPosting",
+              headline: "Why WhatsApp Channel Reactions Are Trending",
+              datePublished: "2026-07-15",
+              url: `${SITE_URL}/services/whatsapp`,
+            },
+            {
+              "@type": "BlogPosting",
+              headline: "Happy Hour: Get 5% Off Every Order",
+              datePublished: "2026-07-12",
+              url: `${SITE_URL}/services`,
+            },
+            {
+              "@type": "BlogPosting",
+              headline: "How M-Pesa Top-Up Works on janjez.social",
+              datePublished: "2026-07-10",
+              url: `${SITE_URL}/how-it-works`,
+            },
+          ],
+        }),
+      }}
+    />
+  );
+}
+export { JsonLd };
 
 export default function BlogPage() {
   const posts = [
@@ -55,6 +153,7 @@ export default function BlogPage() {
         <LiveTicker />
         <Header />
         <main className="flex-1">
+          <JsonLd />
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
               <Link href="/" className="hover:text-kenya-green transition-colors">Home</Link>
