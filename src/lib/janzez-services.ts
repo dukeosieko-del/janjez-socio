@@ -94,6 +94,7 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
     query = query.eq(placement, true);
   }
 
+<<<<<<< ours
   const all: JanjezService[] = [];
   let page = 0;
   const pageSize = 1000;
@@ -112,6 +113,15 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
   }
 
   return all;
+=======
+  const { data, error } = await query;
+  if (error) {
+    console.error("listJanjezServices error:", error);
+    return [];
+  }
+
+  return (data || []) as unknown as JanjezService[];
+>>>>>>> theirs
 }
 
 export async function getJanjezService(id: string): Promise<JanjezService | null> {
