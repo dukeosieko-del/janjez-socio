@@ -31,8 +31,8 @@ vi.mock("@/lib/server/rate-limiter", () => ({
   rateLimit: vi.fn(() => ({ ok: true })),
 }));
 
-vi.mock("@/lib/email/transport", () => ({
-  sendMail: vi.fn(() => Promise.resolve()),
+vi.mock("@/lib/email/mailer", () => ({
+  sendEmail: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
 vi.mock("@/lib/email/config", () => ({
@@ -124,8 +124,8 @@ describe("POST /api/auth/reset-password", () => {
       })
     );
 
-    const { sendMail } = await import("@/lib/email/transport");
-    vi.mocked(sendMail).mockRejectedValueOnce(new Error("SMTP error"));
+    const { sendEmail } = await import("@/lib/email/mailer");
+    vi.mocked(sendEmail).mockResolvedValueOnce({ ok: false, error: "SMTP error" });
 
     const req = new Request("http://localhost/api/auth/reset-password", {
       method: "POST",

@@ -1,5 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/mailer";
+import { getPasswordResetConfirmationEmail } from "@/lib/email/templates";
+import { SITE_URL } from "@/lib/email/config";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { consumeResetToken, setPassword } from "@/lib/auth/reset-helpers";
 
@@ -34,6 +37,29 @@ export async function POST(request: NextRequest) {
     const success = await setPassword(consumed.user_id, password);
     if (!success) {
       return NextResponse.json({ error: "Failed to update password" }, { status: 500 });
+    }
+
+    try {
+      const { data: authUser } = await supabase.auth.admin.getUserById(consumed.user_id);
+      const email = authUser?.user?.email;
+      const fullName = (authUser?.user?.user_metadata?.full_name as string | undefined) || null;
+      if (email) {
+        const { subject, html, text } = getPasswordResetConfirmationEmail({
+          fullName,
+          signInUrl: `${SITE_URL}/auth/sign-in`,
+        });
+        const result = await sendEmail({
+          to: { address: email, name: fullName || "" },
+          subject,
+          html,
+          text,
+        });
+        if (!result.ok) {
+          console.error("Reset confirmation email send failed:", result.error);
+        }
+      }
+    } catch (notifyError) {
+      console.error("Reset confirmation notify error:", notifyError);
     }
 
     return NextResponse.json({ ok: true, message: "Password updated successfully" });

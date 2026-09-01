@@ -31,8 +31,8 @@ vi.mock("@/lib/server/rate-limiter", () => ({
   rateLimit: vi.fn(() => ({ ok: true })),
 }));
 
-vi.mock("@/lib/email/transport", () => ({
-  sendMail: vi.fn(() => Promise.resolve()),
+vi.mock("@/lib/email/mailer", () => ({
+  sendEmail: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
 vi.mock("@/lib/email/config", () => ({

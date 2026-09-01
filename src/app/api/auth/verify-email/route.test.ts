@@ -5,6 +5,7 @@ const mockAdminClient = {
   auth: {
     admin: {
       updateUserById: vi.fn(),
+      getUserById: vi.fn(),
     },
   },
   from: vi.fn(),
@@ -27,6 +28,10 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 vi.mock("@/lib/server/rate-limiter", () => ({
   rateLimit: vi.fn(() => ({ ok: true })),
+}));
+
+vi.mock("@/lib/email/mailer", () => ({
+  sendEmail: vi.fn(() => Promise.resolve({ ok: true })),
 }));
 
 const { GET } = await import("@/app/api/auth/verify-email/route");
@@ -106,6 +111,9 @@ describe("GET /api/auth/verify-email", () => {
     );
 
     mockAdminClient.auth.admin.updateUserById.mockResolvedValue({ error: null });
+    mockAdminClient.auth.admin.getUserById.mockResolvedValue({
+      data: { user: { id: "u1", user_metadata: { full_name: "Test User" } } },
+    });
 
     const req = new Request("http://localhost/api/auth/verify-email?token=valid", {
       method: "GET",

@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { sendMail } from "@/lib/email/transport";
+import { sendEmail } from "@/lib/email/mailer";
 import { SUPPORT_ADDRESS, EMAIL_FORWARDING, SITE_NAME } from "@/lib/email/config";
 import { getContactNotificationHtml, getContactConfirmationHtml } from "@/lib/email/templates";
 import { rateLimit } from "@/lib/server/rate-limiter";
@@ -42,18 +42,12 @@ export async function POST(request: NextRequest) {
 
     let mailSent = false;
     try {
-      await sendMail({
-        from: {
-          address: SITE_NAME === "janjez.social" ? "noreply@janjez.social" : `noreply@${String(SITE_NAME).toLowerCase()}`,
-          name: SITE_NAME,
-        },
-        to: [
-          { email_address: { address: forwardTo, name: `${SITE_NAME} Team` } },
-        ],
-        replyTo: [{ address: email, name }],
+      const notifyResult = await sendEmail({
+        fromName: SITE_NAME,
+        to: { address: forwardTo, name: `${SITE_NAME} Team` },
         subject: `[${SITE_NAME}] ${subject}`,
-        htmlbody: getContactNotificationHtml(data),
-        textbody: [
+        html: getContactNotificationHtml(data),
+        text: [
           `New contact request from ${SITE_NAME}`,
           `Name: ${name}`,
           `Email: ${email}`,
@@ -62,21 +56,15 @@ export async function POST(request: NextRequest) {
           `Message:`,
           message,
         ].join("\n"),
-        clientReference: `contact-${department}-${Date.now()}`,
+        replyTo: { address: email, name },
       });
 
-      await sendMail({
-        from: {
-          address: SITE_NAME === "janjez.social" ? "noreply@janjez.social" : `noreply@${String(SITE_NAME).toLowerCase()}`,
-          name: SITE_NAME,
-        },
-        to: [
-          { email_address: { address: email, name } },
-        ],
-        replyTo: [{ address: SUPPORT_ADDRESS, name: SITE_NAME }],
+      const confirmResult = await sendEmail({
+        fromName: SITE_NAME,
+        to: { address: email, name },
         subject: `We received your message — ${SITE_NAME}`,
-        htmlbody: getContactConfirmationHtml(data),
-        textbody: [
+        html: getContactConfirmationHtml(data),
+        text: [
           `Hi ${name},`,
           ``,
           `We received your message. We aim to respond within 24 hours.`,
@@ -87,10 +75,13 @@ export async function POST(request: NextRequest) {
           ``,
           `Questions? Email us at ${SUPPORT_ADDRESS}.`,
         ].join("\n"),
-        clientReference: `contact-confirmation-${Date.now()}`,
+        replyTo: { address: SUPPORT_ADDRESS, name: SITE_NAME },
       });
 
-      mailSent = true;
+      mailSent = notifyResult.ok && confirmResult.ok;
+      if (!mailSent) {
+        console.error("Contact mail delivery failed:", { notify: notifyResult.error, confirm: confirmResult.error });
+      }
     } catch (mailError) {
       console.error("Mail delivery failed:", mailError);
     }

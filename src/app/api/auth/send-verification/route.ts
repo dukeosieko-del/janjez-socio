@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendMail } from "@/lib/email/transport";
+import { sendEmail } from "@/lib/email/mailer";
+import { getVerificationEmail } from "@/lib/email/templates";
 import { SITE_NAME, SITE_URL } from "@/lib/email/config";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { sanitizeString } from "@/lib/server/validation";
@@ -45,48 +46,19 @@ async function sendVerificationEmail(
   }
 
   const verifyUrl = `${SITE_URL}/api/auth/verify-email?token=${token}`;
+  const { subject, html, text } = getVerificationEmail({ fullName, verifyUrl, expiresInHours: 24 });
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #0D0D0D;">
-      <div style="text-align: center; padding: 20px 0;">
-        <h1 style="color: #00A859; margin: 0; font-size: 28px;">JANJEZ SOCIO</h1>
-        <p style="color: #666; margin-top: 8px;">Pata Clout Chapchap</p>
-      </div>
-      <div style="background: #ffffff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 30px; margin-top: 20px;">
-        <h2 style="color: #0D0D0D; margin-top: 0;">Verify Your Email</h2>
-        <p style="color: #333; line-height: 1.6;">Thanks for signing up! Click the button below to verify your email address and activate your account.</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${verifyUrl}" style="background: #00A859; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Verify Email</a>
-        </div>
-        <p style="color: #666; font-size: 14px;">If the button doesn't work, copy and paste this link into your browser:</p>
-        <p style="word-break: break-all; color: #00A859; font-size: 14px;">${verifyUrl}</p>
-        <p style="color: #999; font-size: 12px; margin-top: 30px;">This link will expire in 24 hours.</p>
-      </div>
-      <div style="text-align: center; padding: 20px 0; color: #999; font-size: 12px;">
-        &copy; ${new Date().getFullYear()} ${SITE_NAME}. All rights reserved.
-      </div>
-    </div>
-  `;
+  const result = await sendEmail({
+    to: { address: email, name: fullName || "" },
+    subject,
+    html,
+    text,
+  });
 
-  const text = `Verify your email for ${SITE_NAME}\n\nClick this link: ${verifyUrl}\n\nThis link expires in 24 hours.`;
-
-  try {
-    await sendMail({
-      from: {
-        address: process.env.ZEPTOMAIL_FROM_EMAIL || `noreply@${SITE_URL.replace(/https?:\/\//, "")}`,
-        name: "JANJEZ SOCIO",
-      },
-      to: [{ email_address: { address: email, name: fullName || "" } }],
-      subject: `Verify your email — ${SITE_NAME}`,
-      htmlbody: html,
-      textbody: text,
-      clientReference: `verify-email-${Date.now()}`,
-    });
-    return { ok: true };
-  } catch (mailError) {
-    console.error("Verification email failed:", mailError);
+  if (!result.ok) {
     return { ok: false, error: "Failed to send verification email" };
   }
+  return { ok: true };
 }
 
 export async function POST(request: NextRequest) {
@@ -130,7 +102,7 @@ export async function POST(request: NextRequest) {
 
       const emailResult = await sendVerificationEmail(supabase, user.id, sanitizedEmail, user.user_metadata?.full_name || null);
       if (!emailResult.ok) {
-        return NextResponse.json({ error: emailResult.error || "Failed to send verification email" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to send verification email. Please try again later." }, { status: 500 });
       }
 
       return NextResponse.json({ ok: true, message: "Verification email sent. Check your inbox." });
@@ -154,7 +126,7 @@ export async function POST(request: NextRequest) {
 
       const emailResult = await sendVerificationEmail(supabase, user.id, sanitizedEmail, user.user_metadata?.full_name || null);
       if (!emailResult.ok) {
-        return NextResponse.json({ error: emailResult.error || "Failed to send verification email" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to send verification email. Please try again later." }, { status: 500 });
       }
 
       return NextResponse.json({ ok: true, message: "Account already exists but is not verified. A new verification email has been sent." });
@@ -177,7 +149,7 @@ export async function POST(request: NextRequest) {
     const emailResult = await sendVerificationEmail(supabase, newUser.user.id, sanitizedEmail, sanitizedFullName || null);
     if (!emailResult.ok) {
       await supabase.auth.admin.deleteUser(newUser.user.id);
-      return NextResponse.json({ error: emailResult.error || "Failed to send verification email" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to send verification email. Please try again later." }, { status: 500 });
     }
 
     return NextResponse.json({
