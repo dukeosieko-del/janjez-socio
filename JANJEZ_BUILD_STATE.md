@@ -3041,22 +3041,52 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 7. **P3:** Old "Renew ZeptoMail token" blocker **CLOSED** — ZeptoMail completely removed, Brevo SMTP is the new transport (pending IP allowlist for actual delivery)
 
 ### Next Actions
-1. **Authorize EC2 IP `3.7.231.161` in Brevo dashboard** (highest priority — unblocks all email)
-2. Apply `pending_mpesa` migration via Supabase dashboard
-3. Apply `20250101000024`, `20250101000025`, `20250101000026` migrations via Supabase dashboard
-4. Fund DripFeed provider account
-5. Verify `BREVO_FROM_EMAIL=info@janjez.social` is a verified sender in Brevo
-6. Decide on `ORDER_SERVICES` removal
-7. Deploy to Vercel production
+1. Apply `pending_mpesa` migration via Supabase dashboard
+2. Apply `20250101000024`, `20250101000025`, `20250101000026`, `20250101000027`, `20250101000028`, `20250101000029` migrations via Supabase dashboard
+3. Fund DripFeed provider account
+4. Verify `BREVO_FROM_EMAIL=info@janjez.social` is a verified sender in Brevo
+5. Decide on `ORDER_SERVICES` removal
+6. Deploy to Vercel production
 
 ### Build State Snapshot
-- **Latest commit:** `354d323 feat(email): migrate from ZeptoMail to Brevo SMTP via nodemailer`
-- **Tests:** 165 passed (16 files)
-- **Lint:** 0 errors, 120 warnings (pre-existing, all unused-vars)
-- **Build:** PASS
-- **PM2 process:** `0 | janjez-app` online, PID 1220759
-- **Public IP:** `3.7.231.161` (Brevo IP allowlist PENDING)
+- **Latest commit:** `da53060 fix(notifications): repair realtime subscription + type errors`
+- **Tests:** 203 passed (21 files)
+- **Lint:** 0 errors, 118 warnings (pre-existing, all unused-vars)
+- **Build:** PASS (BUILD_ID `1TLrEKIEiYnqhhhiFUj6a`)
+- **PM2 process:** `0 | janjez-app` online
+- **Public IP:** `3.7.231.161` (Brevo IP allowlist **CONFIRMED** — delivered messages `36ddd094-...` and `fcca4897-...`)
 - **Auth:** Supabase Auth, custom token tables, admin client
-- **Email:** Brevo SMTP via nodemailer (centralized in `src/lib/email/mailer.ts`)
+- **Email:** Brevo SMTP via nodemailer (centralized in `src/lib/email/mailer.ts`) — **fully operational**
+- **Notifications:** 14 transactional events, in-app + email, real-time via `useNotifications` hook
 - **Database:** Supabase project `snkgkcdnmhqaejpqftxn` (Preview), `rousjavuooduvicaobuv` (Production)
 - **Deployment target:** AWS Lightsail (PM2-managed) + Vercel (pending)
+
+### Transactional Email + Notification System (2026-09-01)
+- **Commit:** `af5f8b2 feat(notifications): full transactional email + in-app notification system`
+- **14 transactional events registered** in `src/lib/transactional.ts`:
+  - User: welcome, verify_email, password_reset, password_reset_confirmation, security_alert
+  - Order: received, completed, failed
+  - Payment: received, wallet.low_balance
+  - Admin: new_order, high_value_order, fulfillment_failure
+  - System: maintenance
+- **All templates** (src/lib/email/templates.ts) use the unified branded layout: kenya-black header band, green→red gradient strip, kenya-green CTA, preheader, 600px max, mobile-responsive inline CSS
+- **Wired into flows:**
+  - send-verification → verify_email + welcome (post-confirm)
+  - reset-password → password_reset
+  - set-password → password_reset_confirmation
+  - security-alert → security_login_alert (after sign-in, IP+UA captured)
+  - orders route → order.received (auth + guest) + order.failed
+  - orders route → wallet.low_balance with 24h debounce
+  - mpesa callback → payment.received
+  - smm/fulfillment → order.completed / order.failed
+- **In-app notifications** (src/lib/notifications.ts):
+  - `notifications` table (20250101000028 migration): audience (user|admin), category, severity, read_at, link, body
+  - RLS: user reads/writes own, admin all
+  - supabase_realtime publication enabled
+  - API: GET /api/notifications, POST (admin broadcast), PATCH (mark read), PATCH ?mark-all-read, DELETE
+  - Client: useNotifications() hook with real-time channel + unread count + markRead/markAllRead
+  - Components: NotificationBell (real-time), NotificationCenter (full page), AdminNotifications (broadcast form)
+  - Pages: /admin/notifications, /dashboard/notifications
+- **Send pattern:** sendTransactional({name, userId, audience?, data}) returns {emailOk, notificationOk} — failure isolated per channel, never throws
+- **Tests:** +38 (was 165 → 203): security_events, notifications CRUD, transactional composer, branded templates
+- **Live deployment verified:** Brevo SMTP delivered test email with messageId `fcca4897-551d-cccf-f5c1-f976e664c0c2@janjez.social`
