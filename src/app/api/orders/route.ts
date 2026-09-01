@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
         sku_id: sku_id ?? janjezService?.slug ?? null,
         quantity: numQuantity,
         link_submitted: sanitizeString(link_submitted, 500),
-        link: sanitizeString(link_submitted, 500),
+        link: sanitizeString(link_submitted, 500) ?? "",
         amount: expectedAmount,
         amount_paid: expectedAmount,
         payment_reference: sanitizeString(payment_reference, 200) || null,
@@ -358,7 +358,7 @@ export async function POST(request: NextRequest) {
               customerName: fullName,
               orderId: data.order_id || data.id.slice(0, 8),
               reason: errorMessage,
-              link: sanitizeString(link_submitted, 500),
+              link: sanitizeString(link_submitted, 500) ?? "",
             });
             return sendEmail({
               to: { address: user.email, name: fullName || "" },
@@ -397,7 +397,7 @@ export async function POST(request: NextRequest) {
             service: janjezService?.name || subcategory || "Service",
             quantity: numQuantity,
             amount: expectedAmount,
-            link: sanitizeString(link_submitted, 500),
+            link: sanitizeString(link_submitted, 500) ?? "",
           });
           return sendEmail({
             to: { address: user.email, name: fullName || "" },

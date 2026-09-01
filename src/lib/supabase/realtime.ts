@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { subscribeToNotifications } from "@/lib/supabase/realtime";
 import type { Notification } from "@/lib/notifications";
 
 export interface UseNotificationsResult {
@@ -24,7 +23,7 @@ export function useNotifications(
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
+  const channelRef = useRef<ReturnType<NonNullable<ReturnType<typeof createClient>>["channel"]> | null>(null);
 
   const audience = options.audience ?? "user";
   const limit = options.limit ?? 20;
@@ -101,15 +100,23 @@ export function useNotifications(
     if (!userId) return;
     const supabase = createClient();
     if (!supabase) return;
-    const channel = subscribeToNotifications(supabase, userId, (row) => {
-      setNotifications((prev) => {
-        if (audience !== "admin" && row.audience === "admin") return prev;
-        if (audience === "admin" && row.audience !== "admin") return prev;
-        if (prev.some((n) => n.id === row.id)) return prev;
-        return [row, ...prev].slice(0, limit);
-      });
-      if (!row.read_at) setUnreadCount((c) => c + 1);
-    });
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        "postgres_changes" as never,
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+        (payload: { new: Notification }) => {
+          const row = payload.new;
+          setNotifications((prev) => {
+            if (audience !== "admin" && row.audience === "admin") return prev;
+            if (audience === "admin" && row.audience !== "admin") return prev;
+            if (prev.some((n) => n.id === row.id)) return prev;
+            return [row, ...prev].slice(0, limit);
+          });
+          if (!row.read_at) setUnreadCount((c) => c + 1);
+        }
+      )
+      .subscribe();
     channelRef.current = channel;
     return () => {
       if (channelRef.current) {

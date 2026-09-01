@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
 
     const sanitizedEmail = email && EMAIL_RE.test(email) ? sanitizeString(email, 254) : null;
     if (sanitizedEmail) {
-      const linkValue = sanitizeString(link_submitted, 500);
+      const linkValue = sanitizeString(link_submitted, 500) ?? "";
       const { subject, html, text } = getOrderReceivedEmail({
         customerName: null,
         orderId: orderData.order_id || orderData.id.slice(0, 8),
