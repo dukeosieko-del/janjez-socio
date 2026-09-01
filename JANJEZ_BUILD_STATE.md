@@ -2959,3 +2959,39 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 3. Renew ZeptoMail token
 4. Decide on `ORDER_SERVICES` removal
 5. Deploy to Vercel production
+
+### Auth Hardening (2026-09-01)
+- **Profile management API** (`src/app/api/profile/route.ts`):
+  - `GET /api/profile` — fetch authenticated user's profile
+  - `PATCH /api/profile` — update `full_name`, `phone`, `avatar_url`, `notification_email`, `notification_sms`, `theme`, `language`
+  - Rate limits: 60/min (GET), 30/min (PATCH)
+  - Input validation via `validateString` + `ALLOWED_THEMES`/`ALLOWED_LANGUAGES` enums
+- **Avatar upload** (`src/app/api/profile/avatar/route.ts`):
+  - `POST /api/profile/avatar` — accepts `data:image/...;base64,...`
+  - Stores in `avatars` bucket at `${userId}/avatar.png` via admin client
+  - Updates `profiles.avatar_url` and returns public URL
+  - Rate limit: 5/min
+- **Migrations added:**
+  - `20250101000024_password_reset_tokens.sql` — table with RLS-gated admin policies, indexes on `user_id`/`token`/`expires_at`
+  - `20250101000025_profiles_admin_policies.sql` — admin SELECT-all and UPDATE-all on `profiles` (closes audit gap)
+- **Middleware fix** (`src/middleware.ts:102-103`):
+  - Bug: matcher entries `"/wallet:path*"` and `"/settings:path*"` lacked the leading slash, so those routes bypassed auth + security headers
+  - Fixed to `"/wallet/:path*"` and `"/settings/:path*"`
+- **AuthContext hardening** (`src/components/AuthContext.tsx`):
+  - 30-minute inactivity auto sign-out (mousedown/keydown/touchstart passive listeners; cleaned up on unmount)
+  - `clearAllLocalCaches()` — calls `signOut()`, strips `sb-` localStorage keys, clears sessionStorage; exported via context
+  - Debounced (500ms) profile refresh
+  - Explicit `TOKEN_REFRESHED`/`SIGNED_OUT`/`USER_UPDATED` event handling
+  - Backward compatible: existing `useAuth()` consumers unchanged
+- **Audit** (`docs/AUTH_AUDIT.md`):
+  - 20 checks: 4 RLS, 12 policy, 2 trigger, CSP, protected routes, admin check, security headers, matcher coverage, code↔migration table resolution
+  - 2 FAILs fixed (admin SELECT policy + matcher typos); 5 hardening notes recorded (CSP `unsafe-inline/eval`, `X-XSS-Protection` deprecation, password_reset_tokens admin-role access is broader than service-role-only intent, first-admin seeding commented out, `sync_email_verified` doesn't handle revocation)
+- **Tests:** 161 passed (16 files; +6 profile tests, 0 lint errors)
+
+### Next Actions
+1. Apply `pending_mpesa` migration via Supabase dashboard
+2. Apply `20250101000024_password_reset_tokens.sql` and `20250101000025_profiles_admin_policies.sql` via Supabase dashboard
+3. Fund DripFeed provider account
+4. Renew ZeptoMail/Brevo token (transport was switched to Brevo; verify key configured)
+5. Decide on `ORDER_SERVICES` removal
+6. Deploy to Vercel production
