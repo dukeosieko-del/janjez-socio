@@ -339,7 +339,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: new Error("OAuth sign-in is only available in the browser.") };
     }
 
-    const redirectTo = `${window.location.origin}/auth/callback`;
+    const canonicalOrigin =
+      typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
+        ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")
+        : window.location.origin;
+    const redirectTo = `${canonicalOrigin}/auth/callback`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider as "google",
       options: {
