@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
+import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
 import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
@@ -68,7 +69,7 @@ export default function MyOrdersPage() {
           throw new Error("No session token");
         }
 
-        const res = await fetch("/api/orders", {
+        const res = await fetchWithTimeout("/api/orders", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { fetchJSON } from "@/lib/client/fetchWithTimeout";
 
 export default function SetPasswordForm({ token }: { token: string }) {
   const [password, setPassword] = useState("");
@@ -28,19 +29,17 @@ export default function SetPasswordForm({ token }: { token: string }) {
 
     setLoading(true);
 
-    const res = await fetch("/api/auth/set-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password }),
-    });
+    try {
+      await fetchJSON("/api/auth/set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password }),
+      });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data?.error || "Failed to reset password");
-    } else {
       setSuccess(true);
       setTimeout(() => router.push("/auth/sign-in"), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reset password");
     }
     setLoading(false);
   };

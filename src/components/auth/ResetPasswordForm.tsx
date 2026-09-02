@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { fetchJSON } from "@/lib/client/fetchWithTimeout";
 
 export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?: () => void }) {
   const [email, setEmail] = useState("");
@@ -22,19 +23,17 @@ export default function ResetPasswordForm({ onBackToSignIn }: { onBackToSignIn?:
 
     setLoading(true);
 
-    const res = await fetch("/api/auth/reset-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+    try {
+      await fetchJSON("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      setError(data?.error || "Failed to send reset link");
-    } else {
       setSuccess(true);
       setTimeout(() => router.push("/auth/sign-in"), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send reset link");
     }
     setLoading(false);
   };

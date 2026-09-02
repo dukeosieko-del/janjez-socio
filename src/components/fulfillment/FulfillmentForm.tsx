@@ -8,6 +8,7 @@ import { submitOrder, submitAnonymousOrder } from "@/lib/order-log";
 import { JanjezService } from "@/lib/janjez-services";
 import { getDripFeedLimitsSync, type DripFeedLimits } from "@/lib/drip-feed-settings";
 import { calculateOrderCost, calculateMpesaAmount, SERVICE_CHARGE_KES } from "@/lib/pricing";
+import { fetchJSON } from "@/lib/client/fetchWithTimeout";
 
 export interface FulfillmentProps {
   platformId: string;
@@ -38,9 +39,8 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const [anonymousPlacing, setAnonymousPlacing] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/settings/drip-feed")
-      .then((r) => r.json())
-      .then((data) => setDripFeedLimits(data))
+    fetchJSON("/api/admin/settings/drip-feed")
+      .then((data) => setDripFeedLimits(data as DripFeedLimits))
       .catch(() => {});
   }, []);
 

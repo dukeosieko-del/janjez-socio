@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useAuth } from "./AuthContext";
 import { calculateMpesaAmount, SERVICE_CHARGE_KES } from "@/lib/pricing";
+import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 
 interface MpesaModalProps {
   isOpen: boolean;
@@ -63,7 +64,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
     }
 
     try {
-      const initiateRes = await fetch("/api/mpesa/stk-push", {
+      const initiateRes = await fetchWithTimeout("/api/mpesa/stk-push", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,7 +87,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
 
       const poll = async () => {
         try {
-          const statusRes = await fetch(
+          const statusRes = await fetchWithTimeout(
             `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
             {
               method: "GET",

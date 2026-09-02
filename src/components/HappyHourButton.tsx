@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { KNOWN_PLATFORMS } from "@/lib/service-queries";
+import { fetchJSON } from "@/lib/client/fetchWithTimeout";
 
 interface JanjezServiceSummary {
   id: string;
@@ -29,9 +30,7 @@ export default function HappyHourButton() {
   const handleClick = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/services/happy-hour?count=1");
-      if (!res.ok) throw new Error("Failed to find Happy Hour service");
-      const { services } = await res.json();
+      const { services } = await fetchJSON<{ services: JanjezServiceSummary[] }>("/api/services/happy-hour?count=1");
       if (!services || services.length === 0) {
         alert("No Happy Hour services available right now. Check back later!");
         setLoading(false);

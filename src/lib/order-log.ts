@@ -1,4 +1,5 @@
 import { SERVICE_CATALOG, type ServiceCatalogItem } from "./service-catalog";
+import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 
 export interface OrderLogPayload {
   categoryId: string;
@@ -29,7 +30,7 @@ export interface AnonymousOrderPayload {
 export async function submitAnonymousOrder(payload: AnonymousOrderPayload) {
   const quantitySource: "preset" | "custom" = /^\d+$/.test(String(payload.quantity)) ? "preset" : "custom";
 
-  const res = await fetch("/api/orders/anonymous", {
+  const res = await fetchWithTimeout("/api/orders/anonymous", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -138,7 +139,7 @@ export async function submitOrder(payload: OrderLogPayload) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch("/api/orders", {
+  const res = await fetchWithTimeout("/api/orders", {
     method: "POST",
     headers,
      body: JSON.stringify({

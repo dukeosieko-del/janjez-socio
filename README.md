@@ -30,8 +30,8 @@ Required:
 - `SUPABASE_SERVICE_ROLE_KEY`
 
 Optional:
-- `ZEPTOMAIL_SENDMAIL_TOKEN`
-- `ZEPTOMAIL_FROM_EMAIL`
+- `BREVO_API_KEY`
+- `BREVO_FROM_EMAIL`
 - M-Pesa variables for payment integration
 
 ## Auth & Email Verification
@@ -42,16 +42,16 @@ Optional:
 2. Open the **Confirm signup** template
 3. Set the sender name to **JANJEZ SOCIO**
 4. Set the sender email to `noreply@janjez.social`
-5. Under **SMTP Settings**, configure your own SMTP relay (e.g. ZeptoMail) so emails go through your domain
+5. Under **SMTP Settings**, configure your own SMTP relay (e.g. Brevo) so emails go through your domain
 
 ### Option B: Custom Verification Flow (Fully Branded)
 
-This project includes a custom verification flow that sends branded emails via ZeptoMail directly from **JANJEZ SOCIO**.
+This project includes a custom verification flow that sends branded emails via Brevo directly from **JANJEZ SOCIO**.
 
 1. In Supabase dashboard, disable **Confirm email** under **Authentication → Providers → Email**
 2. Run the SQL migration `supabase/migrations/20250101000001_email_verification.sql`
 3. Set `SUPABASE_SERVICE_ROLE_KEY` in your environment
-4. Configure `ZEPTOMAIL_SENDMAIL_TOKEN` and `ZEPTOMAIL_FROM_EMAIL`
+4. Configure `BREVO_API_KEY` and `BREVO_FROM_EMAIL`
 
 The app will now create users via the admin API and send verification emails branded as **JANJEZ SOCIO**.
 

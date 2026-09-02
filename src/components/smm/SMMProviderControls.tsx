@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthContext";
+import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 
 export default function SMMProviderControls() {
   const { session } = useAuth();
@@ -19,7 +20,7 @@ export default function SMMProviderControls() {
     setSyncingCatalog(true);
     setCatalogResult(null);
     try {
-      const res = await fetch("/api/smm/catalog", {
+      const res = await fetchWithTimeout("/api/smm/catalog", {
         method: "POST",
         headers,
       });
@@ -40,7 +41,7 @@ export default function SMMProviderControls() {
     setSyncingStatus(true);
     setStatusResult(null);
     try {
-      const res = await fetch("/api/cron/smm-sync", {
+      const res = await fetchWithTimeout("/api/cron/smm-sync", {
         method: "POST",
         headers,
       });

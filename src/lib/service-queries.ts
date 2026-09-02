@@ -1,7 +1,7 @@
 const SERVICES_CACHE_KEY = "janjez-service-catalogue";
 const CACHE_TTL_MS = 60_000;
 
-export async function getServiceCatalogue(placement?: string): Promise<Array<{
+export async function getServiceCatalogue(placement?: string, signal?: AbortSignal): Promise<Array<{
   id: string;
   serviceId: string;
   categoryId: string;
@@ -42,7 +42,7 @@ export async function getServiceCatalogue(placement?: string): Promise<Array<{
     url.searchParams.set("placement", placement);
   }
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const res = await fetch(url.toString(), { cache: "no-store", signal });
   if (!res.ok) {
     throw new Error("Failed to load service catalogue");
   }

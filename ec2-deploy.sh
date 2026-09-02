@@ -65,10 +65,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://snkgkcdnmhqaejpqftxn.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_9O06_TeEL6LQSFkUhQkBCA_FW1JdW0t
 SUPABASE_SERVICE_ROLE_KEY=
 
-# ZeptoMail Configuration
-ZEPTOMAIL_URL=api.zeptomail.com
-ZEPTOMAIL_SENDMAIL_TOKEN=
-ZEPTOMAIL_FROM_EMAIL=
+# Brevo (Transactional Email) Configuration
+# Get your API key from https://app.brevo.com/settings/keys/api
+BREVO_API_KEY=
+BREVO_FROM_EMAIL=
 
 # M-Pesa Configuration
 MPESA_CONSUMER_KEY=

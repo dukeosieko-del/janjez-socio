@@ -21,7 +21,10 @@ export default function GlobalSearch() {
   const [services, setServices] = useState<SearchResult[]>([]);
 
   useEffect(() => {
-    getServiceCatalogue().then((data) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    getServiceCatalogue(undefined, controller.signal).then((data) => {
       const serviceResults: SearchResult[] = data.map((s) => ({
         id: s.id,
         name: s.name,
@@ -32,6 +35,11 @@ export default function GlobalSearch() {
       }));
       setServices(serviceResults);
     }).catch(() => setServices([]));
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   const handleSearch = (value: string) => {

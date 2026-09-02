@@ -1,14 +1,40 @@
+require("dotenv").config({ path: ".env" });
+
+const env = process.env;
+
 module.exports = {
   apps: [{
     name: "janjez-app",
     script: "npm",
     args: "start",
-    instances: "max",
+    instances: 1,
     exec_mode: "cluster",
     env: {
       NODE_ENV: "production",
       PORT: 3000,
       HOST: "0.0.0.0",
+      NEXT_PUBLIC_SITE_URL: "https://janjez.social",
+      CRON_SECRET: env.CRON_SECRET || "",
+      NEXT_PUBLIC_SUPABASE_URL: env.NEXT_PUBLIC_SUPABASE_URL || "",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+      SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY || "",
+      BREVO_SMTP_HOST: env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+      BREVO_SMTP_PORT: env.BREVO_SMTP_PORT || "587",
+      BREVO_SMTP_USER: env.BREVO_SMTP_USER || "",
+      BREVO_SMTP_KEY: env.BREVO_SMTP_KEY || "",
+      BREVO_FROM_EMAIL: env.BREVO_FROM_EMAIL || "info@janjez.social",
+      BREVO_FROM_NAME: env.BREVO_FROM_NAME || "JANJEZ SOCIO",
+      MPESA_CONSUMER_KEY: env.MPESA_CONSUMER_KEY || "",
+      MPESA_CONSUMER_SECRET: env.MPESA_CONSUMER_SECRET || "",
+      MPESA_PASSKEY: env.MPESA_PASSKEY || "",
+      MPESA_SHORTCODE: env.MPESA_SHORTCODE || "174379",
+      MPESA_ENV: env.MPESA_ENV || "sandbox",
+      NEXT_PUBLIC_MPESA_ENV: env.NEXT_PUBLIC_MPESA_ENV || "sandbox",
+      SMM_API_URL: env.SMM_API_URL || "https://dripfeedpanel.com/api/v2",
+      SMM_API_KEY: env.SMM_API_KEY || "",
+      SMM_FULFILLMENT_ENABLED: env.SMM_FULFILLMENT_ENABLED || "true",
+      NEXT_PUBLIC_GA_MEASUREMENT_ID: env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-ER7Z9TTNMJ",
+      NEXT_PUBLIC_GA_ID: env.NEXT_PUBLIC_GA_ID || "G-ER7Z9TTNMJ",
     },
     log_date_format: "YYYY-MM-DD HH:mm:ss",
     error_file: "/var/log/pm2/janjez-app-error.log",
