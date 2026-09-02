@@ -58,7 +58,7 @@ async function ensureProfile(supabase: ReturnType<typeof createClient>, user: Us
       full_name: user.user_metadata?.full_name || null,
       phone: user.user_metadata?.phone || null,
       wallet_balance: 0,
-      email_verified: false,
+      email_verified: !!user.email_confirmed_at,
     }).select("*").single();
     if (error) return null;
     profile = data as Profile;
@@ -343,11 +343,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL
         ? process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "")
         : window.location.origin;
-    const redirectTo = `${canonicalOrigin}/auth/callback`;
+
+    const nextParam = new URLSearchParams(window.location.search).get("next");
+    const redirectTo = `${canonicalOrigin}/auth/callback${nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""}`;
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: provider as "google",
       options: {
         redirectTo,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
       },
     });
 
