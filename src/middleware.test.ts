@@ -17,6 +17,7 @@ function mockSupabaseClient(user: { id: string; role?: string } | null) {
     select: vi.fn(() => profileChain),
     eq: vi.fn(() => profileChain),
     single: vi.fn().mockResolvedValue({ data: user ? { role: user.role || "user" } : null, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: user ? { role: user.role || "user" } : null, error: null }),
   };
   return {
     auth: {
@@ -89,11 +90,10 @@ describe("middleware route protection", () => {
     expect(res?._type).toBe("next");
   });
 
-  it("redirects authenticated normal user away from /admin", async () => {
+  it("allows authenticated normal user to reach /admin (client handles non-admin redirect)", async () => {
     (globalThis as Record<string, unknown>).__mockUser = { id: "user-123", role: "user" };
-    const res: { _type?: string; url?: string } = await middleware.middleware(makeRequest("/admin"));
-    expect(res?._type).toBe("redirect");
-    expect(String(res?.url)).toContain("/dashboard");
+    const res: { _type?: string } = await middleware.middleware(makeRequest("/admin"));
+    expect(res?._type).toBe("next");
   });
 
   it("allows authenticated admin to access /admin", async () => {
