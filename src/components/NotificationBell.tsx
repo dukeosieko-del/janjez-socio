@@ -2,17 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useNotifications } from "@/lib/supabase/realtime";
 
 export default function NotificationBell() {
-  const { user, session } = useAuth();
+  const { user, session, isAdmin } = useAuth();
+  const pathname = usePathname() ?? "";
   const [isOpen, setIsOpen] = useState(false);
+
+  const audience: "user" | "admin" = pathname.startsWith("/admin") ? "admin" : "user";
+  const viewAllHref = audience === "admin" ? "/admin/notifications" : "/dashboard/notifications";
 
   const { notifications, unreadCount, markAllRead, markRead } = useNotifications(
     user?.id ?? null,
     session?.access_token ?? null,
-    { audience: "user", limit: 8 }
+    { audience, limit: 8 }
   );
 
   const handleOpen = async () => {
@@ -164,7 +169,7 @@ export default function NotificationBell() {
 
             <div className="p-4 border-t border-kenya-white/10 flex gap-2">
               <Link
-                href="/dashboard/notifications"
+                href={viewAllHref}
                 onClick={close}
                 className="flex-1 text-center py-2.5 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors"
               >
