@@ -43,17 +43,15 @@ export async function middleware(request: Request) {
 
   if (isAdminPage && user) {
     const metaRole = (user.user_metadata as { role?: string } | undefined)?.role;
-    if (metaRole === "admin") {
-      // short-circuit: metadata says admin, skip the DB lookup
-    } else {
+    if (metaRole !== "admin") {
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (profile?.role !== "admin") {
-        const response = NextResponse.redirect(new URL("/dashboard", request.url));
+      if (!profile || profile.role !== "admin") {
+        const response = NextResponse.next();
         applySecurityHeaders(response, request.url);
         return response;
       }
