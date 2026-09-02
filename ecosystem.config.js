@@ -26,8 +26,7 @@ const dotEnv = loadEnvFile(path.join(__dirname, ".env"));
 module.exports = {
   apps: [{
     name: "janjez-app",
-    script: "npm",
-    args: "start",
+    script: ".next/standalone/janjez-socio/server.js",
     instances: 1,
     exec_mode: "cluster",
     env: {
