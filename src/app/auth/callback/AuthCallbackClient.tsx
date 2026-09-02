@@ -10,13 +10,13 @@ export default function AuthCallbackClient() {
   const [error, setError] = useState<string | null>(null);
   const handled = useRef(false);
 
+  const next = searchParams.get("next") || "/services";
+  const code = searchParams.get("code");
+  const errorParam = searchParams.get("error_description") || searchParams.get("error");
+
   useEffect(() => {
     if (handled.current) return;
     handled.current = true;
-
-    const next = searchParams.get("next") || "/services";
-    const code = searchParams.get("code");
-    const errorParam = searchParams.get("error_description") || searchParams.get("error");
 
     const supabase = createClient();
     if (!supabase) {
@@ -48,16 +48,19 @@ export default function AuthCallbackClient() {
         console.error("[auth/callback] exchange threw:", err);
         setError(err instanceof Error ? err.message : "Unknown error");
       });
-  }, [router, searchParams]);
+  }, [router, searchParams, next, code, errorParam]);
 
   if (error) {
+    const backHref = next && next !== "/services"
+      ? `/auth/sign-in?next=${encodeURIComponent(next)}`
+      : "/auth/sign-in";
     return (
       <div className="min-h-screen flex items-center justify-center bg-kenya-black text-kenya-white px-4">
         <div className="max-w-md w-full bg-kenya-white/5 border border-kenya-red/30 rounded-2xl p-8 text-center">
           <h1 className="text-2xl font-bold text-kenya-red mb-2">Sign-in failed</h1>
           <p className="text-kenya-white/70 mb-6 break-words">{error}</p>
           <a
-            href="/auth/sign-in"
+            href={backHref}
             className="inline-block bg-kenya-green text-kenya-black font-bold px-6 py-3 rounded-xl hover:bg-kenya-green/90 transition-colors"
           >
             Back to sign-in

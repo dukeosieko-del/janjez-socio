@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
+import GoogleAuthButton from "@/components/auth/GoogleAuthButton";
 
 export default function SignInForm({ onSuccess, onForgotPassword }: { onSuccess?: () => void; onForgotPassword?: () => void }) {
   const [email, setEmail] = useState("");
@@ -11,6 +12,15 @@ export default function SignInForm({ onSuccess, onForgotPassword }: { onSuccess?
   const [error, setError] = useState<string | null>(null);
   const { signIn } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const safeNext = (() => {
+    const raw = searchParams.get("next");
+    if (!raw) return "/services";
+    if (!raw.startsWith("/") || raw.startsWith("//")) return "/services";
+    if (raw.startsWith("/auth/")) return "/services";
+    return raw;
+  })();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -23,13 +33,23 @@ export default function SignInForm({ onSuccess, onForgotPassword }: { onSuccess?
       setLoading(false);
     } else {
       onSuccess?.();
-      router.push("/services");
+      router.push(safeNext);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
+    <>
+      <GoogleAuthButton />
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-kenya-white/10"></div>
+        </div>
+        <div className="relative flex justify-center text-xs text-kenya-white/50">
+          <span className="px-2 bg-kenya-black">OR SIGN IN WITH EMAIL</span>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
         <div className="bg-kenya-red/10 border border-kenya-red/30 rounded-xl p-4">
           <p className="text-kenya-red text-sm">{error}</p>
         </div>
@@ -72,6 +92,7 @@ export default function SignInForm({ onSuccess, onForgotPassword }: { onSuccess?
       >
         {loading ? "Signing in..." : "Sign In"}
       </button>
-    </form>
+      </form>
+    </>
   );
 }

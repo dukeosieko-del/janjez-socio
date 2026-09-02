@@ -12,9 +12,10 @@ import {
   ServicesTab,
   MappingTab,
   SettingsTab,
+  NotificationsTab,
 } from "@/components/admin/AdminTabs";
 
-type Tab = "overview" | "users" | "orders" | "services" | "mapping" | "logs" | "ledger" | "settings";
+type Tab = "overview" | "users" | "orders" | "services" | "mapping" | "logs" | "ledger" | "settings" | "notifications";
 
 export default function AdminDashboardPage() {
   const { user, profile, loading } = useAuth();
@@ -22,25 +23,36 @@ export default function AdminDashboardPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [authorized, setAuthorized] = useState(false);
 
-  const isAdmin = useMemo(
-    () => (user?.user_metadata?.role || profile?.role) === "admin",
-    [user, profile]
-  );
+  const isAdmin = useMemo(() => {
+    const metaRole = (user?.user_metadata as { role?: string } | undefined)?.role;
+    const profileRole = profile?.role;
+    return metaRole === "admin" || profileRole === "admin";
+  }, [user, profile]);
 
   useEffect(() => {
     if (loading) return;
 
-    if (!user || !isAdmin) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- required for auth gate redirect
-      setAuthorized(false);
-      router.replace("/dashboard");
+    if (!user) {
+      queueMicrotask(() => {
+        setAuthorized(false);
+        router.replace("/auth/sign-in?next=%2Fadmin");
+      });
       return;
     }
 
-    setAuthorized(true);
+    if (!isAdmin) {
+      queueMicrotask(() => {
+        setAuthorized(false);
+        router.replace("/dashboard");
+      });
+      return;
+    }
+
+    queueMicrotask(() => setAuthorized(true));
   }, [user, isAdmin, loading, router]);
 
-  if (loading || !authorized) {
+  const showLoading = loading || !authorized;
+  if (showLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-kenya-black text-kenya-white">
         <div className="text-center">
@@ -60,6 +72,7 @@ export default function AdminDashboardPage() {
     { key: "logs", label: "Activity Logs" },
     { key: "ledger", label: "Ledger" },
     { key: "settings", label: "Settings" },
+    { key: "notifications", label: "Notifications" },
   ];
 
   return (
@@ -96,6 +109,7 @@ export default function AdminDashboardPage() {
             {tab === "logs" && <LogsTab />}
             {tab === "ledger" && <LedgerTab />}
             {tab === "settings" && <SettingsTab />}
+            {tab === "notifications" && <NotificationsTab />}
           </div>
         </main>
       </div>
