@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import {
   OverviewTab,
@@ -19,7 +18,6 @@ type Tab = "overview" | "users" | "orders" | "services" | "mapping" | "logs" | "
 
 export default function AdminDashboardPage() {
   const { user, profile, loading, isAdmin: contextIsAdmin } = useAuth();
-  const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [authorized, setAuthorized] = useState(false);
 
@@ -31,33 +29,68 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (loading) return;
-
-    if (!user) {
-      queueMicrotask(() => {
-        setAuthorized(false);
-        router.replace("/auth/sign-in?next=%2Fadmin");
-      });
-      return;
-    }
-
-    if (!isAdmin) {
-      queueMicrotask(() => {
-        setAuthorized(false);
-        router.replace("/dashboard");
-      });
-      return;
-    }
-
+    if (!user) return;
+    if (!isAdmin) return;
     queueMicrotask(() => setAuthorized(true));
-  }, [user, isAdmin, loading, router]);
+  }, [user, isAdmin, loading]);
 
-  const showLoading = loading || !authorized;
+  const showLoading = loading;
+  const showNotAuthorized = !loading && user && !isAdmin;
+  const showSignInPrompt = !loading && !user;
+
   if (showLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-kenya-black text-kenya-white">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-kenya-green border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-kenya-white/60">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showSignInPrompt) {
+    if (typeof window !== "undefined") {
+      window.location.replace("/auth/sign-in?next=%2Fadmin");
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-kenya-black text-kenya-white">
+        <div className="text-center">
+          <p className="text-kenya-white/60">Redirecting to sign-in…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showNotAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-kenya-black text-kenya-white px-4">
+        <div className="max-w-md w-full bg-kenya-white/5 border border-kenya-red/30 rounded-2xl p-8 text-center">
+          <h1 className="text-2xl font-bold text-kenya-red mb-2">Admin access required</h1>
+          <p className="text-kenya-white/70 mb-4">
+            Your account is signed in but does not have admin privileges.
+          </p>
+          <p className="text-kenya-white/50 text-sm mb-6">
+            To request admin access, ask the platform owner to run:
+            <br />
+            <code className="text-kenya-green text-xs mt-2 inline-block break-all">
+              UPDATE public.profiles SET role = &apos;admin&apos; WHERE email = &apos;your@email.com&apos;;
+            </code>
+          </p>
+          <div className="flex gap-2 justify-center">
+            <a
+              href="/api/auth/check-admin"
+              className="px-4 py-2 bg-kenya-white/10 text-kenya-white rounded-lg hover:bg-kenya-white/20 transition-colors text-sm"
+            >
+              Diagnose
+            </a>
+            <a
+              href="/dashboard"
+              className="px-4 py-2 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors text-sm"
+            >
+              Go to dashboard
+            </a>
+          </div>
         </div>
       </div>
     );
