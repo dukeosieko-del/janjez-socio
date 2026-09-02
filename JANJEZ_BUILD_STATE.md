@@ -3090,3 +3090,32 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - **Send pattern:** sendTransactional({name, userId, audience?, data}) returns {emailOk, notificationOk} — failure isolated per channel, never throws
 - **Tests:** +38 (was 165 → 203): security_events, notifications CRUD, transactional composer, branded templates
 - **Live deployment verified:** Brevo SMTP delivered test email with messageId `fcca4897-551d-cccf-f5c1-f976e664c0c2@janjez.social`
+
+### Auth Flow Fixes (2026-09-02)
+- **Commits:** `0b61428 fix(auth): resolve PKCE code verifier mismatch on OAuth callback`, `d5da0a0 fix(auth): admin access, sign-in next param, callback back-link, lint`
+- **Issue 1 — Email auth PKCE error on /auth/callback:**
+  - Root cause: When the Supabase PKCE flow sets the code-verifier cookie in the browser at signInWithOAuth, the server route handler could not reliably read it (host mismatches between www/non-www, silent try/catch in setAll). exchangeCodeForSession failed with "PKCE code verifier not found in storage".
+  - Fix: Replaced `src/app/auth/callback/route.ts` (server-side exchange) with `src/app/auth/callback/page.tsx` + `AuthCallbackClient.tsx` (client-side exchange). The browser client reads the verifier cookie from the same origin the OAuth flow started on.
+  - `AuthContext.signInWithOAuth` now forces `redirectTo` to canonical origin (NEXT_PUBLIC_SITE_URL) so verifier cookie and callback URL are always on the same domain.
+- **Issue 2 — Admin access redirecting to /dashboard:**
+  - Root cause: `src/app/admin/page.tsx` used `isAdmin = (user_metadata.role || profile.role) === "admin"`. The useEffect redirected on `!isAdmin` even when profile was still loading (profile loads after getSession completes), so admins saw a flash of redirect to /dashboard.
+  - Fix: Read `user_metadata.role` first (always available immediately after sign-in), then `profile.role`. Wrap all setState in queueMicrotask. Distinct paths: no user → /auth/sign-in?next=/admin; non-admin → /dashboard; admin → render.
+  - Also added `/admin` exactly to middleware matcher (was only `/admin/:path*` which doesn't match the bare /admin path).
+- **Issue 3 — "Back to sign-in" from error page returns to dashboard guarded page:**
+  - Root cause: The callback error page's "Back to sign-in" was a plain `<a href="/auth/sign-in">`. The sign-in form then hardcoded `router.push("/services")` on success, ignoring the `?next=` param that the middleware had set when redirecting from a protected page.
+  - Fix: (a) AuthCallbackClient "Back to sign-in" now preserves `?next=` so the user goes to their intended destination. (b) SignInForm now reads `?next=` from useSearchParams and pushes there on success (with open-redirect protection: rejects protocol-relative URLs and /auth/ paths).
+- **Server-side improvement:** `src/lib/supabase/server.ts` no longer silently swallows cookie write errors — logs them so future cookie write regressions surface in pm2 logs.
+- **Tests:** 203/203 pass, 0 lint errors on new files.
+
+### SEO + Google Analytics (2026-09-01)
+- **Commit:** `992affb feat(seo): GA4 + JSON-LD schemas + robots/sitemap + AI directives`
+- **Google Analytics 4** (`G-ER7Z9TTNMJ`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` env var) with route-change tracking wrapped in Suspense
+- **Per-page metadata + JSON-LD** on 12 pages: home, services, how-it-works, why-choose-us, faq, contact-us, reseller-and-api, terms-of-service, privacy-policy, instagram-setup-guide, smm-provider, blog
+- **Dynamic `app/robots.ts` + `app/sitemap.ts`** via `getStaticRoutes()` helper + static fallbacks in `public/`
+- **Static SEO files:** `robots.txt`, `sitemap.xml` (21 routes), `llms.txt`, `llms-full.txt`, `ai.txt` — AI crawlers welcome (GPTBot, ClaudeBot, PerplexityBot), Bytespider blocked
+- **Performance:** AVIF/WebP, device sizes, cache headers, preconnect to GTM/Brevo/fonts, `next/image` config; new `OptimizedImage`/`LazyMount`/`Skeleton` components; improved `sw.js`
+- **Build clean**, 203/203 tests pass, 0 lint errors on new files, all 9 critical routes return 200
+
+### Notifications Migration Fix (2026-09-01)
+- **Issue:** Migration 20250101000028 failed with "column read_at does not exist". Root cause: the original used `CREATE TABLE IF NOT EXISTS` which silently no-op'd when the table from migration 06 already existed (with `read BOOLEAN`, `type`, `message` and no `read_at`).
+- **Fix:** Rewrote migration to use `DO $$` + `information_schema.columns` to ALTER the existing table and add `audience`, `category`, `severity`, `body`, `read_at` columns. Added `pg_constraint` existence checks for the CHECK constraints. Drops legacy policies before recreating new audience-aware ones. Re-applied via Supabase dashboard.
