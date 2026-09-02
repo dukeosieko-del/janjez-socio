@@ -3142,23 +3142,71 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
   - `osiekoduke@gmail.com` (id `dfebea3a-...`) — just promoted
 - **To promote a new admin:** `cd /home/ubuntu/janjez-socio && npm run promote-admin -- user@example.com`
 
-### Production Deployment State (2026-09-02)
+### Production Deployment State (2026-09-02) — FINAL
 - **Instance:** AWS Lightsail/EC2, public IP `3.7.231.161`, hostname `ip-172-26-5-201`
 - **Domain:** `jansjez.social` (canonical) and `www.jansjez.social` (alias) — DNS A record `3.7.231.161` verified via `dig @8.8.8.8` and `dig @1.1.1.1`
-- **SSL:** Let's Encrypt certs at `/etc/letsencrypt/live/jansjez.social/` — valid, auto-renewed by certbot
-- **Nginx:** `v1.24.0` (Ubuntu), active since 2026-09-01, reverse proxy to `http://127.0.0.1:3000` on both `jansjez.social` and `www.jansjez.social`
+- **SSL:** Let's Encrypt certs at `/etc/letsencrypt/live/janjez.social/` — valid, auto-renewed by certbot
+- **Nginx:** `v1.24.0` (Ubuntu), reverse proxy to `http://127.0.0.1:3000` on both `jansjez.social` and `www.jansjez.social`
 - **Next.js:** `next start --hostname 0.0.0.0` on port 3000, managed by PM2 (`0 | janjez-app`, online)
-- **Build ID:** `M6LgEeYTFtzjLK06AVbWz` (latest deploy at 2026-09-02 07:29 UTC)
-- **Verified routes (via forced-resolve curl):**
-  - `https://jansjez.social/` → 200 (home: "Pata Clout")
+- **Build ID:** `QLYQ_K_HBqSQENIMVnWKf` (rebuilt at 2026-09-02 20:26 UTC — includes all commits through `a6e3d6b`)
+- **PM2 env:** Correctly loaded from `.env` via `ecosystem.config.js` (custom dotenv loader). All env vars present:
+  - `NEXT_PUBLIC_SITE_URL=https://janjez.social` ← FIXED (was `staging.janjez.social`)
+  - `SUPABASE_SERVICE_ROLE_KEY` ← FIXED (was absent — now loaded from .env)
+  - `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-ER7Z9TTNMJ` ← FIXED (was `NEXT_PUBLIC_GA_ID` mismatch)
+  - `MPESA_ENV=sandbox`, `NEXT_PUBLIC_MPESA_ENV=sandbox` ← FIXED (added missing public prefix)
+  - `BREVO_SMTP_KEY`, `SMM_API_KEY`, `CRON_SECRET` — all loaded from .env (no hardcoded secrets in config)
+- **Verified routes (via external HTTPS curl on `3.7.231.161`):**
+  - `https://jansjez.social/` → 200 (home: "Pata Clout", GA4 `G-ER7Z9TTNMJ` injected)
   - `https://www.jansjez.social/` → 200
   - `https://jansjez.social/robots.txt` → 200 (SEO: AI crawlers welcome, Bytespider blocked)
   - `https://jansjez.social/sitemap.xml` → 200 (21 routes)
   - `https://jansjez.social/llms.txt`, `/llms-full.txt`, `/ai.txt` → 200
   - `https://jansjez.social/auth/sign-in` → 200
-  - `https://jansjez.social/dashboard` → 307 (redirects to sign-in for unauth)
-  - `https://jansjez.social/admin` → 307 (redirects to sign-in for unauth)
-- **Known client-side issue:** Some users see `DNS_PROBE_POSSIBLE` on their local network. The DNS is correct publicly; the fix is on the user's end (flush local DNS cache, switch to 8.8.8.8/1.1.1.1, or add a hosts file entry).
+  - `https://jansjez.social/dashboard` → 307 (redirects to /auth/sign-in?next=/dashboard)
+  - `https://jansjez.social/admin` → 307 (redirects to /auth/sign-in?next=/admin)
+  - `https://jansjez.social/api/health` → 200 ({"status":"ok","checks":{"supabase":"ok"}})
+  - `https://jansjez.social/api/services/catalogue` → 200
+  - `https://jansjez.social/services` → 200
+  - `https://jansjez.social/api/auth/check-admin` → accessible
+- **Middleware:** New logic deployed — does NOT redirect non-admins from `/admin`; lets them reach the page where client-side check shows "Admin access required". Verified: `/admin` redirect goes to `/auth/sign-in?next=%2Fadmin` (correct auth redirect), not `/dashboard` (old broken behavior).
+- **Security headers:** CSP, X-Frame-Options: DENY, HSTS, X-Content-Type-Options, Referrer-Policy, Permissions-Policy — all present on middleware-served routes
 - **Tests:** 203/203 pass, 0 lint errors
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af` pushed to `origin`
-- **HEAD:** `8a10bb5`
+- **HEAD:** `a6e3d6b`
+- **Commit history (latest 5):**
+  - `a6e3d6b` fix(test): update middleware test for maybeSingle and client-side admin redirect
+  - `f9d7eb4` fix: load .env vars in ecosystem.config.js without hardcoding secrets
+  - `8a1e279` fix: deployment env fixes, config docs, tsx improvements, test/utils additions
+  - `4bab1ca` docs: record admin access hardening + production deployment state
+  - `8a10bb5` fix(middleware): never redirect admin pages; let client check handle it
+
+### Pending DB Migration (manual step — requires Supabase dashboard access)
+- **Migration 30** (`supabase/migrations/20250101000030_notifications_relax_legacy.sql`):
+  - Makes `notifications.type` and `notifications.message` columns nullable
+  - Required for the new notifications system to insert rows without `type`/`message`
+  - **SQL to apply via Supabase dashboard SQL Editor:**
+    ```sql
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'type'
+      ) THEN
+        ALTER TABLE public.notifications ALTER COLUMN type DROP NOT NULL;
+      END IF;
+
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'notifications' AND column_name = 'message'
+      ) THEN
+        ALTER TABLE public.notifications ALTER COLUMN message DROP NOT NULL;
+      END IF;
+    END $$;
+
+    -- Backfill type from category for rows where type is null
+    UPDATE public.notifications
+    SET type = category
+    WHERE type IS NULL AND category IS NOT NULL;
+    ```
+  - **Status:** NOT APPLIED — verified via test insert that still fails with "null value in column 'type' violates not-null constraint"
+  - **Other pending migrations:** All others (22-29) have been verified as already applied to the Supabase database
