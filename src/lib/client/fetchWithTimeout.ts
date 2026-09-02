@@ -10,8 +10,8 @@ export function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit & 
   return fetch(input, init);
 }
 
-export async function fetchJSON(input: string, init: RequestInit = {}): Promise<any> {
+export async function fetchJSON<T = unknown>(input: string, init: RequestInit = {}): Promise<T> {
   const res = await fetchWithTimeout(input, init);
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-  return res.json();
+  return res.json() as Promise<T>;
 }
