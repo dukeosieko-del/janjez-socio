@@ -18,7 +18,7 @@ import {
 type Tab = "overview" | "users" | "orders" | "services" | "mapping" | "logs" | "ledger" | "settings" | "notifications";
 
 export default function AdminDashboardPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isAdmin: contextIsAdmin } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
   const [authorized, setAuthorized] = useState(false);
@@ -26,8 +26,8 @@ export default function AdminDashboardPage() {
   const isAdmin = useMemo(() => {
     const metaRole = (user?.user_metadata as { role?: string } | undefined)?.role;
     const profileRole = profile?.role;
-    return metaRole === "admin" || profileRole === "admin";
-  }, [user, profile]);
+    return metaRole === "admin" || profileRole === "admin" || contextIsAdmin;
+  }, [user, profile, contextIsAdmin]);
 
   useEffect(() => {
     if (loading) return;

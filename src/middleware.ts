@@ -42,16 +42,21 @@ export async function middleware(request: Request) {
   }
 
   if (isAdminPage && user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    const metaRole = (user.user_metadata as { role?: string } | undefined)?.role;
+    if (metaRole === "admin") {
+      // short-circuit: metadata says admin, skip the DB lookup
+    } else {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
 
-    if (profile?.role !== "admin") {
-      const response = NextResponse.redirect(new URL("/dashboard", request.url));
-      applySecurityHeaders(response, request.url);
-      return response;
+      if (profile?.role !== "admin") {
+        const response = NextResponse.redirect(new URL("/dashboard", request.url));
+        applySecurityHeaders(response, request.url);
+        return response;
+      }
     }
   }
 
