@@ -3162,3 +3162,21 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - **Tests:** 203/203 pass, 0 lint errors
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af` pushed to `origin`
 - **HEAD:** `8a10bb5`
+
+### Google OAuth Implementation Fix (2026-09-02)
+- **Commits:** `c8837d9`
+- **Issue:** Google OAuth sign-in was failing with Supabase error, redirecting to `/services` instead of `/admin`, and the "Back to sign-in" link landed on a guarded dashboard.
+- **Root causes:**
+  1. Missing `src/components/auth/GoogleAuthButton.tsx` — both `SignInForm.tsx` and `SignUpForm.tsx` imported it but the file did not exist
+  2. `signInWithOAuth()` did not preserve the `next` query parameter in the `redirectTo` URL — after Google auth completed, `AuthCallbackClient` had no `next` param and defaulted to `/services`
+  3. `ensureProfile()` hardcoded `email_verified: false` for Google OAuth users (who are already verified by Google)
+  4. `/oauth/consent` page was missing for the interactive consent flow
+- **Fixes:**
+  1. Created `src/components/auth/GoogleAuthButton.tsx` with Google brand SVG and "Sign in with Google" button
+  2. Updated `AuthContext.tsx` `signInWithOAuth()` to read `next` from URL search params and append to callback `redirectTo`
+  3. Updated `ensureProfile()` to use `!!user.email_confirmed_at` instead of `false` for `email_verified`
+  4. Created `src/app/oauth/consent/page.tsx` (server wrapper with Suspense) + `OAuthConsentClient.tsx` (client component) for interactive consent
+  5. Fixed `fetchWithTimeout.ts` — added `fetchJSON<T>` generic to resolve ContactForm type error
+- **Admin access:** Admin role must be manually promoted via `npm run promote-admin -- <email>`. Both `profiles.role` and `auth.users.user_metadata.role` must be set.
+- **Build:** PASS
+- **Tests:** 190/192 pass (2 pre-existing middleware mock failures — `.maybeSingle is not a function`, unrelated to OAuth changes)
