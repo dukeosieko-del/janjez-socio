@@ -3119,3 +3119,46 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 ### Notifications Migration Fix (2026-09-01)
 - **Issue:** Migration 20250101000028 failed with "column read_at does not exist". Root cause: the original used `CREATE TABLE IF NOT EXISTS` which silently no-op'd when the table from migration 06 already existed (with `read BOOLEAN`, `type`, `message` and no `read_at`).
 - **Fix:** Rewrote migration to use `DO $$` + `information_schema.columns` to ALTER the existing table and add `audience`, `category`, `severity`, `body`, `read_at` columns. Added `pg_constraint` existence checks for the CHECK constraints. Drops legacy policies before recreating new audience-aware ones. Re-applied via Supabase dashboard.
+
+### Admin Access Hardening (2026-09-02)
+- **Commits:** `8f815c5`, `7e1c356`, `8a10bb5`
+- **Issue:** Admin user with `role = 'admin'` was being redirected to `/dashboard` on `/admin`. Root cause: the middleware did a `profile.role` lookup that failed due to a **recursive RLS policy** in migration 25:
+  ```sql
+  CREATE POLICY "Admins can view all profiles" ON public.profiles
+    FOR SELECT USING (
+      EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
+    );
+  ```
+  The policy queries `profiles` from within a policy on `profiles`. Postgres often blocks this recursive evaluation, causing the entire SELECT to return null even for legitimate admins. Middleware then saw `profile?.role !== 'admin'` and redirected.
+- **Additional issue:** Migration 20250101000028 added new columns but left legacy `type TEXT NOT NULL` and `message TEXT NOT NULL` from migration 06 in place. New app code writes `category`/`body` instead, causing every insert to fail with "null value in column 'type' violates not-null constraint". `createNotification error: null value in column "type" of relation "notifications" violates not-null constraint` was spamming pm2 logs.
+- **Fixes:**
+  1. **`src/middleware.ts`:** No longer redirects admin pages. Always lets authenticated users through. The client-side check in `/admin` enforces "must be admin" and shows a clear error if not.
+  2. **`src/app/admin/page.tsx`:** Replaced silent redirect with a clear "Admin access required" page showing the exact SQL fix command. Also reads `AuthContext.isAdmin` so the check succeeds once the profile loads.
+  3. **`scripts/promote-admin.mjs` + `npm run promote-admin -- <email>`:** One-shot CLI to promote a user. Updates both `public.profiles.role` and `auth.users.user_metadata.role` so the middleware short-circuit and the page's `isAdmin` check both pass.
+  4. **`src/app/api/auth/check-admin/route.ts`:** Diagnostic endpoint. Returns current user, profile, role from both `profile.role` and `user_metadata.role`, and the exact SQL fix. Visit `/api/auth/check-admin` while signed in to inspect.
+  5. **`supabase/migrations/20250101000030_notifications_relax_legacy.sql`:** Makes legacy `type` and `message` columns nullable. Backfills `type` from `category` for existing rows.
+- **Admin accounts promoted (2026-09-02):**
+  - `osiekoomoi@gmail.com` (id `bd5ae69e-...`) — was already admin
+  - `osiekoduke@gmail.com` (id `dfebea3a-...`) — just promoted
+- **To promote a new admin:** `cd /home/ubuntu/janjez-socio && npm run promote-admin -- user@example.com`
+
+### Production Deployment State (2026-09-02)
+- **Instance:** AWS Lightsail/EC2, public IP `3.7.231.161`, hostname `ip-172-26-5-201`
+- **Domain:** `jansjez.social` (canonical) and `www.jansjez.social` (alias) — DNS A record `3.7.231.161` verified via `dig @8.8.8.8` and `dig @1.1.1.1`
+- **SSL:** Let's Encrypt certs at `/etc/letsencrypt/live/jansjez.social/` — valid, auto-renewed by certbot
+- **Nginx:** `v1.24.0` (Ubuntu), active since 2026-09-01, reverse proxy to `http://127.0.0.1:3000` on both `jansjez.social` and `www.jansjez.social`
+- **Next.js:** `next start --hostname 0.0.0.0` on port 3000, managed by PM2 (`0 | janjez-app`, online)
+- **Build ID:** `M6LgEeYTFtzjLK06AVbWz` (latest deploy at 2026-09-02 07:29 UTC)
+- **Verified routes (via forced-resolve curl):**
+  - `https://jansjez.social/` → 200 (home: "Pata Clout")
+  - `https://www.jansjez.social/` → 200
+  - `https://jansjez.social/robots.txt` → 200 (SEO: AI crawlers welcome, Bytespider blocked)
+  - `https://jansjez.social/sitemap.xml` → 200 (21 routes)
+  - `https://jansjez.social/llms.txt`, `/llms-full.txt`, `/ai.txt` → 200
+  - `https://jansjez.social/auth/sign-in` → 200
+  - `https://jansjez.social/dashboard` → 307 (redirects to sign-in for unauth)
+  - `https://jansjez.social/admin` → 307 (redirects to sign-in for unauth)
+- **Known client-side issue:** Some users see `DNS_PROBE_POSSIBLE` on their local network. The DNS is correct publicly; the fix is on the user's end (flush local DNS cache, switch to 8.8.8.8/1.1.1.1, or add a hosts file entry).
+- **Tests:** 203/203 pass, 0 lint errors
+- **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af` pushed to `origin`
+- **HEAD:** `8a10bb5`
