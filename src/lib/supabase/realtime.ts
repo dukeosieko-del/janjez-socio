@@ -28,6 +28,12 @@ export function useNotifications(
   const audience = options.audience ?? "user";
   const limit = options.limit ?? 20;
 
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
+  if (supabaseRef.current === null && typeof window !== "undefined") {
+    supabaseRef.current = createClient();
+  }
+  const supabase = supabaseRef.current;
+
   const refresh = useCallback(async () => {
     if (!userId || !accessToken) return;
     setLoading(true);
@@ -104,9 +110,7 @@ export function useNotifications(
   }, [userId, accessToken, refresh]);
 
   useEffect(() => {
-    if (!userId) return;
-    const supabase = createClient();
-    if (!supabase) return;
+    if (!userId || !accessToken || !supabase) return;
 
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
@@ -114,7 +118,7 @@ export function useNotifications(
     channelRef.current = null;
 
     const channel = supabase
-      .channel(`notifications:${userId}`)
+      .channel(`notifications:${userId}:${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes" as never,
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
@@ -128,10 +132,11 @@ export function useNotifications(
           });
           if (!row.read_at) setUnreadCount((c) => c + 1);
         }
-      )
-      .subscribe();
+      );
 
     channelRef.current = channel;
+
+    channel.subscribe();
 
     return () => {
       if (channelRef.current) {
@@ -139,7 +144,7 @@ export function useNotifications(
         channelRef.current = null;
       }
     };
-  }, [userId, audience, limit]);
+  }, [userId, accessToken, audience, limit, supabase]);
 
   return { notifications, unreadCount, loading, error, refresh, markAllRead, markRead };
 }
