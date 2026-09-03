@@ -122,22 +122,31 @@ export default async function ServicesPage() {
             <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Link href="/services/champion" className="group">
                 <div className="p-4 bg-kenya-green/10 border border-kenya-green/30 rounded-xl hover:bg-kenya-green/20 transition-all">
-                  <h3 className="text-kenya-green font-bold text-lg mb-1">Champion</h3>
-                  <p className="text-kenya-white/80 text-sm mb-2">Under KES 2,000</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-kenya-green font-bold text-lg">Champion</h3>
+                    <span className="text-kenya-green text-xs font-mono bg-kenya-green/20 px-2 py-0.5 rounded">{"<2k"}</span>
+                  </div>
+                  <p className="text-kenya-white/70 text-xs mb-2">Budget-friendly essentials</p>
                   <p className="text-kenya-white/60 text-xs">{championCount} service{championCount !== 1 ? "s" : ""}</p>
                 </div>
               </Link>
               <Link href="/services/premium" className="group">
                 <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl hover:bg-blue-500/20 transition-all">
-                  <h3 className="text-blue-400 font-bold text-lg mb-1">Premium</h3>
-                  <p className="text-kenya-white/80 text-sm mb-2">KES 2,000 - KES 6,000</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-blue-400 font-bold text-lg">Premium</h3>
+                    <span className="text-blue-400 text-xs font-mono bg-blue-500/20 px-2 py-0.5 rounded">2k-6k</span>
+                  </div>
+                  <p className="text-kenya-white/70 text-xs mb-2">Mid-tier services</p>
                   <p className="text-kenya-white/60 text-xs">{premiumCount} service{premiumCount !== 1 ? "s" : ""}</p>
                 </div>
               </Link>
               <Link href="/services/enterprise" className="group">
                 <div className="p-4 bg-kenya-red/10 border border-kenya-red/30 rounded-xl hover:bg-kenya-red/20 transition-all">
-                  <h3 className="text-kenya-red font-bold text-lg mb-1">Enterprise</h3>
-                  <p className="text-kenya-white/80 text-sm mb-2">Above KES 6,000</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-kenya-red font-bold text-lg">Enterprise</h3>
+                    <span className="text-kenya-red text-xs font-mono bg-kenya-red/20 px-2 py-0.5 rounded">{">6k"}</span>
+                  </div>
+                  <p className="text-kenya-white/70 text-xs mb-2">High-volume solutions</p>
                   <p className="text-kenya-white/60 text-xs">{enterpriseCount} service{enterpriseCount !== 1 ? "s" : ""}</p>
                 </div>
               </Link>

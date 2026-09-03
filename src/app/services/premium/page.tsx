@@ -53,11 +53,11 @@ export default async function PremiumPage() {
 
             <div className="mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                <span className="text-blue-400 font-bold text-sm">KES 6,000</span>
+                <span className="text-blue-400 font-bold text-xs">2k-6k</span>
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-kenya-white">Premium Packages</h1>
-                <p className="text-kenya-white/60 text-sm">{data.services.length} service{data.services.length !== 1 ? "s" : ""} available — {data.description}</p>
+                <p className="text-kenya-white/60 text-sm">{data.services.length} service{data.services.length !== 1 ? "s" : ""} available — KES 2,000 to KES 6,000</p>
               </div>
             </div>
 

@@ -63,15 +63,15 @@ export default function Header() {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <a
               href="https://www.facebook.com/profile.php?id=61592028091844"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center justify-center w-10 h-10 rounded-full bg-kenya-white/5 text-kenya-white/70 hover:bg-blue-600 hover:text-white transition-colors"
+              className="hidden sm:flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-kenya-white/5 text-kenya-white/70 hover:bg-blue-600 hover:text-white transition-colors"
               aria-label="Facebook"
             >
-              <Image src="/facebook-icon.png" alt="Facebook" width={20} height={20} className="w-5 h-5 object-contain" />
+              <Image src="/facebook-icon.png" alt="Facebook" width={20} height={20} className="w-4 h-4 sm:w-5 sm:h-5 object-contain" />
             </a>
             <div className="hidden lg:block">
             <GlobalSearch />
@@ -83,10 +83,10 @@ export default function Header() {
               <>
                 <Link
                   href="/pay"
-                  className="hidden sm:flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-lg hover:bg-kenya-green/90 transition-colors animate-pulse-glow"
+                  className="hidden sm:flex items-center gap-1.5 bg-kenya-green text-kenya-black font-bold text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-kenya-green/90 transition-colors animate-pulse-glow"
                   aria-label="Top up wallet"
                 >
-                  <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain" />
+                  <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-4 h-4 sm:w-5 sm:h-5 object-contain" />
                   <span className="hidden lg:inline">Top Up</span>
                 </Link>
               </>
@@ -95,7 +95,7 @@ export default function Header() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-kenya-white/10 transition-colors"
             >
-              <svg className="h-6 w-6 text-kenya-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 sm:h-6 sm:w-6 text-kenya-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>

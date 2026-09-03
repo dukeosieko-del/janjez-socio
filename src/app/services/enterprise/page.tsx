@@ -53,11 +53,11 @@ export default async function EnterprisePage() {
 
             <div className="mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-kenya-red/20 rounded-xl flex items-center justify-center">
-                <span className="text-kenya-red font-bold text-sm">6K+</span>
+                <span className="text-kenya-red font-bold text-xs">{">6k"}</span>
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-kenya-white">Enterprise Packages</h1>
-                <p className="text-kenya-white/60 text-sm">{data.services.length} service{data.services.length !== 1 ? "s" : ""} available — {data.description}</p>
+                <p className="text-kenya-white/60 text-sm">{data.services.length} service{data.services.length !== 1 ? "s" : ""} available — Above KES 6,000</p>
               </div>
             </div>
 

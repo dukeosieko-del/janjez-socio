@@ -53,11 +53,11 @@ export default async function ChampionPage() {
 
             <div className="mb-6 flex items-center gap-3">
               <div className="w-10 h-10 bg-kenya-green/20 rounded-xl flex items-center justify-center">
-                <span className="text-kenya-green font-bold text-sm">KES 2,000</span>
+                <span className="text-kenya-green font-bold text-xs">{"<2k"}</span>
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-kenya-white">Champion Packages</h1>
-                <p className="text-kenya-white/60 text-sm">{data.services.length} service{data.services.length !== 1 ? "s" : ""} available — {data.description}</p>
+                <p className="text-kenya-white/60 text-sm">{data.services.length} service{data.services.length !== 1 ? "s" : ""} available — Under KES 2,000</p>
               </div>
             </div>
 
