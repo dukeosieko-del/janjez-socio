@@ -5,7 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
+<<<<<<< ours
 import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
+=======
+>>>>>>> theirs
 
 interface LandingService {
   id: string;
@@ -21,7 +24,11 @@ export default function ServiceCatalog() {
 
   useEffect(() => {
     let cancelled = false;
+<<<<<<< ours
     fetchWithTimeout("/api/services/catalogue?placement=show_landing&active=true")
+=======
+    fetch("/api/services/catalogue?placement=show_landing&active=true")
+>>>>>>> theirs
       .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
       .then((data) => {
         if (!cancelled) {
