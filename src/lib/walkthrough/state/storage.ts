@@ -16,7 +16,7 @@ export function loadWalkthroughState(journeyId: string): WalkthroughState | null
       const elapsed = Date.now() - new Date(journeyState.lastInteraction).getTime();
       if (elapsed > INTERACTION_TIMEOUT_MS * 24) {
         delete parsed[journeyId];
-        saveWalkthroughState(journeyId, { ...journeyState, dismissed: true });
+        saveWalkthroughState(journeyId, { dismissed: true });
         return { ...journeyState, dismissed: true };
       }
     }
@@ -32,7 +32,8 @@ export function saveWalkthroughState(journeyId: string, state: Partial<Walkthrou
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const all: Record<string, WalkthroughState> = raw ? JSON.parse(raw) : {};
-    all[journeyId] = {
+    const existing = all[journeyId];
+    const defaults: WalkthroughState = {
       journeyId,
       stepIndex: 0,
       started: false,
@@ -42,7 +43,10 @@ export function saveWalkthroughState(journeyId: string, state: Partial<Walkthrou
       lastInteraction: null,
       version: 1,
       completedSteps: [],
-      ...all[journeyId],
+    };
+    all[journeyId] = {
+      ...defaults,
+      ...existing,
       ...state,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all));

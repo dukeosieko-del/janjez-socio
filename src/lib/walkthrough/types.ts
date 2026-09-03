@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export type StepPlacement =
   | "top"
   | "bottom"
@@ -45,8 +47,6 @@ export interface JourneyDefinition {
   allowSkip?: boolean;
 }
 
-import type { ReactNode } from "react";
-
 export interface WalkthroughState {
   journeyId: string | null;
   stepIndex: number;
@@ -91,16 +91,3 @@ export interface WalkthroughContextType {
   markStepCompleted: (stepId: string) => void;
   recordInteraction: () => void;
 }
-
-import type { JourneyDefinition, WalkthroughStep, WalkthroughState, WalkthroughEvent, WalkthroughContextType };
-
-export type {
-  JourneyDefinition,
-  WalkthroughStep,
-  WalkthroughState,
-  WalkthroughEvent,
-  WalkthroughContextType,
-  StepPlacement,
-  StepActionExpectation,
-  StepNextBehaviour,
-};

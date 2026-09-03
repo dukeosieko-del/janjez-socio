@@ -4,4 +4,5 @@ import "./customer";
 import "./notifications";
 import "./blog";
 
-export { journeys, type JourneyDefinition } from "./index";
+export { journeys } from "./index";
+export type { JourneyDefinition } from "../types";

@@ -1,4 +1,4 @@
-import type { JourneyDefinition } from "./types";
+import type { JourneyDefinition } from "../types";
 
 export const journeys: Record<string, JourneyDefinition> = {};
 
