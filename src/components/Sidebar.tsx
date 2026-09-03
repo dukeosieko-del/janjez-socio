@@ -88,21 +88,11 @@ export default function Sidebar() {
 
   useEffect(() => {
     let cancelled = false;
-<<<<<<< ours
-<<<<<<< ours
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     fetch("/api/services/sidebar", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
-=======
-    fetch("/api/services/sidebar")
-      .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
->>>>>>> theirs
-=======
-    fetch("/api/services/sidebar")
-      .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
->>>>>>> theirs
       .then((data) => {
         if (!cancelled) {
           setSidebarItems(data.items || []);
@@ -112,20 +102,12 @@ export default function Sidebar() {
       .catch(() => {
         if (!cancelled) setLoading(false);
       });
-<<<<<<< ours
-<<<<<<< ours
 
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
       controller.abort();
     };
-=======
-    return () => { cancelled = true; };
->>>>>>> theirs
-=======
-    return () => { cancelled = true; };
->>>>>>> theirs
   }, []);
 
   const expandableItems = useMemo(() => sidebarItems.filter((item) => item.children && item.children.length > 0), [sidebarItems]);

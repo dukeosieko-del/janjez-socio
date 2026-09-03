@@ -1,4 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, ReactNode } from "react";
+"use client";
+
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
+import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import type { JourneyDefinition, WalkthroughStep, WalkthroughState, WalkthroughContextType } from "../types";
 import { getJourney } from "../journeys";

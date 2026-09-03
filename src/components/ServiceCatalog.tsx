@@ -5,13 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
-<<<<<<< ours
-<<<<<<< ours
 import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
-=======
->>>>>>> theirs
-=======
->>>>>>> theirs
 
 interface LandingService {
   id: string;
@@ -27,15 +21,7 @@ export default function ServiceCatalog() {
 
   useEffect(() => {
     let cancelled = false;
-<<<<<<< ours
-<<<<<<< ours
     fetchWithTimeout("/api/services/catalogue?placement=show_landing&active=true")
-=======
-    fetch("/api/services/catalogue?placement=show_landing&active=true")
->>>>>>> theirs
-=======
-    fetch("/api/services/catalogue?placement=show_landing&active=true")
->>>>>>> theirs
       .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
       .then((data) => {
         if (!cancelled) {
@@ -78,7 +64,7 @@ export default function ServiceCatalog() {
   }, []);
 
   return (
-    <section className="py-20 bg-kenya-black" id="catalog">
+    <section data-walkthrough="walkthrough-service-catalog" className="py-20 bg-kenya-black" id="catalog">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl sm:text-5xl font-bold text-kenya-white mb-4">

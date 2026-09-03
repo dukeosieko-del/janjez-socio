@@ -156,6 +156,7 @@ export default function Header() {
                   </button>
                   <button
                     onClick={() => openAuth("login")}
+                    data-walkthrough="walkthrough-nav-account"
                     className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
                   >
                     🔑 Sign In

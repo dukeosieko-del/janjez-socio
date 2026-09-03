@@ -140,7 +140,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div data-walkthrough="walkthrough-mpesa-payment" className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl">
         {step === "input" && (
           <>
@@ -242,6 +242,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
               <button
                 onClick={handleTopUp}
                 disabled={!phoneNumber || !amount}
+                data-walkthrough="walkthrough-mpesa-pay"
                 className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 flex items-center justify-center gap-2"
               >
                 <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />

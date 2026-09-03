@@ -44,7 +44,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-kenya-black">
+    <div data-walkthrough="walkthrough-dashboard" className="min-h-screen flex bg-kenya-black">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <AnnouncementBanner />
