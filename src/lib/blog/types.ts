@@ -47,9 +47,10 @@ export interface BlogPost {
   } | null;
   category?: BlogCategory | null;
   tags?: BlogTag[];
-  average_rating?: number | null;
-  rating_count?: number;
-}
+   average_rating?: number | null;
+   rating_count?: number;
+   user_rating?: number | null;
+ }
 
 export interface BlogComment {
   id: string;

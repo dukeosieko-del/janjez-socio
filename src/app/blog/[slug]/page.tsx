@@ -5,14 +5,16 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
-import RatingStars from "@/components/blog/RatingStars";
+import BlogRating from "@/components/blog/BlogRating";
+import BlogComments from "@/components/blog/BlogComments";
 import ArticleContent from "@/components/blog/ArticleContent";
 import PopupOffer from "@/components/blog/PopupOffer";
 import Link from "next/link";
-import { Clock, Eye, MessageCircle } from "@/components/blog/icons";
-import { getPostBySlug } from "@/lib/blog/data";
-import { blogPosts } from "@/lib/blog/data";
+import { Clock, Eye } from "@/components/blog/icons";
+import { getPostBySlug, blogPosts } from "@/lib/blog/data";
+import type { BlogPost } from "@/lib/blog/types";
 import type { BlogPostListItem } from "@/lib/blog/queries";
+import { SITE_URL } from "../../lib/config";
 
 function toListItem(post: typeof blogPosts[0]): BlogPostListItem {
   return {
@@ -46,7 +48,22 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  let post: BlogPost | null = null;
+
+  try {
+    const res = await fetch(`${SITE_URL}/api/blog/posts/${slug}`, { next: { revalidate: 300 } });
+    if (res.ok) {
+      const data = await res.json();
+      post = data.post;
+    }
+  } catch {
+    // fallback to static
+  }
+
+  if (!post) {
+    post = getPostBySlug(slug);
+  }
+
   if (!post) {
     return { title: "Post Not Found | Blog | janjez.social" };
   }
@@ -56,26 +73,40 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       title: `${post.title} | Blog | janjez.social`,
       description: post.excerpt || `${post.title} — janjez.social Blog & News`,
-      url: `https://janjez.social/blog/${post.slug}`,
+      url: `${SITE_URL}/blog/${post.slug}`,
       siteName: "janjez.social",
       locale: "en_KE",
       type: "article",
       images: post.cover_image_url ? [{ url: post.cover_image_url, width: 1200, height: 630 }] : [],
     },
-    alternates: { canonical: `https://janjez.social/blog/${post.slug}` },
+    alternates: { canonical: `${SITE_URL}/blog/${post.slug}` },
   };
 }
 
 export default async function BlogArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+
+  let post: BlogPost | null = null;
+  try {
+    const res = await fetch(`${SITE_URL}/api/blog/posts/${slug}`, { next: { revalidate: 300 } });
+    if (res.ok) {
+      const data = await res.json();
+      post = data.post;
+    }
+  } catch {
+    // fallback to static
+  }
+
+  if (!post) {
+    post = getPostBySlug(slug);
+  }
 
   if (!post) {
     notFound();
   }
 
   const relatedPosts = blogPosts
-    .filter((p) => p.slug !== post.slug)
+    .filter((p) => p.slug !== post!.slug)
     .slice(0, 3)
     .map(toListItem);
 
@@ -199,26 +230,20 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
                 </div>
 
                 <div className="flex items-center gap-4 text-xs text-kenya-white/50">
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    {post.view_count} views
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MessageCircle className="w-3 h-3" />
-                    12 comments
-                  </span>
+                 <span className="flex items-center gap-1">
+                     <Eye className="w-3 h-3" />
+                     {post.view_count} views
+                   </span>
                 </div>
               </div>
 
               {/* Average Rating */}
-              {post.average_rating != null && (
-                <div className="mt-4 flex items-center gap-2">
-                  <RatingStars rating={post.average_rating} showCount count={post.rating_count ?? 0} />
-                  <span className="text-sm text-kenya-white/60">
-                    {post.average_rating.toFixed(1)} / 5
-                  </span>
-                </div>
-              )}
+              <BlogRating
+                post={post}
+                initialUserRating={post.user_rating ?? null}
+                initialAverage={post.average_rating ?? null}
+                initialCount={post.rating_count ?? 0}
+              />
             </header>
 
             {/* Cover Image */}
@@ -236,30 +261,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
             <ArticleContent post={post} relatedPosts={relatedPosts} ctaConfig={ctaConfig} />
 
             {/* Comments Section */}
-            <div className="border-t border-kenya-white/10 pt-8 mt-12">
-              <h2 className="text-2xl font-bold text-kenya-white mb-6">Discussion (12)</h2>
-
-              <div className="space-y-6">
-                <div className="border border-kenya-white/10 rounded-xl p-4 bg-kenya-white/3">
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-kenya-white/10 flex-shrink-0 flex items-center justify-center">
-                      👤
-                    </div>
-                    <div className="flex-1">
-                      <textarea
-                        placeholder="Write a comment..."
-                        className="w-full bg-transparent text-kenya-white placeholder-kenya-white/40 border-none outline-none resize-none min-h-[60px]"
-                      />
-                      <div className="flex justify-end mt-2">
-                        <button className="px-4 py-2 bg-kenya-green text-kenya-black font-bold rounded-lg hover:bg-kenya-green/90 transition-colors">
-                          Post Comment
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <BlogComments postSlug={post.slug} />
           </article>
         </main>
         <Footer />

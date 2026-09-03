@@ -49,7 +49,7 @@ export default function CommentCard({
 
   return (
     <div className="border-l-2 border-kenya-white/5 pl-4 ml-2">
-      <div className="bg-kenya-white/3 border border-kenya-white/5 rounded-xl p-4">
+      <div className="group bg-kenya-white/3 border border-kenya-white/5 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-kenya-white/10">
             <Image
