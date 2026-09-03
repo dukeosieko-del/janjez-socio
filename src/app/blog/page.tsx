@@ -156,8 +156,6 @@ export default async function BlogPage({ searchParams }: { searchParams: { q?: s
               <BlogFilters
                 currentSort="latest"
                 currentView="grid"
-                onSortChange={() => {}}
-                onViewChange={() => {}}
               />
             </div>
 
@@ -224,10 +222,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { q?: s
                   new services delivered to your inbox. No spam, ever.
                 </p>
                 <button
-                  onClick={() => {
-                    const event = new Event("open-newsletter-modal");
-                    window.dispatchEvent(event);
-                  }}
+                  type="button"
                   className="bg-kenya-green text-kenya-black font-bold px-8 py-3 rounded-xl hover:bg-kenya-green/90 transition-all"
                 >
                   Join the Newsletter
