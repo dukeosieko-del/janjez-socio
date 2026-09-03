@@ -1,4 +1,4 @@
-const CACHE_NAME = 'janjez-social-v2';
+const CACHE_NAME = 'janjez-social-v3';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -23,17 +23,21 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-
   const { request } = event;
   const url = new URL(request.url);
 
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(request));
+  if (request.method !== 'GET') {
     return;
   }
 
-  if (url.pathname.startsWith('/_next/static/')) {
+  if (request.destination === 'document' && request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => caches.match('/'))
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/images/')) {
     event.respondWith(
       caches.match(request).then(cached => {
         if (cached) return cached;
@@ -43,39 +47,11 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
           }
           return response;
-        });
-      })
-    );
-    return;
-  }
-
-  if (url.pathname.startsWith('/icons/') || url.pathname.startsWith('/images/')) {
-    event.respondWith(
-      caches.match(request).then(cached => {
-        const fetchPromise = fetch(request).then(response => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-          }
-          return response;
         }).catch(() => cached);
-        return cached || fetchPromise;
       })
     );
     return;
   }
 
-  event.respondWith(
-    fetch(request).then(response => {
-      if (response && response.status === 200 && response.type === 'basic') {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
-      }
-      return response;
-    }).catch(() => {
-      if (request.mode === 'navigate') {
-        return caches.match('/');
-      }
-    })
-  );
+  return;
 });

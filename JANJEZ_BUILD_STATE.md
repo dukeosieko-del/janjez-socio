@@ -3230,3 +3230,16 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
    - **Root cause:** Chrome prefetch/preload resources not used within 3 seconds of window load event
    - **Impact:** Informational warning only — no user-facing impact
    - **Status:** No fix needed (benign prefetch behavior)
+
+### 2026-09-03 — PKCE Authentication Race Condition
+
+- **Error log source:** Browser console on `/auth/callback` (OAuth redirect callback)
+- **Error:** `POST https://rousjavuooduvicaobuv.supabase.co/auth/v1/token?grant_type=pkce 400 (Bad Request)` — `PKCE code verifier not found in storage`
+- **Root cause:** `@supabase/ssr`'s `createBrowserClient` sets `detectSessionInUrl: true` by default. On the callback page load, the Supabase auth client's auto-initialization detects the `code` parameter in the URL and immediately calls `_exchangeCodeForSession(code)`. This consumes the PKCE code verifier cookie (removes it from storage). When `AuthCallbackClient.tsx`'s `useEffect` subsequently calls `exchangeCodeForSession(code)` manually, the PKCE verifier is already gone, throwing `AuthPKCECodeVerifierMissingError`.
+- **Fix applied in `src/lib/supabase/client.ts`:**
+  1. Set `auth: { detectSessionInUrl: false }` to disable the client's auto-init PKCE exchange, preventing the race condition
+  2. Explicitly set `isSingleton: true` on `createBrowserClient` for consistent singleton management (both with the library's internal cache and our wrapper)
+  3. Added `typeof window !== "undefined"` guard on the singleton check to prevent SSR hydration issues
+- **Why this works:** With `detectSessionInUrl: false`, the Supabase client won't auto-process the auth callback URL. Only `AuthCallbackClient`'s explicit `exchangeCodeForSession(code)` call performs the exchange, reading the PKCE verifier cookie once and correctly.
+- **Verification:** Tests 203/203 pass, Lint 0 errors (pre-existing warnings unchanged), Build PASS, PM2 restarted with `--update-env`, GitHub push verified
+
