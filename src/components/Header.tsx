@@ -9,6 +9,7 @@ import CountdownTimer from "./CountdownTimer";
 import MpesaModal from "./MpesaModal";
 import AuthModal from "./AuthModal";
 import HappyHourButton from "./HappyHourButton";
+import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "./AuthContext";
 
 export default function Header() {
@@ -75,8 +76,9 @@ export default function Header() {
             <div className="hidden lg:block">
             <GlobalSearch />
             </div>
-            <NotificationBell />
-            <CountdownTimer />
+             <NotificationBell />
+             <CountdownTimer />
+             <ThemeToggle />
             {user && (
               <>
                 <Link

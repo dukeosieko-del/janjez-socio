@@ -9,6 +9,46 @@
   --foreground: #FFFFFF;
 }
 
+:root[data-theme="light"] {
+  --kenya-black: #FFFFFF;
+  --kenya-white: #0D0D0D;
+  --background: #FFFFFF;
+  --foreground: #1a1a1a;
+  --surface: #F5F5F5;
+  --surface-2: #E5E5E5;
+  --border: #e0e0e0;
+  --kenya-white/5: rgba(13, 13, 13, 0.05);
+  --kenya-white/10: rgba(13, 13, 13, 0.1);
+  --kenya-white/20: rgba(13, 13, 13, 0.2);
+  --kenya-white/30: rgba(13, 13, 13, 0.3);
+  --kenya-white/40: rgba(13, 13, 13, 0.4);
+  --kenya-white/50: rgba(13, 13, 13, 0.5);
+  --kenya-white/60: rgba(13, 13, 13, 0.6);
+  --kenya-white/70: rgba(13, 13, 13, 0.7);
+  --kenya-white/80: rgba(13, 13, 13, 0.8);
+  --kenya-white/90: rgba(13, 13, 13, 0.9);
+  --kenya-black/5: rgba(255, 255, 255, 0.05);
+  --kenya-black/10: rgba(255, 255, 255, 0.1);
+  --kenya-black/20: rgba(255, 255, 255, 0.2);
+  --kenya-black/30: rgba(255, 255, 255, 0.3);
+  --kenya-black/40: rgba(255, 255, 255, 0.4);
+  --kenya-black/50: rgba(255, 255, 255, 0.5);
+  --kenya-black/60: rgba(255, 255, 255, 0.6);
+  --kenya-black/70: rgba(255, 255, 255, 0.7);
+  --kenya-black/80: rgba(255, 255, 255, 0.8);
+  --kenya-black/90: rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme="dark"] {
+  --kenya-black: #0D0D0D;
+  --kenya-white: #FFFFFF;
+  --background: #0D0D0D;
+  --foreground: #FFFFFF;
+  --surface: #1a1a1a;
+  --surface-2: #2a2a2a;
+  --border: #333333;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -16,6 +56,9 @@
   --color-kenya-green: var(--kenya-green);
   --color-kenya-red: var(--kenya-red);
   --color-kenya-white: var(--kenya-white);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

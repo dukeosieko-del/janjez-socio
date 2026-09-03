@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/AuthContext";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { ThemeProvider } from "@/lib/theme/ThemeContext";
 import { SITE_URL } from "./lib/config";
 import "./globals.css";
 
@@ -22,7 +23,7 @@ const geistMono = Geist_Mono({
 
 export const viewport: Viewport = {
   themeColor: "#00A859",
-  colorScheme: "dark",
+  colorScheme: "dark light",
 };
 
 export const metadata: Metadata = {
@@ -94,6 +95,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
+      data-theme="dark"
     >
       <head>
         <link rel="canonical" href={SITE_URL} />
@@ -114,9 +116,11 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <div className="min-h-full flex flex-col bg-kenya-black text-kenya-white">
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ThemeProvider>
         </div>
         <ServiceWorkerRegistrar />
         <GoogleAnalytics />

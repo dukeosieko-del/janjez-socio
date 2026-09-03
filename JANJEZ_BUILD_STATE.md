@@ -3260,6 +3260,53 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
   4. Non-GET requests pass through with `return` (no `event.respondWith()`, no interference)
   5. All other requests (including cross-origin to `supabase.co`, `googletagmanager.com`) pass through unmodified
 - **Status:** FIXED, deployed, verified live (sw.js returns 200 with v3 cache name)
-- **Note:** Supabase profiles 500 errors will persist until the recursive RLS policy is fixed at the database level. However, the service worker fix prevents these errors from cascading into 502s on page routes.
+   - **Note:** Supabase profiles 500 errors will persist until the recursive RLS policy is fixed at the database level. However, the service worker fix prevents these errors from cascading into 502s on page routes.
+
+### 2026-09-03 — Snapchat Icon Merge Conflict
+
+- **Error log source:** Browser console on `/services` page
+- **Error:** Snapchat service icon not rendering — SVG file contained git merge conflict markers (`<<<<<<< ours`, `>>>>>>> theirs`) preventing the SVG from parsing correctly
+- **Root cause:** `public/icons/services/snapchat.svg` had unresolved git merge conflict markers from a conflicting edit to the file
+- **Fix applied:** Resolved the merge conflict, keeping the detailed Snapchat ghost logo (yellow fill with black stroke)
+- **Verification:** Rebuild, PM2 restart `--update-env`, curl `https://janjez.social/icons/services/snapchat.svg` returns valid SVG markup (no conflict markers)
+- **Status:** FIXED, deployed, verified live
+
+### Pending External Fixes (No Code Fix Possible)
+
+1. **Supabase profiles 500 error:** Recursive RLS policy in migration `20250101000025_profiles_admin_policies.sql`. SQL to run in Supabase SQL Editor:
+
+```sql
+-- Step 1: Drop the recursive policies
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Admins can update all profiles" ON profiles;
+
+-- Step 2: Create non-recursive replacements
+CREATE POLICY "Admins can view all profiles" ON profiles
+  FOR SELECT USING (
+    (SELECT raw_user_meta_data->>'role' FROM auth.users WHERE id = auth.uid()) = 'admin'
+  );
+
+CREATE POLICY "Admins can update all profiles" ON profiles
+  FOR UPDATE USING (
+    (SELECT raw_user_meta_data->>'role' FROM auth.users WHERE id = auth.uid()) = 'admin'
+  );
+```
+
+Migration file `supabase/migrations/20250101000025_profiles_admin_policies.sql` has been updated with the fixed SQL.
+
+2. **M-Pesa STK push (`400 Bad Request - Invalid CallBackURL`):** Register the callback URL in the Safaricom Daraja developer portal:
+
+   **Callback URL to register:** `https://janjez.social/api/mpesa/callback`
+
+   Steps in Daraja portal: Apps → select app → Products → Lipa na M-Pesa Online → Validation & Callback URLs → set Callback URL to `https://janjez.social/api/mpesa/callback` → Save.
+
+### Remaining Benign Warnings
+
+1. **og-image.png preload "not used" (4 warnings):** The `<link rel="preload" as="image" href="/og-image.png">` is unused because og-image.png is only consumed by `<meta>` tags, not `<img>` tags. Added `fetchPriority="low"` to minimize impact. No further fix needed.
+
+2. **"Resource preloaded using link preload but not used" (13+ warnings):** Chrome prefetch warnings for resources not consumed within 3 seconds. Informational only, no user-facing impact.
+
+3. **Realtime notification lint warnings (5 errors, pre-existing):** `react-hooks/refs` rule flags ref access during render in `src/lib/supabase/realtime.ts:31-35`. These are for the supabase client singleton pattern and are not actual runtime errors.
+
 
 
