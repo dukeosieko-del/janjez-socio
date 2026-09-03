@@ -108,7 +108,9 @@ export function useNotifications(
     const supabase = createClient();
     if (!supabase) return;
 
-    void supabase.removeChannel(channelRef.current);
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
     channelRef.current = null;
 
     const channel = supabase
@@ -132,8 +134,10 @@ export function useNotifications(
     channelRef.current = channel;
 
     return () => {
-      void supabase.removeChannel(channel);
-      channelRef.current = null;
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [userId, audience, limit]);
 
