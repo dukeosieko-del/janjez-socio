@@ -3241,5 +3241,25 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
   2. Explicitly set `isSingleton: true` on `createBrowserClient` for consistent singleton management (both with the library's internal cache and our wrapper)
   3. Added `typeof window !== "undefined"` guard on the singleton check to prevent SSR hydration issues
 - **Why this works:** With `detectSessionInUrl: false`, the Supabase client won't auto-process the auth callback URL. Only `AuthCallbackClient`'s explicit `exchangeCodeForSession(code)` call performs the exchange, reading the PKCE verifier cookie once and correctly.
-- **Verification:** Tests 203/203 pass, Lint 0 errors (pre-existing warnings unchanged), Build PASS, PM2 restarted with `--update-env`, GitHub push verified
+  - **Verification:** Tests 203/203 pass, Lint 0 errors (pre-existing warnings unchanged), Build PASS, PM2 restarted with `--update-env`, GitHub push verified
+
+### 2026-09-03 — Service Worker Intercepting Cross-Origin Supabase Requests
+
+- **Error log source:** Browser console during app navigation
+- **Errors observed:**
+  1. `TypeError: Failed to convert value to 'Response'` in `sw.js:1` — service worker catch block returned `undefined` for non-navigate requests
+  2. `GET https://rousjavuooduvicaobuv.supabase.co/rest/v1/profiles?select=* 500 (Internal Server Error)` — Supabase profiles API failing (recursive RLS policy)
+  3. `GET https://janjez.social/dashboard?_rsc=xxx 502 (Bad Gateway)` — RSC requests failing through service worker
+  4. `A preload for 'https://www.googletagmanager.com/gtag/js?id=...' is found, but is not used because it is a cross-world service worker resource mismatch` — SW intercepting GA4 script
+  5. `The resource <URL> was preloaded using link preload but not used within a few seconds` (13+ identical warnings) — SW interfering with resource loading
+- **Root cause:** `public/sw.js` intercepted ALL fetch events (including cross-origin requests to `supabase.co` and `googletagmanager.com`). When Supabase returned 500 errors, the `.catch()` block returned `undefined` for non-navigation requests, causing `TypeError: Failed to convert value to 'Response'`. This cascaded into 502 errors on RSC routes and the GA4 cross-world mismatch.
+- **Fix applied in `public/sw.js`:**
+  1. Bumped `CACHE_NAME` from `janjez-social-v2` to `janjez-social-v3` to force update on existing clients
+  2. Removed generic catch-all fetch handler that intercepted all cross-origin requests
+  3. Service worker now ONLY caches same-origin static assets (`/_next/static/`, `/icons/`, `/images/`) and handles navigation requests (for offline fallback)
+  4. Non-GET requests pass through with `return` (no `event.respondWith()`, no interference)
+  5. All other requests (including cross-origin to `supabase.co`, `googletagmanager.com`) pass through unmodified
+- **Status:** FIXED, deployed, verified live (sw.js returns 200 with v3 cache name)
+- **Note:** Supabase profiles 500 errors will persist until the recursive RLS policy is fixed at the database level. However, the service worker fix prevents these errors from cascading into 502s on page routes.
+
 
