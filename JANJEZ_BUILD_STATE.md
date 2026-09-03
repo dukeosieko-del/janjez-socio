@@ -3142,13 +3142,13 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
   - `osiekoduke@gmail.com` (id `dfebea3a-...`) — just promoted
 - **To promote a new admin:** `cd /home/ubuntu/janjez-socio && npm run promote-admin -- user@example.com`
 
-### 2026-09-02 — Production Deployment State (FINAL)
+### 2026-09-02 — Production Deployment State
 - **Instance:** AWS Lightsail/EC2, public IP `3.7.231.161`, hostname `ip-172-26-5-201`
 - **Domain:** `jansjez.social` (canonical) and `www.jansjez.social` (alias) — DNS A record `3.7.231.161` verified via `dig @8.8.8.8` and `dig @1.1.1.1`
 - **SSL:** Let's Encrypt certs at `/etc/letsencrypt/live/janjez.social/` — valid until 2026-11-28, auto-renewed by certbot
 - **Nginx:** `v1.24.0` (Ubuntu), reverse proxy to `http://127.0.0.1:3000` on both `jansjez.social` and `www.jansjez.social`
 - **Next.js:** Standalone server.js managed by PM2 (`0 | janjez-app`, online)
-- **Build ID:** `uSjbPno36J-QOXPbiph2F` (rebuilt at 2026-09-03 05:43 UTC)
+- **Build ID:** `uSjbPno36J-QOXPbiph2F`
 - **PM2 env:** Correctly loaded from `.env` via `ecosystem.config.js` (custom dotenv loader). All env vars present:
   - `NEXT_PUBLIC_SITE_URL=https://janjez.social`
   - `SUPABASE_SERVICE_ROLE_KEY` — loaded from .env
@@ -3170,8 +3170,8 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - **Tests:** 203/203 pass, 0 lint errors
 
 ### Pending DB Migration (manual step)
-- **Migration 30** (`supabase/migrations/20250101000030_notifications_relax_legacy.sql`): Makes `notifications.type` and `notifications.message` nullable. Required for notifications system to insert rows without `type`/`message`.
-  - **Status:** NOT APPLIED to database. Verified via test insert that returns success (nullable columns work), but migration file exists for traceability.
+- **Migration 30** (`supabase/migrations/20250101000030_notifications_relax_legacy.sql`): Makes `notifications.type` and `notifications.message` nullable.
+  - **Status:** NOT APPLIED to database.
   - Other pending migrations (22-29): All verified as already applied.
 
 ### 2026-09-03 — Notifications Dashboard Crash Fix
@@ -3180,7 +3180,7 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
 - **Fixes applied:**
   1. **`src/lib/supabase/realtime.ts`** — Fixed realtime subscription race condition: explicitly removes old channel via `supabase.removeChannel()` before creating a new one; proper null-guarded cleanup in effect teardown.
   2. **`src/lib/supabase/realtime.ts`** — Added `Array.isArray()` validation on API response (`data?.notifications`); type-safe `unreadCount` validation.
-  3. **`src/lib/supabase/realtime.ts`** — Added explicit `401` detection: returns clear "Session expired. Please sign in again." message instead of raw "HTTP 401".
+  3. **`src/lib/supabase/realtime.ts`** — Added explicit `401` detection: returns clear "Session expired. please sign in again." message instead of raw "HTTP 401".
   4. **`src/components/ErrorBoundary.tsx`** (NEW) — Reusable class-component Error Boundary with "Try Again" button and themed fallback UI.
   5. **`src/app/dashboard/notifications/page.tsx`** — Wrapped `NotificationCenter` in `ErrorBoundary` with custom title/description.
   6. **`src/components/NotificationCenter.tsx`** — Added skeleton loading rows (5 animated placeholders) during fetch; added "Retry" button alongside error message; added `created_at` validation in `grouped` useMemo (skips invalid dates).
@@ -3194,3 +3194,39 @@ Moved the entire `if (!user)` anonymous/auth guard block BEFORE the `if (total >
   - `/_next/static/chunks/*.js`: 200 ✓
   - `/dashboard/notifications`: 307 → /auth/sign-in (correct redirect) ✓
   - All 8 platform routes: 200 ✓
+
+### 2026-09-03 — Chrome Console Error Investigation
+- **Error log source:** Browser console on `/`, `/services`, `/order` pages
+- **Findings:**
+
+1. **Deprecated `apple-mobile-web-app-capable` meta tag:**
+   - **Fix:** Added `<meta name="mobile-web-app-capable" content="yes">` alongside the Apple-specific tag in `src/app/layout.tsx`
+   - **Status:** FIXED, deployed
+
+2. **GA4 preload "cross-world service worker resource mismatch":**
+   - **Root cause:** `next/script` `afterInteractive` strategy preloads the GA4 script, but the service worker (`ServiceWorkerRegistrar.tsx`) intercepts it
+   - **Impact:** Benign warning — GA4 script still loads and functions
+   - **Status:** No fix needed (known Next.js + service worker interaction)
+
+3. **og-image.png preload "not used" warning:**
+   - **Root cause:** `og-image.png` is preloaded but never actually rendered in page body (only used as Open Graph meta tag)
+   - **Fix:** Added `fetchPriority="low"` to the preload link in `src/app/layout.tsx`
+   - **Status:** FIXED, deployed
+
+4. **Supabase profiles 500 errors (GET/POST /profiles):**
+   - **Root cause:** Recursive RLS policy from migration `20250101000025_profiles_admin_policies.sql` — the `FOR SELECT` policy queries `profiles` from within a policy on `profiles`, causing Postgres to block evaluation
+   - **Impact:** Client-side `AuthContext` profile fetch fails silently (graceful handling already in place — falls back to null profile)
+   - **Fix:** Code handles gracefully; database-level fix requires applying migration 26's `FOR SELECT` policy
+   - **Status:** Code handles gracefully, DB-level fix pending
+
+5. **M-Pesa STK push failure (`400 Bad Request - Invalid CallBackURL`):**
+   - **Root cause:** The callback URL `https://janjez.social/api/mpesa/callback` is NOT registered in the Safaricom Daraja developer portal for shortcode `174379` (sandbox)
+   - **Impact:** All M-Pesa STK push transactions fail — both wallet top-up and order payment
+   - **Verification:** Callback URL construction is correct in code (`getCallbackUrl()` returns `https://janjez.social/api/mpesa/callback`)
+   - **Fix required (external):** Register `https://janjez.social/api/mpesa/callback` in the Safaricom Daraja developer portal under the STK Push product for shortcode `174379`
+   - **Status:** External configuration issue — no code fix will resolve this
+
+6. **"Resource preloaded but not used" (13 warnings):**
+   - **Root cause:** Chrome prefetch/preload resources not used within 3 seconds of window load event
+   - **Impact:** Informational warning only — no user-facing impact
+   - **Status:** No fix needed (benign prefetch behavior)
