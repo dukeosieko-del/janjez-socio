@@ -26,7 +26,7 @@ export default function NotificationCenter({
 }: NotificationCenterProps) {
   const { user, session } = useAuth();
 
-  const { notifications, unreadCount, loading, error, markAllRead, markRead } =
+  const { notifications, unreadCount, loading, error, refresh, markAllRead, markRead } =
     useNotifications(user?.id ?? null, session?.access_token ?? null, {
       audience,
       limit: 50,
@@ -38,7 +38,10 @@ export default function NotificationCenter({
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     for (const n of notifications) {
-      if (new Date(n.created_at) >= startOfToday) today.push(n);
+      if (!n.created_at) continue;
+      const d = new Date(n.created_at);
+      if (isNaN(d.getTime())) continue;
+      if (d >= startOfToday) today.push(n);
       else earlier.push(n);
     }
     return { today, earlier };
@@ -65,15 +68,35 @@ export default function NotificationCenter({
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-kenya-red/10 border border-kenya-red/30 rounded-xl text-kenya-red text-sm">
-          {error}
+        <div className="mb-4 p-4 bg-kenya-red/10 border border-kenya-red/30 rounded-xl text-kenya-red text-sm flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => void refresh()}
+            className="px-3 py-1.5 bg-kenya-red text-kenya-white font-semibold rounded-lg hover:bg-kenya-red/90 transition-colors text-xs"
+          >
+            Retry
+          </button>
         </div>
       )}
 
       {loading && notifications.length === 0 && (
-        <div className="p-8 text-center text-kenya-white/50 text-sm">
-          Loading notifications…
-        </div>
+        <>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-4 border-b border-kenya-white/5 last:border-0 animate-pulse"
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-1.5 w-2 h-2 rounded-full bg-kenya-white/10 flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-4 bg-kenya-white/10 rounded w-3/4" />
+                  <div className="h-3 bg-kenya-white/10 rounded w-1/2" />
+                  <div className="h-3 bg-kenya-white/10 rounded w-1/3 mt-1" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
       )}
 
       {!loading && notifications.length === 0 && (

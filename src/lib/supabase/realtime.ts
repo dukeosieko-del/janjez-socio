@@ -37,10 +37,17 @@ export function useNotifications(
       const res = await fetch(`/api/notifications?${params.toString()}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
+      if (res.status === 401) {
+        setError("Session expired. Please sign in again.");
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount ?? 0);
+      const notifications: Notification[] = Array.isArray(data?.notifications)
+        ? data.notifications
+        : [];
+      setNotifications(notifications);
+      setUnreadCount(typeof data?.unreadCount === "number" ? data.unreadCount : 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load notifications");
     } finally {
@@ -100,6 +107,10 @@ export function useNotifications(
     if (!userId) return;
     const supabase = createClient();
     if (!supabase) return;
+
+    void supabase.removeChannel(channelRef.current);
+    channelRef.current = null;
+
     const channel = supabase
       .channel(`notifications:${userId}`)
       .on(
@@ -117,12 +128,12 @@ export function useNotifications(
         }
       )
       .subscribe();
+
     channelRef.current = channel;
+
     return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-      }
+      void supabase.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [userId, audience, limit]);
 
