@@ -27,6 +27,73 @@ export interface JanjezService {
   updated_at: string;
 }
 
+export type ServiceTier = "champion" | "premium" | "enterprise";
+
+export interface TierInfo {
+  tier: ServiceTier;
+  label: string;
+  description: string;
+  maxPrice: number;
+  color: string;
+  href: string;
+}
+
+export const TIERS: TierInfo[] = [
+  {
+    tier: "champion",
+    label: "Champion",
+    description: "Budget-friendly essentials — under KES 2,000",
+    maxPrice: 2000,
+    color: "bg-kenya-green",
+    href: "/services/champion",
+  },
+  {
+    tier: "premium",
+    label: "Premium",
+    description: "Mid-tier services — KES 2,000 to KES 6,000",
+    maxPrice: 6000,
+    color: "bg-blue-500",
+    href: "/services/premium",
+  },
+  {
+    tier: "enterprise",
+    label: "Enterprise",
+    description: "High-volume solutions — above KES 6,000",
+    maxPrice: Infinity,
+    color: "bg-kenya-red",
+    href: "/services/enterprise",
+  },
+];
+
+export function getServiceTier(price: number): ServiceTier {
+  if (price <= 2000) return "champion";
+  if (price <= 6000) return "premium";
+  return "enterprise";
+}
+
+export function getTierInfo(tier: ServiceTier): TierInfo | undefined {
+  return TIERS.find((t) => t.tier === tier);
+}
+
+export function filterServicesByTier(services: JanjezService[], tier: ServiceTier): JanjezService[] {
+  if (tier === "champion") {
+    return services.filter((s) => s.selling_price_ksh <= 2000);
+  }
+  if (tier === "premium") {
+    return services.filter((s) => s.selling_price_ksh > 2000 && s.selling_price_ksh <= 6000);
+  }
+  return services.filter((s) => s.selling_price_ksh > 6000);
+}
+
+export function getTierHref(tier: ServiceTier): string {
+  const tierInfo = getTierInfo(tier);
+  return tierInfo?.href ?? "/services";
+}
+
+export function getServiceTierHref(price: number): string {
+  return getTierHref(getServiceTier(price));
+}
+
 export interface ProviderServiceRow {
   id: string;
   name: string;

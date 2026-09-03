@@ -3,7 +3,9 @@ import LiveTicker from "@/components/LiveTicker";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 import { listJanjezServices } from "@/lib/janjez-services";
+import type { JanjezService } from "@/lib/janjez-services";
 import ServiceDenseList from "@/components/ServiceDenseList";
 import { SITE_URL } from "../lib/config";
 
@@ -96,6 +98,10 @@ export { JsonLd };
 export default async function ServicesPage() {
   const services = await listJanjezServices(true, "show_catalogue");
 
+  const championCount = services.filter((s: JanjezService) => s.selling_price_ksh <= 2000).length;
+  const premiumCount = services.filter((s: JanjezService) => s.selling_price_ksh > 2000 && s.selling_price_ksh <= 6000).length;
+  const enterpriseCount = services.filter((s: JanjezService) => s.selling_price_ksh > 6000).length;
+
   return (
     <div className="min-h-screen flex bg-kenya-black">
       <Sidebar />
@@ -112,6 +118,31 @@ export default async function ServicesPage() {
                 Browse all services across platforms. Select a category to filter.
               </p>
             </div>
+
+            <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Link href="/services/champion" className="group">
+                <div className="p-4 bg-kenya-green/10 border border-kenya-green/30 rounded-xl hover:bg-kenya-green/20 transition-all">
+                  <h3 className="text-kenya-green font-bold text-lg mb-1">Champion</h3>
+                  <p className="text-kenya-white/80 text-sm mb-2">Under KES 2,000</p>
+                  <p className="text-kenya-white/60 text-xs">{championCount} service{championCount !== 1 ? "s" : ""}</p>
+                </div>
+              </Link>
+              <Link href="/services/premium" className="group">
+                <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl hover:bg-blue-500/20 transition-all">
+                  <h3 className="text-blue-400 font-bold text-lg mb-1">Premium</h3>
+                  <p className="text-kenya-white/80 text-sm mb-2">KES 2,000 - KES 6,000</p>
+                  <p className="text-kenya-white/60 text-xs">{premiumCount} service{premiumCount !== 1 ? "s" : ""}</p>
+                </div>
+              </Link>
+              <Link href="/services/enterprise" className="group">
+                <div className="p-4 bg-kenya-red/10 border border-kenya-red/30 rounded-xl hover:bg-kenya-red/20 transition-all">
+                  <h3 className="text-kenya-red font-bold text-lg mb-1">Enterprise</h3>
+                  <p className="text-kenya-white/80 text-sm mb-2">Above KES 6,000</p>
+                  <p className="text-kenya-white/60 text-xs">{enterpriseCount} service{enterpriseCount !== 1 ? "s" : ""}</p>
+                </div>
+              </Link>
+            </div>
+
             <ServiceDenseList services={services} />
           </div>
         </main>
