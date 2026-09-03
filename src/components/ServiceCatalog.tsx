@@ -6,7 +6,10 @@ import Image from "next/image";
 import { KNOWN_PLATFORMS } from "@/lib/service-queries";
 import { getPlatformAvatar } from "@/lib/platform-avatars";
 <<<<<<< ours
+<<<<<<< ours
 import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
+=======
+>>>>>>> theirs
 =======
 >>>>>>> theirs
 
@@ -25,7 +28,11 @@ export default function ServiceCatalog() {
   useEffect(() => {
     let cancelled = false;
 <<<<<<< ours
+<<<<<<< ours
     fetchWithTimeout("/api/services/catalogue?placement=show_landing&active=true")
+=======
+    fetch("/api/services/catalogue?placement=show_landing&active=true")
+>>>>>>> theirs
 =======
     fetch("/api/services/catalogue?placement=show_landing&active=true")
 >>>>>>> theirs

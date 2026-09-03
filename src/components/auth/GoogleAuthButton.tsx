@@ -1,6 +1,7 @@
 "use client";
 
 <<<<<<< ours
+<<<<<<< ours
 import { useState } from "react";
 import { useAuth } from "@/components/AuthContext";
 
@@ -31,6 +32,8 @@ export default function GoogleAuthButton() {
       </svg>
       {loading ? "Signing in..." : "Continue with Google"}
 =======
+=======
+>>>>>>> theirs
 import { useAuth } from "@/components/AuthContext";
 
 export default function GoogleAuthButton() {
@@ -69,6 +72,9 @@ export default function GoogleAuthButton() {
         />
       </svg>
       Continue with Google
+<<<<<<< ours
+>>>>>>> theirs
+=======
 >>>>>>> theirs
     </button>
   );

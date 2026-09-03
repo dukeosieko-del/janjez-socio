@@ -22,7 +22,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0" data-walkthrough="walkthrough-home">
             <Image src="/janjez-logo.png" alt="janjez.social" width={28} height={32} quality={90} className="w-7 h-8 object-contain" />
             <span className="text-xl font-bold text-kenya-white">
               janjez<span className="text-kenya-green">.social</span>
@@ -34,6 +34,7 @@ export default function Header() {
             <Link
               href="/services"
               className="px-4 py-2 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
+              data-walkthrough="walkthrough-nav-services"
             >
               🛒 New Order
             </Link>

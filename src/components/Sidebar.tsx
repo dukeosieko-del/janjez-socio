@@ -89,11 +89,16 @@ export default function Sidebar() {
   useEffect(() => {
     let cancelled = false;
 <<<<<<< ours
+<<<<<<< ours
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     fetch("/api/services/sidebar", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+=======
+    fetch("/api/services/sidebar")
+      .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
+>>>>>>> theirs
 =======
     fetch("/api/services/sidebar")
       .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
@@ -108,12 +113,16 @@ export default function Sidebar() {
         if (!cancelled) setLoading(false);
       });
 <<<<<<< ours
+<<<<<<< ours
 
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
       controller.abort();
     };
+=======
+    return () => { cancelled = true; };
+>>>>>>> theirs
 =======
     return () => { cancelled = true; };
 >>>>>>> theirs
