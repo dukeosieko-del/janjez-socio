@@ -3308,5 +3308,40 @@ Migration file `supabase/migrations/20250101000025_profiles_admin_policies.sql` 
 
 3. **Realtime notification lint warnings (5 errors, pre-existing):** `react-hooks/refs` rule flags ref access during render in `src/lib/supabase/realtime.ts:31-35`. These are for the supabase client singleton pattern and are not actual runtime errors.
 
+### 2026-09-03 — Anonymous Order Checkout Resilience
+
+- **Issue:** When the M-Pesa STK push fails (e.g., `400 Bad Request - Invalid CallBackURL` due to unregistered callback URL in Safaricom Daraja portal), the anonymous order API returned a 500 error with no order reference. The user saw a generic error and could not track their order.
+- **Root cause:** `/api/orders/anonymous/route.ts` catch block (line 205) returned `{ error: "Failed to initiate M-Pesa payment" }` as HTTP 500, discarding the `order_id` already created in the database. The `OrderForm` had no fallback reference to show the user.
+- **Fixes applied:**
+  1. `src/app/api/orders/anonymous/route.ts` — STK push failure now returns HTTP 200 with `{ ok: false, order_id, error }`. The error message is specific: "Payment gateway not configured" when the callback URL is the issue, or "Failed to initiate M-Pesa payment" otherwise. The order is still marked as `failed` in the DB.
+  2. `src/lib/order-log.ts` — `submitAnonymousOrder` now returns `order_id` in both success and failure cases, so the client can display it.
+  3. `src/components/OrderForm.tsx` — When `submitAnonymousOrder` returns `ok: false` with an `order_id`, the error message includes the order reference and a link to `/orders/track?ref=<order_id>`. On success, falls back to tracking by order_id when no `checkoutRequestId` is present.
+  4. `src/app/orders/track/page.tsx` — `getOrderStatus()` now looks up orders by `wallet_transactions.reference` (CheckoutRequestID) first, then falls back to `orders.order_id` lookup, so users can track orders even when STK push failed.
+
+- **External blockers (no code fix possible):**
+  1. `pending_mpesa` DB migration still NOT applied — Supabase constraint will reject `payment_status: "pending_mpesa"` inserts
+  2. M-Pesa callback URL `https://janjez.social/api/mpesa/callback` still NOT registered in Safaricom Daraja portal — STK push will fail with `Invalid CallBackURL`
+
+### 2026-09-03 — Blog / Community Content Infrastructure (Phase 1)
+
+- **Goal:** Implement the foundational blog platform with DB schema, API layer, data access, components, and dynamic blog hub page per `BLOG_ARCHITECTURE.md` Phase 1.
+
+- **Completed:**
+  1. **DB Migration** — `supabase/migrations/20250101000031_blog_community_tables.sql`: Creates `blog_categories`, `blog_posts`, `blog_tags`, `blog_post_tags`, `blog_ratings`, `blog_comments`, `blog_post_views` tables with RLS policies, indexes, and `increment_blog_view` RPC function.
+  2. **Type System** — `src/lib/blog/types.ts`: TypeScript interfaces for `BlogCategory`, `BlogTag`, `BlogPost`, `BlogComment`, `BlogRating`, `BlogPostView`.
+  3. **Static Seed Data** — `src/lib/blog/data.ts`: Seed categories, tags, one featured blog post with rich content structure; helper functions `getTagsForPost()` and `getPostBySlug()`.
+  4. **Data Access Layer** — `src/lib/blog/queries.ts`: Supabase query functions for categories, tags, featured posts, latest posts, posts by category, search, post by slug, rating stats, comments (with nesting), view increment, and user rating lookup.
+  5. **API Routes** — `src/app/api/blog/`: `posts/route.ts` (list/filter/search with static fallback), `posts/[slug]/route.ts` (single post with comments/ratings/tags), `categories/route.ts`, `tags/route.ts`. All have graceful fallback to static seed data.
+  6. **Component Library** — `src/components/blog/`: `BlogCard`, `CategoryNav`, `BlogSearch`, `BlogFilters`, `ArticleContent`, `CommentCard`, `RatingStars`, `RatingInput`, `PopupOffer`, `icons`.
+  7. **Blog Hub Page** — `src/app/blog/page.tsx`: Converted from hardcoded links to dynamic data-driven layout with featured carousel, category navigation, search, sort filters, and post grid.
+  8. **Article Page** — `src/app/blog/[slug]/page.tsx`: Server-rendered article page with metadata, rich content rendering, CTA integration, related articles, and comment section stub.
+
+- **Build:** `next build` — Compiled successfully. All blog routes (`/_next/data/blog`, `/api/blog/*`, `/blog`, `/blog/[slug]`) generated.
+- **Tests:** 238/238 passing (24 files). No blog-specific test file yet (planned for Phase 2).
+- **Lint:** 0 errors (3 `next/image` warnings — consistent with existing codebase usage of `<img>`).
+- **Type check:** 0 blog-related errors.
+
+- **Remaining for Phase 2+:** Admin dashboard, rich text editor, comment/rating API POST endpoints, write/edit pages, notification integration.
+
 
 

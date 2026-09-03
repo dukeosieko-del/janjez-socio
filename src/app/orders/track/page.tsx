@@ -19,24 +19,35 @@ interface OrderStatus {
   created_at: string;
 }
 
-async function getOrderStatus(checkoutRequestId: string): Promise<OrderStatus | null> {
+async function getOrderStatus(ref: string): Promise<OrderStatus | null> {
   const supabase = createAdminClient();
   if (!supabase) return null;
 
   const { data: tx, error: txError } = await supabase
     .from("wallet_transactions")
     .select("related_order_id, status")
-    .eq("reference", checkoutRequestId)
-    .single();
+    .eq("reference", ref)
+    .maybeSingle();
 
-  if (txError || !tx?.related_order_id) return null;
+  let orderId: string | null = tx?.related_order_id ?? null;
+
+  if (txError || !orderId) {
+    const { data: orderByOrderId, error: orderByIdError } = await supabase
+      .from("orders")
+      .select("id")
+      .eq("order_id", ref)
+      .maybeSingle();
+
+    if (orderByIdError || !orderByOrderId) return null;
+    orderId = orderByOrderId.id;
+  }
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .select(
       "order_id, service_name, quantity, amount, amount_paid, payment_status, status, fulfillment_status, fulfilled_at, provider_order_id, provider_response, runs, interval, phone_number, created_at"
     )
-    .eq("id", tx.related_order_id)
+    .eq("id", orderId)
     .single();
 
   if (orderError || !order) return null;

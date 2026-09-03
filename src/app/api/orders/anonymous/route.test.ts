@@ -351,4 +351,46 @@ describe("POST /api/orders/anonymous - validation", () => {
       payment_status: "pending_mpesa",
     });
   });
+
+  it("returns order_id with ok:false when STK push fails (Invalid CallBackURL)", async () => {
+    let updateCalled = false;
+    const orderChainable = makeChainable({});
+    orderChainable.insert = vi.fn(() => ({
+      select: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({ data: { id: "order-1", order_id: "ORD-TEST" }, error: null }),
+      })),
+    }));
+    orderChainable.update = vi.fn(() => {
+      updateCalled = true;
+      return orderChainable;
+    });
+    orderChainable.eq = vi.fn(() => orderChainable);
+
+    const txChainable = makeChainable({ insert: vi.fn().mockResolvedValue({ data: {}, error: null }) });
+    mockAdminClient.from.mockImplementation((table: string) => {
+      if (table === "orders") return orderChainable;
+      if (table === "wallet_transactions") return txChainable;
+      return makeChainable({});
+    });
+
+    const service = { id: "svc-1", name: "YT", slug: "yt", category: "youtube", selling_price_ksh: 41.1, provider_service_id: "12345", min_quantity: 100, max_quantity: 1000000, supports_drip_feed: true, is_active: true, show_anonymous: true, description: null, display_order: 0, supports_refill: false, supports_cancel: false, show_sidebar: false, show_landing: false, show_guarded: false, show_catalogue: false, created_at: "", updated_at: "" };
+    (listJanjezServices as ReturnType<typeof vi.fn>).mockResolvedValue([service]);
+    (initiateStkPush as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("M-Pesa STK push failed: 400 Bad Request - Invalid CallBackURL")
+    );
+
+    const req = mockRequest({
+      janjez_service_id: "svc-1",
+      link_submitted: "https://youtube.com/watch?v=test",
+      quantity: 100,
+      phone_number: "0712345678",
+    });
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.ok).toBe(false);
+    expect(data.order_id).toBe("ORD-TEST");
+    expect(data.error).toContain("Payment gateway not configured");
+    expect(updateCalled).toBe(true);
+  });
 });

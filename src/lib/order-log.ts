@@ -44,13 +44,11 @@ export async function submitAnonymousOrder(payload: AnonymousOrderPayload) {
     }),
   });
 
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    return { ok: false as const, error: data?.error || "Failed to start anonymous order." };
-  }
-
   const data = await res.json();
-  return { ok: true as const, data };
+  if (!res.ok) {
+    return { ok: false as const, error: data?.error || "Failed to start anonymous order.", order_id: data?.order_id };
+  }
+  return { ok: true as const, data, order_id: data.order_id };
 }
 
 function getCatalogItem(categoryId: string): ServiceCatalogItem | undefined {

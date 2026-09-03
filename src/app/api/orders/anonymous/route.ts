@@ -204,13 +204,22 @@ export async function POST(request: NextRequest) {
       });
     } catch (stkError) {
       console.error("Anonymous STK push error:", stkError);
+      const stkErrorMsg = stkError instanceof Error ? stkError.message : "Unknown error";
+      const isCallBackURL = stkErrorMsg.includes("Invalid CallBackURL") || stkErrorMsg.includes("CallBackURL");
       await supabase
         .from("orders")
-        .update({ fulfillment_status: "failed", fulfillment_error: "M-Pesa payment initiation failed" })
+        .update({
+          fulfillment_status: isCallBackURL ? "failed" : "failed",
+          fulfillment_error: `M-Pesa payment initiation failed: ${stkErrorMsg}`,
+        })
         .eq("id", orderData.id);
       return NextResponse.json({
-        error: "Failed to initiate M-Pesa payment. Please try again.",
-      }, { status: 500 });
+        ok: false,
+        order_id: orderData.order_id,
+        error: isCallBackURL
+          ? "Payment gateway not configured. Please contact support."
+          : "Failed to initiate M-Pesa payment. Please try again.",
+      }, { status: 200 });
     }
   } catch (error) {
     console.error("Anonymous order error:", error);
