@@ -11,13 +11,15 @@ interface MpesaModalProps {
   isOpen: boolean;
   onClose: () => void;
   requiredAmount?: number;
+  serviceName?: string;
+  quantity?: number;
   onSuccess?: () => void;
 }
 
 const POLL_INTERVAL = 5000;
 const POLL_TIMEOUT = 120000;
 
-export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess }: MpesaModalProps) {
+export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceName, quantity, onSuccess }: MpesaModalProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"input" | "processing" | "success">("input");
@@ -150,6 +152,11 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
                 <div>
                   <h2 className="text-xl font-bold text-kenya-white">Lipa na M-Pesa</h2>
                   <p className="text-kenya-white/50 text-sm">Top up your wallet instantly</p>
+                  {(serviceName || quantity) && (
+                    <p className="text-kenya-white/40 text-xs mt-1">
+                      {serviceName}{quantity ? ` x${quantity}` : ""}
+                    </p>
+                  )}
                 </div>
               </div>
               <button
