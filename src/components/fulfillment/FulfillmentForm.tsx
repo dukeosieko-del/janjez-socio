@@ -411,6 +411,8 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         isOpen={mpesaOpen}
         onClose={() => setMpesaOpen(false)}
         requiredAmount={requiredAmount}
+        serviceName={displayName}
+        quantity={quantityNum}
         onSuccess={() => {
           setMpesaOpen(false);
           handlePlaceOrder();

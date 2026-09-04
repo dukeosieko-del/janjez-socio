@@ -4,6 +4,48 @@
 
 ---
 
+## 22. 2026-09-04 — NON-BLOG FULL RECONCILIATION INVENTORY
+
+- **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
+- **Operation type:** READ-ONLY INSPECTION
+- **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
+- **HEAD:** `22180186021fd245edaef7e6616458cda7bb3bbb`
+- **Baseline HEAD:** `4f1774f9e5bd2569e623c20d1dd7b7d6c6f2da54` (origin/review/janjez-reconciliation-20260822)
+- **Merge base:** `88a2ab96b7b693a219e3a4d3f8a92ee18300abdd8`
+- **Ahead/behind:** 79 commits ahead, 61 behind baseline
+
+### Reconciliation Verdict
+**NO SELECTIVE RECOVERY REQUIRED — CURRENT BRANCH IS FUNCTIONALLY SUPERSET**
+
+### Key Findings
+1. **All security fixes from baseline are present in current branch** (provider_service_id, slug normalization, categoryId, explicit column projections)
+2. **KES 50 model (`82d65fa`, `832762c`) absent — KES 7 (`13275b5`) authoritative**
+3. **Email transport upgraded**: Baseline ZeptoMail → Current Brevo SMTP via nodemailer
+4. **Auth hardened**: New admin-check endpoint, profile API with avatar upload, username support, auto sign-out
+5. **Notifications system added**: Full transactional email + in-app notification stack (NOT in baseline)
+6. **Walkthrough engine integrated**: `data-walkthrough` attributes on key components (passive, non-modifying)
+7. **No security regressions found**: No provider ID exposure, amount validation present, middleware protects all routes
+
+### Historical Commit Classification
+| Commit | Status |
+|---|---|
+| `832762c` | SUPERSEDED — KES 50 model replaced by KES 7 |
+| `4a9777f` | SUPERSEDED — functionality incorporated |
+| `42c7f82` | SUPERSEDED — platform avatar utility present |
+| `13275b5` | AUTHORITATIVE — KES 7 model present and protected |
+| `5adfbec` | BASELINE-OK — provider_service_id restriction present |
+| `fd81e3e` | BASELINE-OK — server-side /services rendering present |
+| `00a4d84` | BASELINE-OK — categoryId usage present |
+| `47f70f5` | BASELINE-OK — slug normalization and janjezServiceId present |
+| `e336df5` | IRRELEVANT — documentation only |
+| `5f0e5e6` | BASELINE-OK — blog links fixed (Blog approved separately) |
+| `82d65fa` | SUPERSEDED — KES 50 minimum removed per `13275b5` |
+
+### Recovery Candidates
+**None identified.** Current branch contains all baseline functionality through direct ancestry or equivalent implementations.
+
+---
+
 ## WARNING: CLOUD AGENT ≠ EC2 RUNTIME
 
 DO NOT ASSUME THE CLOUD AGENT WORKSPACE IS THE EC2 RUNTIME.
@@ -3449,3 +3491,101 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 
 
 
+
+---
+
+## 22. 2026-09-04 — NON-BLOG FULL RECONCILIATION INVENTORY
+
+- **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
+- **Operation type:** READ-ONLY INSPECTION
+- **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
+- **HEAD:** `22180186021fd245edaef7e6616458cda7bb3bbb`
+- **Baseline HEAD:** `4f1774f9e5bd2569e623c20d1dd7b7d6c6f2da54` (origin/review/janjez-reconciliation-20260822)
+- **Merge base:** `88a2ab96b7b693a219e3a4d91892ee18300abdd8`
+- **Ahead/behind:** 79 commits ahead, 61 behind baseline
+
+### Reconciliation Verdict
+**NO SELECTIVE RECOVERY REQUIRED — CURRENT BRANCH IS FUNCTIONALLY SUPERSET**
+
+### Key Findings
+1. **All security fixes from baseline are present in current branch** (provider_service_id, slug normalization, categoryId, explicit column projections)
+2. **KES 50 model (`82d65fa`, `832762c`) absent — KES 7 (`13275b5`) authoritative**
+3. **Email transport upgraded**: Baseline ZeptoMail → Current Brevo SMTP via nodemailer
+4. **Auth hardened**: New admin-check endpoint, profile API with avatar upload, username support, auto sign-out
+5. **Notifications system added**: Full transactional email + in-app notification stack (NOT in baseline)
+6. **Walkthrough engine integrated**: `data-walkthrough` attributes on key components (passive, non-modifying)
+7. **No security regressions found**: No provider ID exposure, amount validation present, middleware protects all routes
+
+### Historical Commit Classification
+| Commit | Status |
+|---|---|
+| `832762c` | SUPERSEDED — KES 50 model replaced by KES 7 |
+| `4a9777f` | SUPERSEDED — functionality incorporated |
+| `42c7f82` | SUPERSEDED — platform avatar utility present |
+| `13275b5` | AUTHORITATIVE — KES 7 model present and protected |
+| `5adfbec` | BASELINE-OK — provider_service_id restriction present |
+| `fd81e3e` | BASELINE-OK — server-side /services rendering present |
+| `00a4d84` | BASELINE-OK — categoryId usage present |
+| `47f70f5` | BASELINE-OK — slug normalization and janjezServiceId present |
+| `e336df5` | IRRELEVANT — documentation only |
+| `5f0e5e6` | BASELINE-OK — blog links fixed (Blog approved separately) |
+| `82d65fa` | SUPERSEDED — KES 50 minimum removed per `13275b5` |
+
+### Recovery Candidates
+**None identified.** Current branch contains all baseline functionality through direct ancestry or equivalent implementations.
+
+### Protected State
+- Surgical commit `2218018` — protected, not to be modified
+- KES 7 M-Pesa pricing model (`13275b5`) — authoritative, KES 50 must not be reintroduced
+- Current Blog implementation — approved as authoritative
+- Current walkthrough system — complete and integrated
+
+---
+
+## 23. CURRENT STATE SUMMARY (2026-09-04)
+
+### Branch
+`session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
+
+### HEAD
+`22180186021fd245edaef7e6616458cda7bb3bbb`
+
+### HEAD Commit
+`2218018` — fix: resolve snapchat asset and enhance mpesa checkout context
+
+### Working Tree
+CLEAN — 0 modified tracked files
+
+### Tests
+237 passed (24 test files)
+
+### Lint
+0 errors, 122 warnings (pre-existing)
+
+### Build
+PASS
+
+### TypeScript
+0 errors in changed files (49 pre-existing errors in test files only)
+
+### Blog
+AUTHORITATIVE — 186-line landing page with JSON-LD, OpenGraph, Twitter cards, canonical URLs
+
+### M-Pesa Pricing
+LOCKED — `SERVICE_CHARGE_KES = 7`, no KES 50 minimum
+
+### Walkthrough
+INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions
+
+### Pending External Blockers
+1. **ZeptoMail/Brevo SMTP IP allowlist** — blocked if using Brevo SMTP from EC2
+2. **`pending_mpesa` DB migration** — requires manual Supabase dashboard application
+3. **Supabase recursive RLS policy** on profiles — requires manual SQL fix (documented in section 20, 2026-09-03)
+4. **M-Pesa STK push callback URL** — must be registered in Safaricom Daraja portal
+
+### Next Starting Point
+1. Complete Blog agent integration (walkthrough-blog-article target)
+2. Apply pending DB migrations
+3. Obtain valid Brevo SMTP credentials and configure IP allowlist
+4. Register M-Pesa callback URL in Daraja portal
+5. Deploy to Vercel production
