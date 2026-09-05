@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         text: [
           `Hi ${name},`,
           ``,
-          `We received your message. We aim to respond within 24 hours.`,
+          `We received your message. We aim to respond within a few minutes to one hour.`,
           ``,
           `Subject: ${subject}`,
           `Message:`,

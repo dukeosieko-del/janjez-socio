@@ -548,11 +548,11 @@ export function getContactNotificationHtml(data: ContactFormData) {
 
 export function getContactConfirmationHtml(data: ContactFormData) {
   return shell({
-    preheader: `We received your message — our team will get back to you within 24 hours.`,
+    preheader: `We received your message — our team will get back to you within a few minutes to one hour.`,
     body: `
       ${titleBlock("We received your message", "Thanks for reaching out to the Janjez Socio team.")}
       ${paragraph(
-        `We've got your note and our team will get back to you within 24 hours. Below is a copy of what you sent so you have a record.`
+        `We've got your note and our team will get back to you within a few minutes to one hour. Below is a copy of what you sent so you have a record.`
       )}
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; margin: 8px 0 16px; background: ${TABLE_BG}; border: 1px solid ${CARD_BORDER}; border-radius: 10px;">
         <tr>
@@ -579,6 +579,53 @@ export function getContactConfirmationHtml(data: ContactFormData) {
         </tr>
       </table>
       ${mutedParagraph(`Need urgent help? Chat with us on WhatsApp or email ${SUPPORT_ADDRESS}.`)}
+    `,
+  });
+}
+
+export function getContactReplyHtml(data: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  originalMessage: string;
+  department: string;
+}) {
+  return shell({
+    preheader: `We replied to your message — ${SITE_NAME}`,
+    body: `
+      ${titleBlock("We replied to your message", "Here is our response to your inquiry.")}
+      ${paragraph(`Hi ${escapeHtml(data.name)},`)}
+      ${paragraph(`We've responded to your message below.`)}
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; margin: 8px 0 16px; background: ${TABLE_BG}; border: 1px solid ${CARD_BORDER}; border-radius: 10px;">
+        <tr>
+          <td style="padding: 16px 18px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: ${TEXT_DARK};">
+              <tr>
+                <td width="120" style="padding: 8px 12px 8px 0; color: ${TEXT_MUTED}; font-weight: 600; vertical-align: top;">Subject</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid ${CARD_BORDER};">${escapeHtml(data.subject)}</td>
+              </tr>
+              <tr>
+                <td width="120" style="padding: 8px 12px 8px 0; color: ${TEXT_MUTED}; font-weight: 600; vertical-align: top;">Our Reply</td>
+                <td style="padding: 8px 0; white-space: pre-wrap;">${escapeHtml(data.message)}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; margin: 8px 0 16px; background: ${TABLE_BG}; border: 1px solid ${CARD_BORDER}; border-radius: 10px;">
+        <tr>
+          <td style="padding: 16px 18px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; font-family: Helvetica, Arial, sans-serif; font-size: 14px; color: ${TEXT_DARK};">
+              <tr>
+                <td width="120" style="padding: 8px 12px 8px 0; color: ${TEXT_MUTED}; font-weight: 600; vertical-align: top;">Your Message</td>
+                <td style="padding: 8px 0; white-space: pre-wrap;">${escapeHtml(data.originalMessage)}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      ${mutedParagraph(`Need more help? Reply to this email or reach us at ${SUPPORT_ADDRESS}.`)}
     `,
   });
 }

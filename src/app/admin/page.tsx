@@ -21,6 +21,33 @@ export default function AdminDashboardPage() {
   const { user, profile, loading, isAdmin: contextIsAdmin } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
   const [authorized, setAuthorized] = useState(false);
+  const [unreadContactCount, setUnreadContactCount] = useState(0);
+
+  type ContactMessage = {
+    id: string;
+    status: string;
+  };
+
+  useEffect(() => {
+    if (!authorized) return;
+    let mounted = true;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch("/api/admin/contact?limit=1");
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data.ok) {
+            setUnreadContactCount(data.messages.filter((m: ContactMessage) => m.status === "new").length);
+          }
+        }
+      } catch {
+        // silent
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, [authorized]);
 
   const isAdmin = useMemo(() => {
     const metaRole = (user?.user_metadata as { role?: string } | undefined)?.role;
@@ -119,8 +146,13 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">Admin Dashboard</h1>
                 <p className="text-kenya-white/60">Platform operations and oversight.</p>
               </div>
-              <Link href="/admin/contact" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-xl hover:bg-kenya-green/90 transition-colors">
+              <Link href="/admin/contact" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-xl hover:bg-kenya-green/90 transition-colors relative">
                 Contact Messages
+                {unreadContactCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-kenya-red text-kenya-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {unreadContactCount > 9 ? "9+" : unreadContactCount}
+                  </span>
+                )}
               </Link>
             </div>
 

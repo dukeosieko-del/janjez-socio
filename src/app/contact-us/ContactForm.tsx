@@ -122,7 +122,7 @@ export default function ContactForm() {
           <p className="text-kenya-green text-sm">
             {fallbackEmail
               ? `Message received. Since automated email delivery is not configured yet, please also send this directly to ${fallbackEmail}.`
-              : "Message sent successfully. We'll get back to you within 24 hours."}
+              : "Message sent successfully. We'll get back to you within a few minutes to one hour."}
           </p>
         </div>
       )}
