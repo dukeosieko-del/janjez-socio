@@ -80,12 +80,6 @@ export async function listProviderServices(params: {
 }
 
 export async function listJanjezServices(activeOnly: boolean = false, placement?: keyof Pick<JanjezService, "show_sidebar" | "show_landing" | "show_guarded" | "show_anonymous" | "show_catalogue">): Promise<JanjezService[]> {
-  const cacheKey = `${activeOnly}:${placement ?? ""}`;
-  const cached = SERVICES_CACHE.get(cacheKey);
-  if (cached && Date.now() - cached.timestamp < SERVICES_CACHE_TTL_MS) {
-    return cached.services;
-  }
-
   const supabase = createAdminClient();
   if (!supabase) return [];
 
@@ -101,6 +95,12 @@ export async function listJanjezServices(activeOnly: boolean = false, placement?
 
   if (placement) {
     query = query.eq(placement, true);
+  }
+
+  const cacheKey = `${activeOnly}:${placement ?? ""}`;
+  const cached = SERVICES_CACHE.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < SERVICES_CACHE_TTL_MS) {
+    return cached.services;
   }
 
   const all: JanjezService[] = [];

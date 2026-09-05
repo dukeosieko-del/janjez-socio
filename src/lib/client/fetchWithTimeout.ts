@@ -1,47 +1,17 @@
-export class FetchTimeoutError extends Error {
-  constructor(message: string = "Fetch timed out") {
-    super(message);
-    this.name = "FetchTimeoutError";
-  }
-}
-
-export interface FetchWithTimeoutOptions extends RequestInit {
-  timeout?: number;
-}
-
-export async function fetchWithTimeout(
-  input: string | URL | Request,
-  options: FetchWithTimeoutOptions = {}
-): Promise<Response> {
-  const { timeout = 10000, ...rest } = options;
-
+export function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit & { timeout?: number }): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(input, {
-      ...rest,
-      signal: controller.signal,
-    });
-    return response;
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      throw new FetchTimeoutError(`Request timed out after ${timeout}ms`);
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
+  const timeout = init?.timeout ?? init?.signal ? undefined : 15000;
+  if (timeout !== undefined) {
+    const id = setTimeout(() => controller.abort(), timeout);
+    init = { ...init, signal: controller.signal };
+    const original = init;
+    return fetch(input, original).finally(() => clearTimeout(id)).then((res) => res) as Promise<Response>;
   }
+  return fetch(input, init);
 }
 
-export async function fetchJSON<T = unknown>(
-  input: string | URL | Request,
-  options: FetchWithTimeoutOptions = {}
-): Promise<T> {
-  const res = await fetchWithTimeout(input, options);
-  if (!res.ok) {
-    const text = await res.text().catch(() => "Unknown error");
-    throw new Error(`HTTP ${res.status}: ${text}`);
-  }
+export async function fetchJSON<T = unknown>(input: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetchWithTimeout(input, init);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
   return res.json() as Promise<T>;
 }
