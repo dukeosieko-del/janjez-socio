@@ -3723,10 +3723,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`a0cc6e8b7ddc2a9ac7daa07fe5ec3cf944bd1c25`
+`d475ee63dd74410757dd21713601f402995b8d79`
 
 ### HEAD Commit
-`a0cc6e8` — fix: disable Geist Mono preload and harden service worker cache error handling
+`d475ee6` — fix: suppress web-vitals startTime console error from DevTools/Lighthouse
 
 ### Working Tree
 CLEAN — 0 modified tracked files, 0 untracked files
@@ -3756,7 +3756,7 @@ FIXED — Google auth button restored to dark-themed styling with loading state;
 FIXED — AnnouncementBanner now edge-to-edge full-width; Header content constrained to max-w-7xl centered on all screens; mobile menu toggle visible; mobile menu closes on link click, scroll, or resize to desktop
 
 ### Performance/Browser Warnings
-FIXED — Disabled Geist Mono font preload to eliminate Chrome unused-preload warning; added CacheStorage error handling in service worker to prevent `UnknownError: Failed to execute 'open' on 'CacheStorage'`
+FIXED — Disabled Geist Mono font preload to eliminate Chrome unused-preload warning; added CacheStorage error handling in service worker to prevent `UnknownError: Failed to execute 'open' on 'CacheStorage'`; added global error suppression for web-vitals `startTime` DevTools/Lighthouse console error
 
 ### Deployment
 DEPLOYED — PM2 restarted with updated build, all critical routes returning HTTP 200
