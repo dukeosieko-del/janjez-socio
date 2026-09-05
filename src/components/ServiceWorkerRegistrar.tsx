@@ -7,7 +7,7 @@ export function ServiceWorkerRegistrar() {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
 
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js").then((registration) => {
+      navigator.serviceWorker.register("/sw-v2.js").then((registration) => {
         registration.addEventListener("updatefound", () => {
           const newWorker = registration.installing;
           if (!newWorker) return;
