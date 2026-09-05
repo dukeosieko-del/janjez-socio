@@ -3717,40 +3717,48 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 
 ---
 
-## 23. CURRENT STATE SUMMARY (2026-09-04)
+## 23. CURRENT STATE SUMMARY (2026-09-05)
 
 ### Branch
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`22180186021fd245edaef7e6616458cda7bb3bbb`
+`34ec4fe437e89e623a2637775b5d627a9a71d7e0`
 
 ### HEAD Commit
-`2218018` — fix: resolve snapchat asset and enhance mpesa checkout context
+`34ec4fe` — merge: resolve conflicts and integrate walkthrough branch with blog Phase 2
 
 ### Working Tree
-CLEAN — 0 modified tracked files
+CLEAN — 0 modified tracked files, 0 untracked files
 
 ### Tests
-237 passed (24 test files)
+243 passed (25 test files)
 
 ### Lint
-0 errors, 122 warnings (pre-existing)
+0 errors, pre-existing warnings unchanged
 
 ### Build
-PASS
+PASS — standalone output packaged with postbuild script
 
 ### TypeScript
-0 errors in changed files (49 pre-existing errors in test files only)
+0 new errors in changed files
 
 ### Blog
-AUTHORITATIVE — 186-line landing page with JSON-LD, OpenGraph, Twitter cards, canonical URLs
-
-### M-Pesa Pricing
-LOCKED — `SERVICE_CHARGE_KES = 7`, no KES 50 minimum
+COMPLETE — Phase 2 implemented: admin management, notifications, auth middleware, API tests, static fallbacks
 
 ### Walkthrough
-INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions
+INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions, passive DOM markers on key components
+
+### CSS/Runtime
+HEALTHY — CSS HTTP 200, JS HTTP 200, images HTTP 200, PM2 online, no new runtime errors after restart
+
+### Git
+- Pushed to `origin/session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
+- Merge conflicts resolved: JANJEZ_BUILD_STATE.md, blog/page.tsx, snapchat.svg, GoogleAuthButton.tsx, fetchWithTimeout.ts
+- Remote branch now at `34ec4fe`
+
+### Deployment
+DEPLOYED — PM2 restarted with updated build, all critical routes returning HTTP 200
 
 ### Pending External Blockers
 1. **ZeptoMail/Brevo SMTP IP allowlist** — blocked if using Brevo SMTP from EC2
@@ -3759,8 +3767,7 @@ INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions
 4. **M-Pesa STK push callback URL** — must be registered in Safaricom Daraja portal
 
 ### Next Starting Point
-1. Complete Blog agent integration (walkthrough-blog-article target)
-2. Apply pending DB migrations
-3. Obtain valid Brevo SMTP credentials and configure IP allowlist
-4. Register M-Pesa callback URL in Daraja portal
-5. Deploy to Vercel production
+1. Apply pending DB migrations
+2. Obtain valid Brevo SMTP credentials and configure IP allowlist
+3. Register M-Pesa callback URL in Daraja portal
+4. Deploy to production if authorized
