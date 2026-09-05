@@ -3723,10 +3723,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`34ec4fe437e89e623a2637775b5d627a9a71d7e0`
+`7ddefa691cc60e8a138e46da77e569d71f192762`
 
 ### HEAD Commit
-`34ec4fe` — merge: resolve conflicts and integrate walkthrough branch with blog Phase 2
+`7ddefa6` — fix: make announcement banner edge-to-edge and improve mobile header behavior
 
 ### Working Tree
 CLEAN — 0 modified tracked files, 0 untracked files
@@ -3749,13 +3749,11 @@ COMPLETE — Phase 2 implemented: admin management, notifications, auth middlewa
 ### Walkthrough
 INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions, passive DOM markers on key components
 
-### CSS/Runtime
-HEALTHY — CSS HTTP 200, JS HTTP 200, images HTTP 200, PM2 online, no new runtime errors after restart
+### Auth
+FIXED — Google auth button restored to dark-themed styling with loading state; sign-in/sign-up pages functional
 
-### Git
-- Pushed to `origin/session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
-- Merge conflicts resolved: JANJEZ_BUILD_STATE.md, blog/page.tsx, snapchat.svg, GoogleAuthButton.tsx, fetchWithTimeout.ts
-- Remote branch now at `34ec4fe`
+### Mobile UI
+FIXED — AnnouncementBanner now edge-to-edge full-width; Header content constrained to max-w-7xl centered on all screens; mobile menu toggle visible; mobile menu closes on link click, scroll, or resize to desktop
 
 ### Deployment
 DEPLOYED — PM2 restarted with updated build, all critical routes returning HTTP 200
