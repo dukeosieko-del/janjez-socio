@@ -3723,10 +3723,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`3c2cb432d6e34411da614ab173e2a3c285b79875`
+`ef9b29518a25f2a69c0811f1e59aee225f748771`
 
 ### HEAD Commit
-`3c2cb43` — feat: add 10 professional blog posts and walkthrough integration
+`ef9b295` — fix: fallback to static blog posts when database returns empty results
 
 ### Working Tree
 CLEAN — 0 modified tracked files, 0 untracked files
@@ -3744,7 +3744,7 @@ PASS — standalone output packaged with postbuild script
 0 new errors in changed files
 
 ### Blog
-COMPLETE — 10 professional how-to blog posts published (800+ words each) with platform-specific links, rich content, and SVG cover images. Posts cover: platform navigation, YouTube monetization, X/Twitter trends, Facebook monetization, TikTok growth, Instagram safety, SMM sourcing, agency building, M-Pesa payments, and engagement monetization. Walkthrough integration complete with data-walkthrough targets on blog cards and entry point. Admin contact reply system with unread badge deployed. Anonymous checkout fixed. Service worker hardened. All routes returning HTTP 200.
+COMPLETE — 10 professional how-to blog posts published (800+ words each) with platform-specific links and rich content. Posts cover: platform navigation, YouTube monetization, X/Twitter trends, Facebook monetization, TikTok growth, Instagram safety, SMM sourcing, agency building, M-Pesa payments, and engagement monetization. Blog fallback to static data fixed. Walkthrough integration complete with data-walkthrough targets on blog cards and entry point. Cover images pending from asset generation.
 
 ### Walkthrough
 INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions, passive DOM markers on key components
