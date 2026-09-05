@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthContext";
+import { useRouter } from "next/navigation";
 
 type ContactMessage = {
   id: string;
@@ -49,7 +50,7 @@ const DEPARTMENT_OPTIONS = [
 
 export default function AdminContactPage() {
   const { user, profile, loading, session } = useAuth();
-  const router = require("next/navigation").useRouter();
+  const router = useRouter();
 
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [page, setPage] = useState(1);

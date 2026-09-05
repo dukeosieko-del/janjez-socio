@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "cp -r .next/static .next/standalone/janjez-socio/.next/ && cp -r public .next/standalone/janjez-socio/public/ 2>/dev/null || true",
+    "postbuild": "cp -r .next/static .next/standalone/janjez-socio/.next/ && cp -r public .next/standalone/janjez-socio/public/ 2>/dev/null || true && cp -r .next/build .next/standalone/janjez-socio/.next/build 2>/dev/null || true && cp -r .next/diagnostics .next/standalone/janjez-socio/.next/diagnostics 2>/dev/null || true && cp .next/export-marker.json .next/standalone/janjez-socio/.next/export-marker.json 2>/dev/null || true && cp .next/fallback-build-manifest.json .next/standalone/janjez-socio/.next/fallback-build-manifest.json 2>/dev/null || true && cp .next/images-manifest.json .next/standalone/janjez-socio/.next/images-manifest.json 2>/dev/null || true && cp .next/next-minimal-server.js.nft.json .next/standalone/janjez-socio/.next/next-minimal-server.js.nft.json 2>/dev/null || true && cp .next/next-server.js.nft.json .next/standalone/janjez-socio/.next/next-server.js.nft.json 2>/dev/null || true && cp .next/required-server-files.js .next/standalone/janjez-socio/.next/required-server-files.js 2>/dev/null || true",
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint",
     "test": "vitest",
