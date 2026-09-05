@@ -44,11 +44,11 @@ self.addEventListener('fetch', event => {
         return fetch(request).then(response => {
           if (response && response.status === 200) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+            caches.open(CACHE_NAME).then(cache => cache.put(request, clone)).catch(() => {});
           }
           return response;
         }).catch(() => cached);
-      })
+      }).catch(() => fetch(request))
     );
     return;
   }
