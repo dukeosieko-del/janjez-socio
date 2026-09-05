@@ -3723,10 +3723,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`89d1012548effedbcc5f89452f5b6ae6f8e2a810`
+`3ecf181636de0981f07c59e89ef5103d01339c30`
 
 ### HEAD Commit
-`89d1012` — feat: add inline blog article images for all 10 posts
+`3ecf181` — fix: replace SVG covers with PNG to avoid browser rendering 500 errors
 
 ### Working Tree
 CLEAN — 0 modified tracked files, 0 untracked files
@@ -3744,7 +3744,7 @@ PASS — standalone output packaged with postbuild script
 0 new errors in changed files
 
 ### Blog
-COMPLETE — 10 professional how-to blog posts published (800+ words each) with platform-specific links and rich content. SVG cover images and 11 inline article PNG images created and linked for all posts. Database posts missing cover_image_url are automatically merged with static data. All blog images present in public/blog/. Walkthrough integration complete. Admin contact reply system with unread badge deployed.
+COMPLETE — 10 professional how-to blog posts published (800+ words each) with platform-specific links and rich content. PNG cover images and 11 inline article PNG images created and linked for all posts. Additional missing static assets added: logo-icon.png, placeholder.png, avatar-placeholder.png. Database posts missing cover_image_url are automatically merged with static data. All blog images present in public/blog/. Walkthrough integration complete. Admin contact reply system with unread badge deployed.
 
 ### Walkthrough
 INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions, passive DOM markers on key components
