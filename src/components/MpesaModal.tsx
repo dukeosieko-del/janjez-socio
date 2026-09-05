@@ -11,13 +11,15 @@ interface MpesaModalProps {
   isOpen: boolean;
   onClose: () => void;
   requiredAmount?: number;
+  serviceName?: string;
+  quantity?: number;
   onSuccess?: () => void;
 }
 
 const POLL_INTERVAL = 5000;
 const POLL_TIMEOUT = 120000;
 
-export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess }: MpesaModalProps) {
+export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceName, quantity, onSuccess }: MpesaModalProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [step, setStep] = useState<"input" | "processing" | "success">("input");
@@ -140,7 +142,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div data-walkthrough="walkthrough-mpesa-payment" className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-kenya-black border border-kenya-white/10 rounded-2xl w-full max-w-md shadow-2xl">
         {step === "input" && (
           <>
@@ -150,6 +152,11 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
                 <div>
                   <h2 className="text-xl font-bold text-kenya-white">Lipa na M-Pesa</h2>
                   <p className="text-kenya-white/50 text-sm">Top up your wallet instantly</p>
+                  {(serviceName || quantity) && (
+                    <p className="text-kenya-white/40 text-xs mt-1">
+                      {serviceName}{quantity ? ` x${quantity}` : ""}
+                    </p>
+                  )}
                 </div>
               </div>
               <button
@@ -242,6 +249,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
               <button
                 onClick={handleTopUp}
                 disabled={!phoneNumber || !amount}
+                data-walkthrough="walkthrough-mpesa-pay"
                 className="w-full bg-green-600 text-white font-bold text-lg py-4 rounded-xl hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600 flex items-center justify-center gap-2"
               >
                 <Image src="/mpesa-logo.png" alt="M-Pesa" width={24} height={24} className="w-6 h-6 object-contain" />

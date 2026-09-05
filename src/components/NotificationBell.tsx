@@ -51,6 +51,7 @@ export default function NotificationBell() {
     <>
       <button
         onClick={handleOpen}
+        data-walkthrough="walkthrough-notif-bell"
         className="relative p-2 rounded-lg hover:bg-kenya-white/10 transition-colors"
         aria-label="Notifications"
       >
@@ -76,6 +77,7 @@ export default function NotificationBell() {
 
       {isOpen && (
         <div
+          data-walkthrough="walkthrough-notif-panel"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           onClick={close}
         >

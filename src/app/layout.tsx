@@ -4,6 +4,9 @@ import { AuthProvider } from "@/components/AuthContext";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import { ThemeProvider } from "@/lib/theme/ThemeContext";
+import { WalkthroughProvider } from "@/lib/walkthrough/engine/useWalkthrough";
+import WalkthroughRenderer from "@/components/walkthrough/WalkthroughRenderer";
+import "@/lib/walkthrough/journeys/all";
 import { SITE_URL } from "./lib/config";
 import "./globals.css";
 
@@ -118,7 +121,10 @@ export default function RootLayout({
         <div className="min-h-full flex flex-col bg-kenya-black text-kenya-white">
           <ThemeProvider>
             <AuthProvider>
-              {children}
+              <WalkthroughProvider>
+                {children}
+                <WalkthroughRenderer />
+              </WalkthroughProvider>
             </AuthProvider>
           </ThemeProvider>
         </div>

@@ -48,7 +48,7 @@ export default function NotificationCenter({
   }, [notifications]);
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div data-walkthrough="walkthrough-notif-center" className="max-w-3xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-kenya-white">{title}</h1>
@@ -138,7 +138,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-xs uppercase tracking-wider text-kenya-white/50 font-semibold mb-2 px-1">
         {title}
       </h2>
-      <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl overflow-hidden">
+      <div data-walkthrough="walkthrough-view-all-notifications" className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl overflow-hidden">
         {children}
       </div>
     </section>

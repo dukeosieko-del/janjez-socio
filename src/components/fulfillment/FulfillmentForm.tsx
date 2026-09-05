@@ -207,7 +207,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
   const refillText = service ? (service.supports_refill ? "30 Days Refill Guarantee" : "No refill") : "No refill";
 
   return (
-    <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
+    <div data-walkthrough="walkthrough-fulfillment-form" className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
       <div className="flex items-center gap-4 mb-6">
         <div className="w-12 h-12 flex items-center justify-center">
           <img src={platformIcon} alt={platformName} className="w-10 h-10 object-contain" />
@@ -231,6 +231,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
           <input
             type="text"
             required
+            data-walkthrough="walkthrough-target-link"
             value={link}
             onChange={(e) => setLink(e.target.value)}
             placeholder="Profile, post, channel URL or phone number"
@@ -245,6 +246,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
           <input
             type="number"
             required
+            data-walkthrough="walkthrough-quantity-input"
             min={qtyMin}
             max={qtyMax}
             value={quantity}
@@ -363,6 +365,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
                   </label>
                   <input
                     type="tel"
+                    data-walkthrough="walkthrough-phone-input"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="07XXXXXXXX or 01XXXXXXXX"
@@ -397,6 +400,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         <button
           onClick={handlePlaceOrder}
           disabled={!isValid || placing || anonymousPlacing}
+          data-walkthrough="walkthrough-guest-checkout"
           className="w-full bg-kenya-green text-kenya-black font-bold text-lg py-4 rounded-xl hover:bg-kenya-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-kenya-green flex items-center justify-center gap-2"
         >
           {placing || anonymousPlacing ? "Processing…" : !user && isAnonymous ? "Place & Pay (Guest)" : "Place Order"}
@@ -407,6 +411,8 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         isOpen={mpesaOpen}
         onClose={() => setMpesaOpen(false)}
         requiredAmount={requiredAmount}
+        serviceName={displayName}
+        quantity={quantityNum}
         onSuccess={() => {
           setMpesaOpen(false);
           handlePlaceOrder();

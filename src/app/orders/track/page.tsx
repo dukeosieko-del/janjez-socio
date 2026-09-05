@@ -81,7 +81,7 @@ export default async function AnonymousTrackingPage({ searchParams }: { searchPa
   }
 
   return (
-    <div className="min-h-screen bg-kenya-black text-kenya-white">
+    <div data-walkthrough="walkthrough-order-tracking" className="min-h-screen bg-kenya-black text-kenya-white">
       <div className="max-w-3xl mx-auto px-4 py-16">
         <h1 className="text-3xl font-bold mb-8">Anonymous Order Status</h1>
 
