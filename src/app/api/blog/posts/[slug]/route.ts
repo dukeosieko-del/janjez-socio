@@ -19,6 +19,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
+    const staticPost = blogPosts.find((p) => p.slug === slug);
+    if (staticPost && !post.cover_image_url) {
+      post.cover_image_url = staticPost.cover_image_url;
+    }
+
     // Get comments
     let comments: BlogComment[] = [];
     try {

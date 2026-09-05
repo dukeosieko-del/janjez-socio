@@ -75,8 +75,20 @@ export const metadata: Metadata = {
 
 async function getBlogData() {
   const categories = await getCategories().catch(() => blogCategories as BlogCategory[]);
-  const featuredPosts = await getFeaturedPosts(3).catch(() => blogPosts.map(toListItem));
-  const latestPosts = await getLatestPosts(12).catch(() => blogPosts.map(toListItem));
+  let featuredPosts = await getFeaturedPosts(3).catch(() => blogPosts.map(toListItem));
+  let latestPosts = await getLatestPosts(12).catch(() => blogPosts.map(toListItem));
+
+  const staticMap = new Map(blogPosts.map((p) => [p.slug, p]));
+  const enrichPost = (post: BlogPostListItem): BlogPostListItem => {
+    const staticPost = staticMap.get(post.slug);
+    if (staticPost && !post.cover_image_url) {
+      return { ...post, cover_image_url: staticPost.cover_image_url };
+    }
+    return post;
+  };
+
+  featuredPosts = featuredPosts.map(enrichPost);
+  latestPosts = latestPosts.map(enrichPost);
 
   return {
     categories: categories.length > 0 ? categories : blogCategories,
