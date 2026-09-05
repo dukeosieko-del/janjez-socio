@@ -45,7 +45,7 @@ const DEPARTMENT_OPTIONS = [
 ];
 
 export default function AdminContactPage() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, session } = useAuth();
   const router = require("next/navigation").useRouter();
 
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -63,13 +63,23 @@ export default function AdminContactPage() {
     }
   }, [user, profile, loading, router]);
 
+  const getAuthHeaders = () => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    return headers;
+  };
+
   const fetchMessages = async () => {
     setError(null);
     const params = new URLSearchParams({ page: String(page), limit: "25" });
     if (statusFilter) params.set("status", statusFilter);
     if (departmentFilter) params.set("department", departmentFilter);
 
-    const res = await fetch(`/api/admin/contact?${params.toString()}`);
+    const res = await fetch(`/api/admin/contact?${params.toString()}`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) {
       setError("Failed to load contact messages");
       return;
@@ -93,7 +103,7 @@ export default function AdminContactPage() {
     try {
       const res = await fetch("/api/admin/contact", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeaders() },
         body: JSON.stringify({ id, status: newStatus }),
       });
       if (res.ok) {
