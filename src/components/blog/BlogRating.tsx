@@ -41,7 +41,7 @@ export default function BlogRating({
       setUserRating(rating);
       if (data.average !== undefined) setAverage(data.average);
       if (data.count !== undefined) setCount(data.count);
-    } catch (err) {
+    } catch {
       setError("Failed to submit rating");
     } finally {
       setSubmitting(false);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { ChevronDown, Grid, List } from "./icons";
 
 interface BlogFiltersProps {
@@ -16,27 +15,6 @@ export default function BlogFilters({
   onSortChange,
   onViewChange,
 }: BlogFiltersProps) {
-  const [internalSort, setInternalSort] = useState(currentSort);
-  const [internalView, setInternalView] = useState(currentView);
-
-  useEffect(() => {
-    setInternalSort(currentSort);
-  }, [currentSort]);
-
-  useEffect(() => {
-    setInternalView(currentView);
-  }, [currentView]);
-
-  const handleSortChange = (sort: string) => {
-    setInternalSort(sort);
-    onSortChange?.(sort);
-  };
-
-  const handleViewChange = (view: "grid" | "list") => {
-    setInternalView(view);
-    onViewChange?.(view);
-  };
-
   const sortOptions = [
     { value: "latest", label: "Latest First" },
     { value: "oldest", label: "Oldest First" },
@@ -50,8 +28,8 @@ export default function BlogFilters({
         <div className="flex items-center gap-2">
           <span className="text-xs text-kenya-white/50">Sort by:</span>
           <select
-            value={internalSort}
-            onChange={(e) => handleSortChange(e.target.value)}
+            value={currentSort}
+            onChange={(e) => onSortChange?.(e.target.value)}
             className="text-sm text-kenya-white bg-kenya-black border border-kenya-white/20 rounded-lg px-3 py-1 focus:outline-none focus:border-kenya-green focus:ring-1 focus:ring-kenya-green"
           >
             {sortOptions.map((opt) => (
@@ -65,9 +43,9 @@ export default function BlogFilters({
         <div className="hidden sm:flex items-center gap-2">
           <span className="text-xs text-kenya-white/50">View:</span>
           <button
-            onClick={() => handleViewChange("grid")}
+            onClick={() => onViewChange?.("grid")}
             className={`p-1.5 rounded-lg transition-all ${
-              internalView === "grid"
+              currentView === "grid"
                 ? "bg-kenya-green text-kenya-black"
                 : "text-kenya-white/50 hover:text-kenya-white hover:bg-kenya-white/10"
             }`}
@@ -76,9 +54,9 @@ export default function BlogFilters({
             <Grid className="w-4 h-4" />
           </button>
           <button
-            onClick={() => handleViewChange("list")}
+            onClick={() => onViewChange?.("list")}
             className={`p-1.5 rounded-lg transition-all ${
-              internalView === "list"
+              currentView === "list"
                 ? "bg-kenya-green text-kenya-black"
                 : "text-kenya-white/50 hover:text-kenya-white hover:bg-kenya-white/10"
             }`}
@@ -89,7 +67,7 @@ export default function BlogFilters({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-2">
         <span className="text-xs text-kenya-white/50">Filters:</span>
         <button className="flex items-center gap-1 text-xs text-kenya-white/60 hover:text-kenya-white transition-colors">
           <span>Category</span>

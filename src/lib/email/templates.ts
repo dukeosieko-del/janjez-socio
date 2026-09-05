@@ -949,7 +949,78 @@ export function getSystemMaintenanceEmail({
       `Ends: ${windowEnd}`,
       `Reason: ${reason}`,
       ``,
-      `Status page: ${statusUrl}`,
+       `Status page: ${statusUrl}`,
+     ].join("\n"),
+   };
+}
+
+export interface ArticlePublishedEmailInput {
+  authorName: string;
+  articleTitle: string;
+  articleUrl: string;
+}
+
+export function getArticlePublishedEmail({ authorName, articleTitle, articleUrl }: ArticlePublishedEmailInput) {
+  const body = `
+    ${greetingBlock(authorName)}
+    ${titleBlock("Article Published", `Your article is now live on ${SITE_NAME}`)}
+    ${paragraph(`Great news! Your article <strong>${escapeHtml(articleTitle)}</strong> has been approved and published.`)}
+    ${paragraph(`Readers can now find it in the blog and search results. Share it with your audience to maximize reach.`)}
+    ${ctaButton(articleUrl, "View Published Article")}
+    ${divider()}
+    ${mutedParagraph(`Thank you for contributing to the ${SITE_NAME} community.`)}
+  `;
+  return {
+    subject: `Your article is now live — ${articleTitle}`,
+    html: shell({ preheader: `Your article "${articleTitle}" has been published on ${SITE_NAME}.`, body }),
+    text: [
+      `Your article is now live — ${SITE_NAME}`,
+      ``,
+      `Hi ${authorName},`,
+      ``,
+      `Great news! Your article "${articleTitle}" has been approved and published.`,
+      ``,
+      `View it here: ${articleUrl}`,
+      ``,
+      `Thank you for contributing to the ${SITE_NAME} community.`,
     ].join("\n"),
   };
 }
+
+export interface ArticleRejectedEmailInput {
+  authorName: string;
+  articleTitle: string;
+  reason?: string;
+  articleUrl: string;
+}
+
+export function getArticleRejectedEmail({ authorName, articleTitle, reason, articleUrl }: ArticleRejectedEmailInput) {
+  const body = `
+    ${greetingBlock(authorName)}
+    ${titleBlock("Article Needs Revision", `Your article "${escapeHtml(articleTitle)}" was not approved`)}
+    ${paragraph(`Thank you for submitting your article. After review, it was not approved for publication at this time.`)}
+    ${reason ? paragraph(`<strong>Reason:</strong> ${escapeHtml(reason)}`) : ""}
+    ${paragraph(`You can edit your article and resubmit it for review.`)}
+    ${ctaButton(articleUrl, "Edit Article")}
+    ${divider()}
+    ${mutedParagraph(`If you have questions, reply to this email or contact us on WhatsApp.`)}
+  `;
+  return {
+    subject: `Article update needed — ${articleTitle}`,
+    html: shell({ preheader: `Your article "${articleTitle}" needs revision before it can be published.`, body }),
+    text: [
+      `Article update needed — ${SITE_NAME}`,
+      ``,
+      `Hi ${authorName},`,
+      ``,
+      `Your article "${articleTitle}" was not approved for publication.`,
+      reason ? `Reason: ${reason}` : "",
+      ``,
+      `Edit and resubmit: ${articleUrl}`,
+      ``,
+      `If you have questions, reply to this email or contact us on WhatsApp.`,
+    ].join("\n"),
+  };
+}
+
+export { SITE_NAME, SUPPORT_ADDRESS, SUPPORT_PHONE };

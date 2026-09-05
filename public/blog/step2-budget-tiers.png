@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D0D0D"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <text x="600" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="600" fill="#FFFFFF" text-anchor="middle">
+    Step 2: Choose Your Budget Tier
+  </text>
+  <text x="600" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="rgba(255,255,255,0.6)" text-anchor="middle">
+    Select your preferred budget level at the top of the services page
+  </text>
+  <rect x="200" y="360" width="180" height="50" rx="25" fill="#00A859" opacity="0.2"/>
+  <text x="290" y="392" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#00A859" text-anchor="middle">&lt;2k Champion</text>
+  <rect x="400" y="360" width="180" height="50" rx="25" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+  <text x="490" y="392" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="rgba(255,255,255,0.6)" text-anchor="middle">Starter</text>
+  <rect x="600" y="360" width="180" height="50" rx="25" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+  <text x="690" y="392" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="rgba(255,255,255,0.6)" text-anchor="middle">Premium</text>
+  <rect x="800" y="360" width="180" height="50" rx="25" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)"/>
+  <text x="890" y="392" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="rgba(255,255,255,0.6)" text-anchor="middle">Enterprise</text>
+</svg>

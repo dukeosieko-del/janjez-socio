@@ -1,82 +1,101 @@
-import { NextResponse } from "next/server";
-import { getLatestPosts, getFeaturedPosts, getPostsByCategory, searchPosts } from "@/lib/blog/queries";
+import { NextResponse, NextRequest } from "next/server";
+import { getUserFromRequest } from "@/lib/server/auth-helpers";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { blogPosts } from "@/lib/blog/data";
-import type { BlogPostListItem } from "@/lib/blog/queries";
 
-function toListItem(post: typeof blogPosts[0]): BlogPostListItem {
-  return {
-    id: post.id,
-    slug: post.slug,
-    title: post.title,
-    excerpt: post.excerpt,
-    cover_image_url: post.cover_image_url,
-    category: post.category ? {
-      id: post.category.id,
-      name: post.category.name,
-      slug: post.category.slug,
-      color_hex: post.category.color_hex,
-    } : null,
-    tags: post.tags || [],
-    author: post.author ? {
-      id: post.author.id,
-      full_name: post.author.full_name,
-      avatar_url: post.author.avatar_url,
-    } : null,
-    reading_time_minutes: post.reading_time_minutes,
-    view_count: post.view_count,
-    published_at: post.published_at,
-    is_featured: post.is_featured,
-    average_rating: post.average_rating ?? null,
-    rating_count: post.rating_count ?? 0,
-  };
-}
+export async function POST(request: NextRequest) {
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const featured = searchParams.get("featured") === "true";
-  const category = searchParams.get("category");
-  const search = searchParams.get("q");
-  const limit = parseInt(searchParams.get("limit") || "12");
-  const offset = parseInt(searchParams.get("offset") || "0");
+  const supabase = createAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Database not configured" }, { status: 500 });
+  }
 
   try {
-    if (featured) {
-      const posts = await getFeaturedPosts(limit);
-      return NextResponse.json({ ok: true, posts });
+    const body = await request.json();
+    const { title, excerpt, content, category_id, cover_image_url, tags, status = "draft" } = body;
+
+    if (!title || !content) {
+      return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
     }
 
-    if (category) {
-      const posts = await getPostsByCategory(category, limit, offset);
-      return NextResponse.json({ ok: true, posts });
+    const { data: post, error } = await supabase
+      .from("blog_posts")
+      .insert({
+        title,
+        excerpt: excerpt || null,
+        content,
+        category_id: category_id || null,
+        cover_image_url: cover_image_url || null,
+        author_id: user.id,
+        status: status === "pending" ? "pending" : "draft",
+        visibility: "public",
+        slug: `post-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      })
+      .select("id, slug, title, status")
+      .single();
+
+    if (error) {
+        console.error("Failed to create post:", error);
+        return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
     }
 
-    if (search) {
-      const posts = await searchPosts(search, limit);
-      return NextResponse.json({ ok: true, posts });
+    if (tags && Array.isArray(tags) && post) {
+      const tagInserts = tags.map((tagId: string) => ({
+        post_id: post.id,
+        tag_id: tagId,
+      }));
+      await supabase.from("blog_post_tags").insert(tagInserts);
     }
 
-    const posts = await getLatestPosts(limit, offset);
-    return NextResponse.json({ ok: true, posts });
+    return NextResponse.json({ ok: true, post }, { status: 201 });
   } catch (error) {
-    console.error("Blog API error:", error);
+    console.error("Create post error:", error);
+    return NextResponse.json({ error: "Failed to create post" }, { status: 500 });
+  }
+}
 
-    // Fallback to static data
-    let staticPosts;
-    if (featured) {
-      staticPosts = blogPosts.filter((p) => p.is_featured);
-    } else if (category) {
-      staticPosts = blogPosts.filter((p) => p.category?.slug === category);
-    } else if (search) {
-      const q = search.toLowerCase();
-      staticPosts = blogPosts.filter((p) => 
-        p.title.toLowerCase().includes(q) || 
-        (p.excerpt?.toLowerCase().includes(q) ?? false)
-      );
-    } else {
-      staticPosts = blogPosts;
+export async function GET(request: NextRequest) {
+  const user = await getUserFromRequest(request);
+  if (!user) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
+  const supabase = createAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Database not configured" }, { status: 500 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get("status");
+
+    let query = supabase
+      .from("blog_posts")
+      .select("id, slug, title, excerpt, status, created_at, updated_at, published_at, category:blog_categories!left(id, name, slug)")
+      .eq("author_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (statusFilter) {
+      query = query.eq("status", statusFilter);
     }
 
-    const items = staticPosts.map(toListItem);
-    return NextResponse.json({ ok: true, posts: items, source: "static" });
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Failed to fetch posts:", error);
+    }
+
+    if (data && data.length > 0) {
+      return NextResponse.json({ ok: true, posts: data });
+    }
+  } catch (error) {
+    console.error("Blog posts API error:", error);
   }
+
+  // Fallback to static data
+  return NextResponse.json({ ok: true, posts: blogPosts, source: "static" });
 }

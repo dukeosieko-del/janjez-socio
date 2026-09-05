@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D0D0D"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <text x="600" y="80" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" fill="#FFFFFF" text-anchor="middle">
+    Price Comparison
+  </text>
+  <rect x="100" y="140" width="1000" height="400" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <text x="200" y="200" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="rgba(255,255,255,0.6)">Other Panels</text>
+  <text x="200" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="rgba(255,255,255,0.4)">KES 500–2000 per 1000</text>
+  <rect x="200" y="270" width="600" height="20" rx="4" fill="#BB133E" opacity="0.3"/>
+  <text x="900" y="285" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#BB133E" text-anchor="middle">KES 1,500</text>
+  <text x="200" y="350" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#00A859" font-weight="600">janjez.social</text>
+  <text x="200" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="rgba(255,255,255,0.6)">KES 1 per 1000 followers</text>
+  <rect x="200" y="420" width="60" height="20" rx="4" fill="#00A859" opacity="0.4"/>
+  <text x="900" y="435" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#00A859" text-anchor="middle">KES 1</text>
+  <text x="600" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="rgba(255,255,255,0.4)" text-anchor="middle">Save 99% with janjez.social</text>
+</svg>

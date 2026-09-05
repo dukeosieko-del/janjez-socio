@@ -31,7 +31,11 @@ export async function middleware(request: Request) {
     (pathname.startsWith("/orders") && !isPublicTracking) ||
     pathname.startsWith("/pay") ||
     pathname.startsWith("/wallet") ||
-    pathname.startsWith("/settings");
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/blog/write") ||
+    pathname.startsWith("/blog/drafts") ||
+    pathname.startsWith("/blog/my-articles") ||
+    (pathname.startsWith("/blog/") && pathname.includes("/edit"));
 
   const redirectTo = `/auth/sign-in?next=${encodeURIComponent(pathname)}`;
 
