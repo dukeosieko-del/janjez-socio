@@ -130,6 +130,18 @@ export default function RootLayout({
         </div>
         <ServiceWorkerRegistrar />
         <GoogleAnalytics />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('error', function(e) {
+                if (e.message && e.message.includes('startTime') && e.message.includes('reportAllChanges')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              });
+            `,
+          }}
+        />
       </body>
     </html>
   );
