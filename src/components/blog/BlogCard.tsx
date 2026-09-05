@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import type { BlogPostListItem } from "@/lib/blog/queries";
 import { CalendarDays, Clock, Eye, Star } from "./icons";
 
@@ -33,11 +32,10 @@ export default function BlogCard({ post, featured = false, showCategory = true, 
     >
       {post.cover_image_url && (
         <div className={`relative overflow-hidden ${featured ? "md:w-48 md:h-auto w-full h-40" : "w-full h-32"}`}>
-          <Image
+          <img
             src={post.cover_image_url}
             alt={post.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             sizes={featured ? "192px" : "400px"}
           />
         </div>
