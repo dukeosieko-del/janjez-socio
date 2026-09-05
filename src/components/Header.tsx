@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import NotificationBell from "./NotificationBell";
@@ -17,10 +17,29 @@ export default function Header() {
   const [mpesaOpen, setMpesaOpen] = useState(false);
   const { authModal, openAuth, closeAuth, user, signOut } = useAuth();
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleScroll = () => setMobileMenuOpen(false);
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [mobileMenuOpen]);
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
     <header className="sticky top-0 z-40 bg-kenya-black/95 backdrop-blur-md border-b border-kenya-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 max-w-7xl">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0" data-walkthrough="walkthrough-home">
             <Image src="/janjez-logo.png" alt="janjez.social" width={28} height={32} quality={90} className="w-7 h-8 object-contain" />
@@ -95,6 +114,7 @@ export default function Header() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg hover:bg-kenya-white/10 transition-colors"
+              aria-label="Toggle menu"
             >
               <svg className="h-5 w-5 sm:h-6 sm:w-6 text-kenya-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -105,19 +125,21 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-kenya-white/10">
+          <div className="md:hidden py-4 border-t border-kenya-white/10 max-w-7xl mx-auto">
             <div className="lg:hidden mb-4">
               <GlobalSearch />
             </div>
             <div className="flex flex-col gap-2">
               <Link
                 href="/services"
+                onClick={closeMobileMenu}
                 className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
               >
                 🛒 New Order
               </Link>
               <Link
                 href="/blog"
+                onClick={closeMobileMenu}
                 className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
               >
                 💬 Blog & News
@@ -129,18 +151,20 @@ export default function Header() {
                 <>
                   <Link
                     href="/dashboard"
+                    onClick={closeMobileMenu}
                     className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
                   >
                     📊 Dashboard
                   </Link>
                   <Link
                     href="/orders/all"
+                    onClick={closeMobileMenu}
                     className="px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
                   >
                     📦 My Orders
                   </Link>
                   <button
-                    onClick={signOut}
+                    onClick={() => { signOut(); closeMobileMenu(); }}
                     className="text-left px-4 py-3 text-sm font-medium text-kenya-red hover:text-kenya-red transition-colors rounded-lg hover:bg-kenya-white/5"
                   >
                     🚪 Sign Out
@@ -149,13 +173,13 @@ export default function Header() {
               ) : (
                 <>
                   <button
-                    onClick={() => openAuth("register")}
+                    onClick={() => { openAuth("register"); closeMobileMenu(); }}
                     className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
                   >
                     📑 Register
                   </button>
                   <button
-                    onClick={() => openAuth("login")}
+                    onClick={() => { openAuth("login"); closeMobileMenu(); }}
                     data-walkthrough="walkthrough-nav-account"
                     className="text-left px-4 py-3 text-sm font-medium text-kenya-white hover:text-kenya-green transition-colors rounded-lg hover:bg-kenya-white/5"
                   >
