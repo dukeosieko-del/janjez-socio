@@ -3723,10 +3723,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`867ea1111fac94ba20ceedd9737e9f4632ae31dd`
+`ea43ecc6ec2ff527cf5d8408784986a7184d4d19`
 
 ### HEAD Commit
-`867ea11` — docs: update build state with contact messages feature
+`ea43ecc` — feat: add admin contact reply system, unread badge, and faster response time
 
 ### Working Tree
 CLEAN — 0 modified tracked files, 0 untracked files
@@ -3762,7 +3762,7 @@ FIXED — FulfillmentForm anonymous checkout no longer blocked by wallet balance
 FIXED — Disabled Geist Sans and Geist Mono font preload to eliminate Chrome unused-preload warnings; removed og-image.png preload; added CacheStorage error handling in service worker install/activate/fetch; added global error suppression for web-vitals startTime DevTools/Lighthouse console error; CSP connect-src now allows wss: for Supabase realtime
 
 ### Contact Form & Admin Fulfillment
-COMPLETE — Public contact form at `/contact-us` persists submissions to `contact_messages` table in Supabase. Admin interface at `/admin/contact` allows listing, filtering (status/department), and updating message status (new/read/in_progress/resolved/spam). Admin dashboard has "Contact Messages" quick-link button.
+COMPLETE — Public contact form at `/contact-us` persists submissions to `contact_messages` table in Supabase. Admin interface at `/admin/contact` allows listing, filtering (status/department), inline status updates, and replying to messages via email. Admin dashboard has "Contact Messages" quick-link button with unread message count badge. Response time updated from 24 hours to "a few minutes to one hour".
 
 ### Deployment
 DEPLOYED — PM2 restarted with updated build, all critical routes returning HTTP 200
@@ -3772,10 +3772,10 @@ DEPLOYED — PM2 restarted with updated build, all critical routes returning HTT
 2. **`pending_mpesa` DB migration** — requires manual Supabase dashboard application
 3. **Supabase recursive RLS policy** on profiles — requires manual SQL fix (documented in section 20, 2026-09-03)
 4. **M-Pesa STK push callback URL** — must be registered in Safaricom Daraja portal
-5. **`contact_messages` DB migration** — requires manual Supabase dashboard application
+5. **`contact_messages` reply fields migration** — requires manual Supabase dashboard application (`supabase/migrations/20250101000033_contact_messages_reply.sql`)
 
 ### Next Starting Point
-1. Apply pending DB migrations (`pending_mpesa`, `contact_messages`)
+1. Apply pending DB migrations (`pending_mpesa`, `contact_messages` reply fields)
 2. Obtain valid Brevo SMTP credentials and configure IP allowlist
 3. Register M-Pesa callback URL in Daraja portal
 4. Deploy to production if authorized
