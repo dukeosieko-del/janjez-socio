@@ -4,6 +4,7 @@ import { SUPPORT_ADDRESS, EMAIL_FORWARDING, SITE_NAME } from "@/lib/email/config
 import { getContactNotificationHtml, getContactConfirmationHtml } from "@/lib/email/templates";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { sanitizeString } from "@/lib/server/validation";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -97,6 +98,24 @@ export async function POST(request: NextRequest) {
         },
         { status: 503 }
       );
+    }
+
+    const supabase = createAdminClient();
+    if (supabase) {
+      try {
+        await supabase.from("contact_messages").insert({
+          name: sanitizedName,
+          email: sanitizedEmail,
+          subject: sanitizedSubject,
+          message: sanitizedMessage,
+          department: sanitizedDept,
+          source: "contact_form",
+          ip_address: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || null,
+          user_agent: request.headers.get("user-agent") || null,
+        });
+      } catch (dbError) {
+        console.error("Contact message persistence failed:", dbError);
+      }
     }
 
     return NextResponse.json({

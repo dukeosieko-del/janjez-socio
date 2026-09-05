@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import { useAuth } from "@/components/AuthContext";
 import {
   OverviewTab,
@@ -113,9 +114,14 @@ export default function AdminDashboardPage() {
       <div className="flex-1 flex flex-col">
         <main className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-            <div className="mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">Admin Dashboard</h1>
-              <p className="text-kenya-white/60">Platform operations and oversight.</p>
+            <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-2">Admin Dashboard</h1>
+                <p className="text-kenya-white/60">Platform operations and oversight.</p>
+              </div>
+              <Link href="/admin/contact" className="inline-flex items-center gap-2 bg-kenya-green text-kenya-black font-bold text-sm px-4 py-2 rounded-xl hover:bg-kenya-green/90 transition-colors">
+                Contact Messages
+              </Link>
             </div>
 
             <div className="flex gap-2 mb-8 overflow-x-auto">
