@@ -1,4 +1,4 @@
-const CACHE_NAME = 'janjez-social-v3';
+const CACHE_NAME = 'janjez-social-v4';
 
 self.addEventListener('install', event => {
   event.waitUntil(
