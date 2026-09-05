@@ -9,9 +9,10 @@ interface BlogCardProps {
   post: BlogPostListItem;
   featured?: boolean;
   showCategory?: boolean;
+  walkthroughTarget?: string;
 }
 
-export default function BlogCard({ post, featured = false, showCategory = true }: BlogCardProps) {
+export default function BlogCard({ post, featured = false, showCategory = true, walkthroughTarget }: BlogCardProps) {
   const date = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-KE", {
         year: "numeric",
@@ -25,6 +26,7 @@ export default function BlogCard({ post, featured = false, showCategory = true }
   return (
     <Link
       href={`/blog/${post.slug}`}
+      data-walkthrough={walkthroughTarget}
       className={`group block bg-kenya-white/5 border border-kenya-white/10 rounded-2xl overflow-hidden hover:border-kenya-green/50 transition-all duration-300 ${
         featured ? "md:flex" : ""
       }`}

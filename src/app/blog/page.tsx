@@ -130,7 +130,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { q?: s
             </nav>
 
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-8" data-walkthrough="walkthrough-blog-entry">
               <h1 className="text-3xl sm:text-4xl font-bold text-kenya-white mb-3">
                 Blog &amp; News
               </h1>
@@ -165,7 +165,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { q?: s
                 <h2 className="text-sm font-bold text-kenya-green uppercase tracking-wider mb-4">
                   Featured Article
                 </h2>
-                <BlogCard post={featuredPost} featured />
+                <BlogCard post={featuredPost} featured walkthroughTarget="walkthrough-blog-article" />
               </div>
             )}
 
@@ -177,7 +177,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { q?: s
                 </h2>
                 <div className="grid md:grid-cols-2 gap-6">
                   {otherFeatured.map((post) => (
-                    <BlogCard key={post.id} post={post} />
+                    <BlogCard key={post.id} post={post} walkthroughTarget="walkthrough-blog-article" />
                   ))}
                 </div>
               </div>
@@ -205,7 +205,7 @@ export default async function BlogPage({ searchParams }: { searchParams: { q?: s
               ) : (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {displayedPosts.map((post) => (
-                    <BlogCard key={post.id} post={post} />
+                    <BlogCard key={post.id} post={post} walkthroughTarget="walkthrough-blog-article" />
                   ))}
                 </div>
               )}
