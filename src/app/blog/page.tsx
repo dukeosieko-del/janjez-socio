@@ -78,7 +78,11 @@ async function getBlogData() {
   const featuredPosts = await getFeaturedPosts(3).catch(() => blogPosts.map(toListItem));
   const latestPosts = await getLatestPosts(12).catch(() => blogPosts.map(toListItem));
 
-  return { categories, featuredPosts, latestPosts };
+  return {
+    categories: categories.length > 0 ? categories : blogCategories,
+    featuredPosts: featuredPosts.length > 0 ? featuredPosts : blogPosts.map(toListItem),
+    latestPosts: latestPosts.length > 0 ? latestPosts : blogPosts.map(toListItem),
+  };
 }
 
 export default async function BlogPage({ searchParams }: { searchParams: { q?: string; category?: string } }) {
