@@ -3723,10 +3723,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`8ebd0044cb1d9b69cb4952d3f5b68ceedf72c46e`
+`6efe55ab6d808f8765b608defa561c8af75796c6`
 
 ### HEAD Commit
-`8ebd004` — fix: anonymous checkout, M-Pesa modal auth, duplicate modal, silent service charge, preload warnings
+`6efe55a` — fix: harden service worker cache errors and disable Geist font preload
 
 ### Working Tree
 CLEAN — 0 modified tracked files, 0 untracked files
@@ -3759,7 +3759,7 @@ FIXED — AnnouncementBanner now edge-to-edge full-width; Header content constra
 FIXED — FulfillmentForm anonymous checkout no longer blocked by wallet balance check; M-Pesa modal allows anonymous STK push without auth; duplicate modal opening prevented; service charge (KES 7) is silent and not displayed to users
 
 ### Performance/Browser Warnings
-FIXED — Disabled Geist Mono font preload to eliminate Chrome unused-preload warning; removed og-image.png preload; added CacheStorage error handling in service worker; added global error suppression for web-vitals startTime DevTools/Lighthouse console error
+FIXED — Disabled Geist Sans and Geist Mono font preload to eliminate Chrome unused-preload warnings; removed og-image.png preload; added CacheStorage error handling in service worker install/activate/fetch; added global error suppression for web-vitals startTime DevTools/Lighthouse console error; CSP connect-src now allows wss: for Supabase realtime
 
 ### Deployment
 DEPLOYED — PM2 restarted with updated build, all critical routes returning HTTP 200
