@@ -115,7 +115,6 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://api.brevo.com" />
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-        <link rel="preload" as="image" href="/og-image.png" fetchPriority="low" />
       </head>
       <body suppressHydrationWarning>
         <div className="min-h-full flex flex-col bg-kenya-black text-kenya-white">

@@ -29,8 +29,8 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
   const [chargedAmount, setChargedAmount] = useState<number | null>(null);
   const { session, walletBalance, refreshProfile } = useAuth();
   const suggestedAmount = requiredAmount
-    ? calculateMpesaAmount(Math.max(0, requiredAmount - Number(walletBalance || 0)))
-    : SERVICE_CHARGE_KES;
+    ? Math.max(0, requiredAmount - Number(walletBalance || 0))
+    : 0;
 
   const resetAndClose = () => {
     setStep("input");
@@ -59,19 +59,17 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
     const mpesaAmount = calculateMpesaAmount(numAmount);
     setChargedAmount(mpesaAmount);
 
-    if (!session?.access_token) {
-      setError("Please sign in to top up your wallet");
-      setStep("input");
-      return;
-    }
-
     try {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
       const initiateRes = await fetchWithTimeout("/api/mpesa/stk-push", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers,
         body: JSON.stringify({ phoneNumber, amount: mpesaAmount }),
       });
 
@@ -85,15 +83,18 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
       setCheckoutRequestId(checkoutId);
 
       const startTime = Date.now();
-      const token = session.access_token;
+      const token = session?.access_token;
 
       const poll = async () => {
         try {
+          const headers: Record<string, string> = {};
+          if (token) headers.Authorization = `Bearer ${token}`;
+
           const statusRes = await fetchWithTimeout(
             `/api/mpesa/check-status?checkoutRequestId=${encodeURIComponent(checkoutId)}`,
             {
               method: "GET",
-              headers: { Authorization: `Bearer ${token}` },
+              headers,
             }
           );
 
@@ -102,7 +103,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
           if (statusData.paid) {
             setTxId(checkoutId.slice(0, 10));
             setStep("success");
-            await refreshProfile();
+            if (token) await refreshProfile();
             return;
           }
 

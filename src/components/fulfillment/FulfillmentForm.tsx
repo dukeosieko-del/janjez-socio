@@ -7,7 +7,7 @@ import MpesaModal from "@/components/MpesaModal";
 import { submitOrder, submitAnonymousOrder } from "@/lib/order-log";
 import { JanjezService } from "@/lib/janjez-services";
 import { getDripFeedLimitsSync, type DripFeedLimits } from "@/lib/drip-feed-settings";
-import { calculateOrderCost, calculateMpesaAmount, SERVICE_CHARGE_KES } from "@/lib/pricing";
+import { calculateOrderCost } from "@/lib/pricing";
 import { fetchJSON } from "@/lib/client/fetchWithTimeout";
 
 export interface FulfillmentProps {
@@ -81,6 +81,54 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     if (!link.trim() || quantityNum <= 0 || quantityError) return;
     if (dripFeed && (parseInt(runs, 10) <= 0 || parseInt(intervalMin, 10) <= 0)) return;
 
+    if (!user && isAnonymous) {
+      if (!phoneNumber || !/^\d{9,15}$/.test(phoneNumber.replace(/\s+/g, ""))) {
+        setOrderError("Please enter a valid phone number for anonymous checkout.");
+        return;
+      }
+      if (!service) {
+        setOrderError("Anonymous checkout requires a Janjez service. Please sign in or select a mapped service.");
+        return;
+      }
+
+      setAnonymousPlacing(true);
+      setPlacing(true);
+      setOrderError(null);
+
+      try {
+        const result = await submitAnonymousOrder({
+          janjezServiceId: service.id,
+          link,
+          quantity: quantityNum,
+          phoneNumber,
+          runs: dripFeed ? parseInt(runs, 10) : null,
+          interval: dripFeed ? parseInt(intervalMin, 10) : null,
+        });
+
+        if (!result.ok) {
+          setOrderError(result.error || "Failed to start anonymous checkout.");
+          setPlacing(false);
+          setAnonymousPlacing(false);
+          return;
+        }
+
+        setOrderSuccess(true);
+        setPlacing(false);
+        setAnonymousPlacing(false);
+        const orderId = result.data.order_id;
+        void orderId;
+        const checkoutId = result.data.checkoutRequestId;
+        setTimeout(() => {
+          window.location.href = checkoutId ? `/orders/track?ref=${checkoutId}` : "/order/anonymous/created";
+        }, 2000);
+      } catch {
+        setOrderError("Unexpected error while starting anonymous checkout.");
+        setPlacing(false);
+        setAnonymousPlacing(false);
+      }
+      return;
+    }
+
     if (total > walletBalance) {
       setMpesaOpen(true);
       setRequiredAmount(total);
@@ -88,54 +136,6 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     }
 
     if (!user) {
-      if (isAnonymous) {
-        if (!phoneNumber || !/^\d{9,15}$/.test(phoneNumber.replace(/\s+/g, ""))) {
-          setOrderError("Please enter a valid phone number for anonymous checkout.");
-          return;
-        }
-        if (!service) {
-          setOrderError("Anonymous checkout requires a Janjez service. Please sign in or select a mapped service.");
-          return;
-        }
-
-        setAnonymousPlacing(true);
-        setPlacing(true);
-        setOrderError(null);
-
-        try {
-          const result = await submitAnonymousOrder({
-            janjezServiceId: service.id,
-            link,
-            quantity: quantityNum,
-            phoneNumber,
-            runs: dripFeed ? parseInt(runs, 10) : null,
-            interval: dripFeed ? parseInt(intervalMin, 10) : null,
-          });
-
-          if (!result.ok) {
-            setOrderError(result.error || "Failed to start anonymous checkout.");
-            setPlacing(false);
-            setAnonymousPlacing(false);
-            return;
-          }
-
-          setOrderSuccess(true);
-          setPlacing(false);
-          setAnonymousPlacing(false);
-          const orderId = result.data.order_id;
-          void orderId; // Order ID tracked via checkout reference
-          const checkoutId = result.data.checkoutRequestId;
-          setTimeout(() => {
-            window.location.href = checkoutId ? `/orders/track?ref=${checkoutId}` : "/order/anonymous/created";
-          }, 2000);
-        } catch {
-          setOrderError("Unexpected error while starting anonymous checkout.");
-          setPlacing(false);
-          setAnonymousPlacing(false);
-        }
-        return;
-      }
-
       if (onRequireAuth) {
         onRequireAuth("login");
       } else {
@@ -375,9 +375,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
                 <div className="bg-kenya-green/5 border border-kenya-green/20 rounded-xl p-4 flex items-start gap-3">
                   <Image src="/mpesa-logo.png" alt="M-Pesa" width={20} height={20} className="w-5 h-5 object-contain mt-0.5" />
                   <p className="text-kenya-white/80 text-xs">
-                    You will receive an M-Pesa STK push for KES {calculateMpesaAmount(total).toLocaleString()}.
-                    The exact order cost is KES {total.toFixed(2)} including KES {SERVICE_CHARGE_KES} service charge.
-                    Your order will be processed for the exact amount shown above.
+                    You will receive an M-Pesa STK push for the exact order amount. Your order will be processed immediately after payment.
                   </p>
                 </div>
               </>
@@ -413,10 +411,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         requiredAmount={requiredAmount}
         serviceName={displayName}
         quantity={quantityNum}
-        onSuccess={() => {
-          setMpesaOpen(false);
-          handlePlaceOrder();
-        }}
+        onSuccess={() => setMpesaOpen(false)}
       />
     </div>
   );
