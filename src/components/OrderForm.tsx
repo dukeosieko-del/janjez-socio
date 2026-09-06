@@ -163,18 +163,13 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
           interval: dripFeed ? intervalNum : null,
         });
 
-<<<<<<< ours
-         if (!result.ok) {
+        if (!result.ok) {
           const orderId = result.order_id;
           setOrderError(
             orderId
               ? `${result.error || "Failed to start anonymous checkout."} Your order reference is ${orderId}. You can track it at /orders/track?ref=${orderId.split("-").pop() || orderId}.`
               : result.error || "Failed to start anonymous checkout."
           );
-=======
-        if (!result.ok) {
-          setOrderError(result.error || "Failed to start anonymous checkout.");
->>>>>>> theirs
           setPlacing(false);
           setAnonymousPlacing(false);
           return;
@@ -183,16 +178,10 @@ export default function OrderForm({ onRequireAuth, onInsufficientBalance, servic
         setOrderSuccess(true);
         setPlacing(false);
         setAnonymousPlacing(false);
-<<<<<<< ours
         const checkoutId = result.data?.checkoutRequestId;
         const orderId = result.order_id;
         setTimeout(() => {
           window.location.href = checkoutId ? `/orders/track?ref=${checkoutId}` : orderId ? `/orders/track?ref=${orderId.split("-").pop() || orderId}` : "/order/anonymous/created";
-=======
-        const checkoutId = result.data.checkoutRequestId;
-        setTimeout(() => {
-          window.location.href = checkoutId ? `/orders/track?ref=${checkoutId}` : "/order/anonymous/created";
->>>>>>> theirs
         }, 2000);
       } catch {
         setOrderError("Unexpected error while starting anonymous checkout.");
