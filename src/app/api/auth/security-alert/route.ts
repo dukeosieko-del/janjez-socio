@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { sendTransactional } from "@/lib/transactional";
+import { SITE_URL } from "@/lib/email/config";
 
 export const runtime = "nodejs";
 
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
         userAgent,
         location,
         time,
+        signOutUrl: `${SITE_URL}/auth/sign-out`,
       },
     });
 
