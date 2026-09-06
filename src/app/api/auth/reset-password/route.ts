@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { SITE_URL } from "@/lib/email/config";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { sanitizeString } from "@/lib/server/validation";
 import { sendTransactional } from "@/lib/transactional";
@@ -50,8 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create reset token" }, { status: 500 });
     }
 
-    const requestUrl = new URL(request.url);
-    const resetUrl = `${requestUrl.origin}/auth/reset-password?token=${token}`;
+    const resetUrl = `${SITE_URL}/auth/reset-password?token=${token}`;
     const fullName = (user.user_metadata?.full_name as string | undefined) || null;
 
     const { emailOk } = await sendTransactional({

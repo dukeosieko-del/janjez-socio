@@ -6,6 +6,8 @@ import { sendTransactional } from "@/lib/transactional";
 
 export const runtime = "nodejs";
 
+const REDIRECT_BASE = SITE_URL;
+
 export async function GET(request: NextRequest) {
   try {
     const rl = rateLimit(request, 60);
@@ -15,12 +17,12 @@ export async function GET(request: NextRequest) {
     const token = requestUrl.searchParams.get("token");
 
     if (!token) {
-      return NextResponse.redirect(new URL("/auth/sign-in?error=missing_token", requestUrl.origin));
+      return NextResponse.redirect(new URL("/auth/sign-in?error=missing_token", REDIRECT_BASE));
     }
 
     const supabase = createAdminClient();
     if (!supabase) {
-      return NextResponse.redirect(new URL("/auth/sign-in?error=server_misconfigured", requestUrl.origin));
+      return NextResponse.redirect(new URL("/auth/sign-in?error=server_misconfigured", REDIRECT_BASE));
     }
 
     const { data: verification, error: fetchError } = await supabase
@@ -30,12 +32,12 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (fetchError || !verification) {
-      return NextResponse.redirect(new URL("/auth/sign-in?error=invalid_token", requestUrl.origin));
+      return NextResponse.redirect(new URL("/auth/sign-in?error=invalid_token", REDIRECT_BASE));
     }
 
     if (new Date(verification.expires_at) < new Date()) {
       await supabase.from("email_verifications").delete().eq("id", verification.id);
-      return NextResponse.redirect(new URL("/auth/sign-in?error=token_expired", requestUrl.origin));
+      return NextResponse.redirect(new URL("/auth/sign-in?error=token_expired", REDIRECT_BASE));
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -45,12 +47,12 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.redirect(new URL("/auth/sign-in?error=profile_not_found", requestUrl.origin));
+      return NextResponse.redirect(new URL("/auth/sign-in?error=profile_not_found", REDIRECT_BASE));
     }
 
     if (profile.email_verified) {
       await supabase.from("email_verifications").delete().eq("id", verification.id);
-      return NextResponse.redirect(new URL(`/auth/sign-in?verified=1&email=${encodeURIComponent(profile.email)}`, requestUrl.origin));
+      return NextResponse.redirect(new URL(`/auth/sign-in?verified=1&email=${encodeURIComponent(profile.email)}`, REDIRECT_BASE));
     }
 
     const { error: updateError } = await supabase.auth.admin.updateUserById(verification.user_id, {
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     if (updateError) {
       console.error("Failed to confirm email:", updateError);
-      return NextResponse.redirect(new URL("/auth/sign-in?error=verification_failed", requestUrl.origin));
+      return NextResponse.redirect(new URL("/auth/sign-in?error=verification_failed", REDIRECT_BASE));
     }
 
     const { data: authUser } = await supabase.auth.admin.getUserById(verification.user_id);
@@ -80,9 +82,8 @@ export async function GET(request: NextRequest) {
 
     await supabase.from("email_verifications").delete().eq("id", verification.id);
 
-    return NextResponse.redirect(new URL(`/auth/sign-in?verified=1&email=${encodeURIComponent(profile.email)}`, requestUrl.origin));
+    return NextResponse.redirect(new URL(`/auth/sign-in?verified=1&email=${encodeURIComponent(profile.email)}`, REDIRECT_BASE));
   } catch {
-    const requestUrl = new URL("http://localhost");
-    return NextResponse.redirect(new URL("/auth/sign-in?error=unexpected", requestUrl.origin));
+    return NextResponse.redirect(new URL("/auth/sign-in?error=unexpected", REDIRECT_BASE));
   }
 }
