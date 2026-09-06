@@ -3723,10 +3723,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`b1aaafed679970821152eb6a730d7fb19b63ff69`
+`78eab647366426c9ea319bb70eb2a883f7d26e4d`
 
 ### HEAD Commit
-`b1aaafe` — fix: remove obsolete SVG blog cover images
+`78eab64` — feat: update all blog cover images with improved gradient visuals
 
 ### Working Tree
 CLEAN — 0 modified tracked files, 0 untracked files, 0 staged files
@@ -3744,7 +3744,7 @@ PASS — standalone output packaged with postbuild script
 0 new errors in changed files
 
 ### Blog
-COMPLETE — 10 professional how-to blog posts published (800+ words each) with platform-specific links and rich content. PNG cover images and 11 inline article PNG images created and linked for all posts. Additional missing static assets added: logo-icon.png, placeholder.png, avatar-placeholder.png. Database posts missing cover_image_url are automatically merged with static data. All blog images present in public/blog/. Walkthrough integration complete. Admin contact reply system with unread badge deployed. Service worker cache bumped to v4.
+COMPLETE — 10 professional how-to blog posts published (800+ words each) with platform-specific links and rich content. PNG cover images and 11 inline article PNG images created and linked for all posts. Additional missing static assets added: logo-icon.png, placeholder.png, avatar-placeholder.png. Database posts missing cover_image_url are automatically merged with static data. All blog images present in public/blog/. Walkthrough integration complete. Admin contact reply system with unread badge deployed. Service worker cache bumped to v4. Mail transport verified: all auth/email/reset flows use SITE_URL, no localhost URLs, 243 tests pass, production build deployed via PM2.
 
 ### Walkthrough
 INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions, passive DOM markers on key components
