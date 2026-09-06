@@ -411,7 +411,14 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
         requiredAmount={requiredAmount}
         serviceName={displayName}
         quantity={quantityNum}
+<<<<<<< ours
         onSuccess={() => setMpesaOpen(false)}
+=======
+        onSuccess={() => {
+          setMpesaOpen(false);
+          handlePlaceOrder();
+        }}
+>>>>>>> theirs
       />
     </div>
   );
