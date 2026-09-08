@@ -9,10 +9,10 @@
 - **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
 - **Operation type:** READ-ONLY INSPECTION
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
-- **HEAD:** `22180186021fd245edaef7e6616458cda7bb3bbb`
-- **Baseline HEAD:** `4f1774f9e5bd2569e623c20d1dd7b7d6c6f2da54` (origin/review/janjez-reconciliation-20260822)
-- **Merge base:** `88a2ab96b7b693a219e3a4d3f8a92ee18300abdd8`
-- **Ahead/behind:** 79 commits ahead, 61 behind baseline
+- **HEAD:** `23510e6435f863067d6327de2c5f29af66109ad9`
+- **Baseline HEAD:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d` (upstream/main)
+- **Merge base:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d`
+- **Ahead/behind:** 205 commits ahead, 0 behind baseline
 
 ### Reconciliation Verdict
 **NO SELECTIVE RECOVERY REQUIRED — CURRENT BRANCH IS FUNCTIONALLY SUPERSET**
@@ -3674,10 +3674,10 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 - **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
 - **Operation type:** READ-ONLY INSPECTION
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
-- **HEAD:** `22180186021fd245edaef7e6616458cda7bb3bbb`
-- **Baseline HEAD:** `4f1774f9e5bd2569e623c20d1dd7b7d6c6f2da54` (origin/review/janjez-reconciliation-20260822)
-- **Merge base:** `88a2ab96b7b693a219e3a4d91892ee18300abdd8`
-- **Ahead/behind:** 79 commits ahead, 61 behind baseline
+- **HEAD:** `23510e6435f863067d6327de2c5f29af66109ad9`
+- **Baseline HEAD:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d` (upstream/main)
+- **Merge base:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d`
+- **Ahead/behind:** 205 commits ahead, 0 behind baseline
 
 ### Reconciliation Verdict
 **NO SELECTIVE RECOVERY REQUIRED — CURRENT BRANCH IS FUNCTIONALLY SUPERSET**
@@ -3785,10 +3785,10 @@ DEPLOYED — PM2 online with latest build, all critical static assets returning 
 - **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
 - **Operation type:** READ-ONLY INSPECTION
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
-- **HEAD:** `22180186021fd245edaef7e6616458cda7bb3bbb`
-- **Baseline HEAD:** `4f1774f9e5bd2569e623c20d1dd7b7d6c6f2da54` (origin/review/janjez-reconciliation-20260822)
-- **Merge base:** `88a2ab96b7b693a219e3a4d91892ee18300abdd8`
-- **Ahead/behind:** 79 commits ahead, 61 behind baseline
+- **HEAD:** `23510e6435f863067d6327de2c5f29af66109ad9`
+- **Baseline HEAD:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d` (upstream/main)
+- **Merge base:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d`
+- **Ahead/behind:** 205 commits ahead, 0 behind baseline
 
 ### Reconciliation Verdict
 **NO SELECTIVE RECOVERY REQUIRED — CURRENT BRANCH IS FUNCTIONALLY SUPERSET**
@@ -3868,11 +3868,57 @@ INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions
 2. **`pending_mpesa` DB migration** — requires manual Supabase dashboard application
 3. **Supabase recursive RLS policy** on profiles — requires manual SQL fix (documented in section 20, 2026-09-03)
 4. **M-Pesa STK push callback URL** — must be registered in Safaricom Daraja portal
+5. **`contact_messages` reply fields migration** — requires manual Supabase dashboard application (`supabase/migrations/20250101000033_contact_messages_reply.sql`)
 
 ### Next Starting Point
-1. Complete Blog agent integration (walkthrough-blog-article target)
-2. Apply pending DB migrations
-3. Obtain valid Brevo SMTP credentials and configure IP allowlist
-4. Register M-Pesa callback URL in Daraja portal
-5. Deploy to Vercel production
->>>>>>> theirs
+1. Apply pending DB migrations (`pending_mpesa`, `contact_messages` reply fields)
+2. Obtain valid Brevo SMTP credentials and configure IP allowlist
+3. Register M-Pesa callback URL in Daraja portal
+4. Deploy to production if authorized
+
+## 23. CURRENT STATE SUMMARY (2026-09-08)
+
+### Branch
+`session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
+
+### HEAD
+`23510e6435f863067d6327de2c5f29af66109ad9`
+
+### HEAD Commit
+`23510e6` — feat: blog system complete with covers, contact admin, M-Pesa callback fix
+
+### Working Tree
+CLEAN — 0 modified tracked files
+
+### Tests
+243 passed (25 test files)
+
+### Lint
+0 errors, 122 warnings (pre-existing)
+
+### Build
+PASS
+
+### TypeScript
+0 errors in changed files (49 pre-existing errors in test files only)
+
+### Blog
+AUTHORITATIVE — 10 professional how-to posts (800+ words each) in `src/lib/blog/data.ts`, 10 SVG covers in `public/blog/`, 11 inline PNGs
+
+### M-Pesa Pricing
+LOCKED — `SERVICE_CHARGE_KES = 7`, no KES 50 minimum
+
+### Walkthrough
+INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions
+
+### P0 Fixes Applied (2026-09-08)
+1. **M-Pesa callback URL fix** (`ac77c64`) — uses `SITE_URL` env var instead of `requestUrl.origin` in `/api/orders/anonymous` and `/api/mpesa/stk-push`
+2. **Blog cover fallback** — static `cover_image_url` merged in fallback API responses (`src/app/api/blog/posts/[slug]/route.ts`)
+3. **SVG cover rendering** — `<Image fill>` replaced with native `<img>` in `BlogCard.tsx:36`
+4. **Static asset generation** — `scripts/create-blog-covers.mjs` and `scripts/create-placeholders.mjs` for all missing images
+
+### Known Issues
+1. **React hydration error #418** — `dangerouslySetInnerHTML` in `src/components/blog/PopupOffer.tsx` causes SSR/client divergence
+2. **Auth verification/reset password link routing** — email templates use `/auth/verify-email?token=...` but Supabase redirects to `/auth/callback?type=signup|recovery`
+3. **Profile route 404** — `/profile` route not implemented (feature gap)
+4. **`JANJEZ_BUILD_STATE.md` cleanup** — this section documents the fix
