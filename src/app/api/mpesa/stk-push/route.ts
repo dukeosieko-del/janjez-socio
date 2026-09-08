@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { rateLimit } from "@/lib/server/rate-limiter";
 import { calculateMpesaAmount } from "@/lib/pricing";
+import { SITE_URL } from "@/lib/email/config";
 
 export const runtime = "nodejs";
 
@@ -31,8 +32,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const requestUrl = new URL(request.url);
-    const callbackUrl = getCallbackUrl(requestUrl.origin);
+    const callbackUrl = getCallbackUrl(SITE_URL);
     const response = await initiateStkPush({
       phoneNumber,
       amount: numAmount,

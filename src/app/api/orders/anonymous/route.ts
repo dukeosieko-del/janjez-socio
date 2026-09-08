@@ -7,6 +7,7 @@ import { calculateOrderCost, calculateMpesaAmount } from "@/lib/pricing";
 import { getCallbackUrl, initiateStkPush } from "@/lib/mpesa/client";
 import { sendEmail } from "@/lib/email/mailer";
 import { getOrderReceivedEmail } from "@/lib/email/templates";
+import { SITE_URL } from "@/lib/email/config";
 
 export const runtime = "nodejs";
 
@@ -164,8 +165,7 @@ export async function POST(request: NextRequest) {
         });
     }
 
-    const requestUrl = new URL(request.url);
-    const callbackUrl = getCallbackUrl(requestUrl.origin);
+    const callbackUrl = getCallbackUrl(SITE_URL);
 
     try {
       const stkRes = await initiateStkPush({
