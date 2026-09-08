@@ -3710,7 +3710,7 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 **None identified.** Current branch contains all baseline functionality through direct ancestry or equivalent implementations.
 
 ### Protected State
-- Surgical commit `2218018` — protected, not to be modified
+- Surgical commit `42cf6ae` — protected, not to be modified
 - KES 7 M-Pesa pricing model (`13275b5`) — authoritative, KES 50 must not be reintroduced
 - Current Blog implementation — approved as authoritative
 - Current walkthrough system — complete and integrated
@@ -3821,7 +3821,7 @@ DEPLOYED — PM2 online with latest build, all critical static assets returning 
 **None identified.** Current branch contains all baseline functionality through direct ancestry or equivalent implementations.
 
 ### Protected State
-- Surgical commit `2218018` — protected, not to be modified
+- Surgical commit `42cf6ae` — protected, not to be modified
 - KES 7 M-Pesa pricing model (`13275b5`) — authoritative, KES 50 must not be reintroduced
 - Current Blog implementation — approved as authoritative
 - Current walkthrough system — complete and integrated
@@ -3834,10 +3834,10 @@ DEPLOYED — PM2 online with latest build, all critical static assets returning 
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`22180186021fd245edaef7e6616458cda7bb3bbb`
+`42cf6ae`
 
 ### HEAD Commit
-`2218018` — fix: resolve snapchat asset and enhance mpesa checkout context
+`42cf6ae` — fix: resolve slug namespace mismatch for microcategory routes
 
 ### Working Tree
 CLEAN — 0 modified tracked files
