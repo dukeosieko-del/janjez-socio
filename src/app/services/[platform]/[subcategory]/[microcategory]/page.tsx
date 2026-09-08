@@ -35,28 +35,31 @@ async function getService(platform: string, subcategorySlug: string, serviceSlug
   const supabase = createAdminClient();
   if (!supabase) return null;
 
-  const normalizedSlug = normalizeSlug(serviceSlug);
-  let { data, error } = await supabase
-    .from("janjez_services")
-    .select("*")
-    .eq("slug", serviceSlug)
-    .eq("is_active", true)
-    .maybeSingle();
+  // Try multiple slug formats to handle namespace mismatch between UI links and DB slugs
+  const slugVariants = [
+    serviceSlug,                                    // exact match
+    normalizeSlug(serviceSlug),                     // normalized
+    serviceSlug.replace(/^microcategory-/, ''),    // remove microcategory- prefix
+    serviceSlug.replace(/^sub-/, ''),              // remove sub- prefix
+    serviceSlug.replace(/^deliverable-\d+-/, ''),  // remove deliverable-N- prefix
+  ];
 
-  if (!data && normalizedSlug !== serviceSlug) {
-    const fallback = await supabase
+  let service = null;
+  for (const variant of slugVariants) {
+    const { data } = await supabase
       .from("janjez_services")
       .select("*")
-      .eq("slug", normalizedSlug)
+      .eq("slug", variant)
       .eq("is_active", true)
       .maybeSingle();
-    data = fallback.data;
-    error = fallback.error;
+    if (data) {
+      service = data as unknown as JanjezService;
+      break;
+    }
   }
 
-  if (error || !data) return null;
+  if (!service) return null;
 
-  const service = data as unknown as JanjezService;
   if (matchPlatform(service.category) !== platform) {
     return null;
   }
