@@ -135,7 +135,7 @@ All entries **VERIFIED** against commit messages and timestamps.
 - None explicitly marked as TODO in the document
 
 ### Documented Blockers
-- P1: ZeptoMail `ZEPTOMAIL_SENDMAIL_TOKEN` invalid
+- P1: Brevo SMTP credentials require valid API key and IP allowlist (if on EC2)
 - P3: Logo source asset is 233x270 JPEG
 
 ### Documented Guard Rails
@@ -301,9 +301,11 @@ module.exports = {
 | `NEXT_PUBLIC_SUPABASE_URL` | PRESENT | `src/lib/supabase/admin.ts`, `src/lib/supabase/client.ts`, `src/lib/supabase/middleware.ts`, `src/lib/supabase/server.ts` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | PRESENT | `src/lib/supabase/client.ts`, `src/lib/supabase/middleware.ts`, `src/lib/supabase/server.ts` |
 | `SUPABASE_SERVICE_ROLE_KEY` | PRESENT | `src/lib/supabase/admin.ts` |
-| `ZEPTOMAIL_URL` | PRESENT | `src/lib/email/transport.ts` |
-| `ZEPTOMAIL_SENDMAIL_TOKEN` | PRESENT | `src/lib/email/transport.ts` |
-| `ZEPTOMAIL_FROM_EMAIL` | PRESENT | `src/app/api/auth/reset-password/route.ts`, `src/app/api/auth/send-verification/route.ts` |
+| `BREVO_SMTP_HOST` | PRESENT | `src/lib/email/mailer.ts` |
+| `BREVO_SMTP_PORT` | PRESENT | `src/lib/email/mailer.ts` |
+| `BREVO_SMTP_USER` | PRESENT | `src/lib/email/mailer.ts` |
+| `BREVO_SMTP_PASS` | PRESENT | `src/lib/email/mailer.ts` |
+| `EMAIL_FROM_ADDRESS` | PRESENT | `src/app/api/auth/reset-password/route.ts`, `src/app/api/auth/send-verification/route.ts`, `src/lib/email/mailer.ts` |
 | `SMM_API_URL` | PRESENT | `src/lib/smm/provider.ts` |
 | `SMM_API_KEY` | PRESENT | `src/lib/smm/provider.ts` |
 | `SMM_FULFILLMENT_ENABLED` | PRESENT | Not directly consumed in traced paths |
@@ -619,12 +621,12 @@ Primary pricing paths use the authoritative formula. Legacy `/api/orders/route.t
 | Middleware | IMPLEMENTED | `src/middleware.ts` — protects admin, dashboard, orders, pay, wallet, settings |
 | Protected routes | IMPLEMENTED | Redirects to `/auth/sign-in?next=...` |
 
-### ZeptoMail / Email
+### Brevo SMTP / Email
 | Feature | Status | Evidence |
 |---------|--------|----------|
-| Configuration | PRESENT | `ZEPTOMAIL_URL`, `ZEPTOMAIL_SENDMAIL_TOKEN`, `ZEPTOMAIL_FROM_EMAIL` in `.env` |
-| Sendmail implementation | IMPLEMENTED | `src/lib/email/transport.ts` uses ZeptoMail SDK |
-| Password reset dependency | IMPLEMENTED | Uses ZeptoMail for branded emails |
+| Configuration | PRESENT | `BREVO_SMTP_HOST`, `BREVO_SMTP_PORT`, `BREVO_SMTP_USER`, `BREVO_SMTP_PASS`, `EMAIL_FROM_ADDRESS` in `.env` |
+| Sendmail implementation | IMPLEMENTED | `src/lib/email/mailer.ts` uses nodemailer with Brevo SMTP |
+| Password reset dependency | IMPLEMENTED | Uses Brevo SMTP for branded emails |
 | Order notification dependency | NOT TRACED | No order notification email path found in current scan |
 | Token validity | UNVERIFIED | Historical reports of `TM_4001 Access Denied` |
 

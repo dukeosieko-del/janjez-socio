@@ -9,7 +9,7 @@
 - **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
 - **Operation type:** READ-ONLY INSPECTION
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
-- **HEAD:** `23510e6435f863067d6327de2c5f29af66109ad9`
+- **HEAD:** `d9a79c5fef82fef4dbd59a2326698f8d85f1fd30`
 - **Baseline HEAD:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d` (upstream/main)
 - **Merge base:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d`
 - **Ahead/behind:** 205 commits ahead, 0 behind baseline
@@ -3674,7 +3674,7 @@ The Blog/Community system (owned by VS Code Remote Extension agent) was **inspec
 - **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
 - **Operation type:** READ-ONLY INSPECTION
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
-- **HEAD:** `23510e6435f863067d6327de2c5f29af66109ad9`
+- **HEAD:** `d9a79c5fef82fef4dbd59a2326698f8d85f1fd30`
 - **Baseline HEAD:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d` (upstream/main)
 - **Merge base:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d`
 - **Ahead/behind:** 205 commits ahead, 0 behind baseline
@@ -3785,7 +3785,7 @@ DEPLOYED — PM2 online with latest build, all critical static assets returning 
 - **Task:** Full reconciliation inventory comparing current walkthrough branch against `review/janjez-reconciliation-20260822` baseline
 - **Operation type:** READ-ONLY INSPECTION
 - **Branch:** `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
-- **HEAD:** `23510e6435f863067d6327de2c5f29af66109ad9`
+- **HEAD:** `d9a79c5fef82fef4dbd59a2326698f8d85f1fd30`
 - **Baseline HEAD:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d` (upstream/main)
 - **Merge base:** `b4d1c489430bf52a92d56961e75bf35d0dc5423d`
 - **Ahead/behind:** 205 commits ahead, 0 behind baseline
@@ -3882,10 +3882,10 @@ INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions
 `session/agent_200e4553-a3ec-4db9-a0c1-b2cb8f7d59af`
 
 ### HEAD
-`23510e6435f863067d6327de2c5f29af66109ad9`
+`d9a79c5fef82fef4dbd59a2326698f8d85f1fd30`
 
 ### HEAD Commit
-`23510e6` — feat: blog system complete with covers, contact admin, M-Pesa callback fix
+`d9a79c5` — docs: remove remaining stale references to non-existent commit 2218018
 
 ### Working Tree
 CLEAN — 0 modified tracked files
@@ -3918,7 +3918,5 @@ INTEGRATED — Complete dynamic walkthrough engine with 8 journey definitions
 4. **Static asset generation** — `scripts/create-blog-covers.mjs` and `scripts/create-placeholders.mjs` for all missing images
 
 ### Known Issues
-1. **React hydration error #418** — `dangerouslySetInnerHTML` in `src/components/blog/PopupOffer.tsx` causes SSR/client divergence
-2. **Auth verification/reset password link routing** — email templates use `/auth/verify-email?token=...` but Supabase redirects to `/auth/callback?type=signup|recovery`
-3. **Profile route 404** — `/profile` route not implemented (feature gap)
-4. **`JANJEZ_BUILD_STATE.md` cleanup** — this section documents the fix
+1. **Auth verification/reset password link routing** — email templates use `/auth/verify-email?token=...` but Supabase redirects to `/auth/callback?type=signup|recovery`
+2. **Profile route 404** — `/profile` route not implemented (feature gap)

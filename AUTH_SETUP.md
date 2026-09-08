@@ -76,8 +76,7 @@ Run this SQL in your Supabase dashboard to create the profiles table:
 ## Brevo Email Transport
 
 This project uses **Brevo** (formerly Sendinblue) for transactional email (verification,
-password reset, contact form). The legacy ZeptoMail transport was moved to
-`archived/zeptomail/` (excluded from the build).
+password reset, contact form). The legacy ZeptoMail transport has been removed.
 
 1. Go to **Brevo Dashboard** → Settings → SMTP / API Keys → API Keys
 2. Create an API key with **`emailSmtp.access:write`** scope (or full access)
