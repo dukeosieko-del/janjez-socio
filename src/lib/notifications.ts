@@ -1,13 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type NotificationAudience = "user" | "admin";
-export type NotificationSeverity = "info" | "success" | "warning" | "error";
+export type NotificationSeverity = "info" | "success" | "warning" | "error" | "critical";
 export type NotificationCategory =
   | "order"
   | "wallet"
   | "security"
   | "system"
-  | "admin_alert";
+  | "admin_alert"
+  | "fulfillment_failure";
 
 export interface Notification {
   id: string;

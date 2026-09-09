@@ -10,6 +10,10 @@ import {
 import type { ProviderService } from "./provider";
 import { sendEmail } from "@/lib/email/mailer";
 import { getOrderCompletedEmail, getOrderFailedEmail } from "@/lib/email/templates";
+import { createNotification } from "@/lib/notifications";
+
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [60, 300, 900]; // 1min, 5min, 15min
 
 function fireAndForgetEmail(
   promise: Promise<{ ok: boolean; error?: string }>,
@@ -201,6 +205,18 @@ export async function fulfillOrder(orderId: string) {
 
   if (process.env.SMM_FULFILLMENT_ENABLED === "false") {
     const message = "Fulfillment is disabled";
+    await logFulfillment(supabase, orderId, "place", "fulfillment_disabled", null, null, message);
+    await supabase
+      .from("orders")
+      .update({ fulfillment_status: "fulfillment_disabled", fulfillment_error: message })
+      .eq("id", orderId);
+    throw new Error(message);
+  }
+
+  // Check retry count
+  const retryCount = order.retry_count || 0;
+  if (retryCount >= MAX_RETRIES) {
+    const message = "Max retries exceeded";
     await logFulfillment(supabase, orderId, "place", "failed", null, null, message);
     await supabase
       .from("orders")
@@ -295,11 +311,7 @@ export async function fulfillOrder(orderId: string) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Provider request failed";
-    await logFulfillment(supabase, order.id, "place", "error", null, null, message);
-    await supabase
-      .from("orders")
-      .update({ fulfillment_status: "failed", fulfillment_error: message })
-      .eq("id", order.id);
+    await handleFulfillmentFailure(supabase, order, message, retryCount);
     throw new Error(message);
   }
 
@@ -322,13 +334,89 @@ export async function fulfillOrder(orderId: string) {
   }
 
   const message = response.error || "Provider returned no order ID";
-  await logFulfillment(supabase, order.id, "place", "failed", null, null, message);
+  await handleFulfillmentFailure(supabase, order, message, retryCount);
+  throw new Error(message);
+}
+
+async function handleFulfillmentFailure(
+  supabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  order: Record<string, unknown>,
+  errorMessage: string,
+  retryCount: number
+) {
+  const nextRetryCount = retryCount + 1;
+  const isRetryable = nextRetryCount < MAX_RETRIES;
+  const newStatus = isRetryable ? "retry_pending" : "failed";
+  const delay = isRetryable ? RETRY_DELAYS[nextRetryCount - 1] || 900 : 0;
+  const nextRetryAt = isRetryable ? new Date(Date.now() + delay * 1000).toISOString() : null;
+
+  await logFulfillment(supabase, order.id as string, "place", newStatus, null, null, errorMessage);
   await supabase
     .from("orders")
-    .update({ fulfillment_status: "failed", fulfillment_error: message })
+    .update({
+      fulfillment_status: newStatus,
+      fulfillment_error: errorMessage,
+      retry_count: nextRetryCount,
+      next_retry_at: nextRetryAt,
+    })
     .eq("id", order.id);
 
-  throw new Error(message);
+  // Refund on final failure (not retryable)
+  if (!isRetryable) {
+    await refundOrder(supabase, order, errorMessage);
+  }
+
+  // Send admin notification
+  await notifyAdminsOfFailure(
+    { id: order.id as string, order_id: order.order_id as string | null, user_id: order.user_id as string | null },
+    errorMessage
+  );
+}
+
+async function refundOrder(
+  supabase: NonNullable<ReturnType<typeof createAdminClient>>,
+  order: Record<string, unknown>,
+  errorMessage: string
+) {
+  const userId = order.user_id as string | null;
+  const amountPaid = order.amount_paid as number | null;
+
+  if (userId && amountPaid && amountPaid > 0) {
+    try {
+      await supabase.rpc("credit_wallet", {
+        p_user_id: userId,
+        p_amount: amountPaid,
+      });
+      await supabase
+        .from("orders")
+        .update({ payment_status: "refunded" })
+        .eq("id", order.id);
+      console.log(`[fulfillment] Refunded ${amountPaid} to user ${userId} for order ${order.id}`);
+    } catch (refundError) {
+      console.error(`[fulfillment] Failed to refund user ${userId} for order ${order.id}:`, refundError);
+      // Log for manual intervention
+      await logFulfillment(supabase, order.id as string, "refund", "error", null, { errorMessage }, `Refund failed: ${refundError}`);
+    }
+  }
+}
+
+async function notifyAdminsOfFailure(
+  order: { id: string; order_id?: string | null; user_id?: string | null },
+  errorMessage: string
+) {
+  try {
+    await createNotification({
+      userId: order.user_id as string,
+      audience: "admin",
+      category: "fulfillment_failure",
+      severity: "critical",
+      title: `Fulfillment Failed: Order ${order.order_id || order.id.slice(0, 8)}`,
+      body: `Order ${order.order_id || order.id.slice(0, 8)} failed fulfillment: ${errorMessage}`,
+      link: `/admin/orders/${order.id}`,
+    });
+  } catch (notifyError) {
+    console.error("[fulfillment] Admin notification failed:", notifyError);
+  }
 }
 
 export async function cancelOrder(orderId: string) {
@@ -498,6 +586,19 @@ export async function syncOrderStatuses(orderIds?: string[]) {
         message: `Status changed from ${prevStatus || "pending"} to ${newStatus}. Provider: ${status.status || "unknown"}.`,
         link: "/orders/all",
       });
+
+      // Admin notification on failure/cancellation
+      if (newStatus === "failed" || newStatus === "cancelled") {
+        await createNotification({
+          userId: order.user_id as string,
+          audience: "admin",
+          category: "fulfillment_failure",
+          severity: "critical",
+          title: `Fulfillment ${newStatus === "failed" ? "Failed" : "Cancelled"}: Order ${order.order_id || order.id.slice(0, 8)}`,
+          body: `Order ${order.order_id || order.id.slice(0, 8)} ${newStatus}: ${status.status || "unknown"}`,
+          link: `/admin/orders/${order.id}`,
+        });
+      }
     }
 
     await supabase.from("orders").update(updates).eq("id", order.id);

@@ -36,26 +36,40 @@ export interface ProviderBalanceResponse {
 }
 
 export async function smmPost<T>(body: Record<string, unknown>): Promise<T> {
-  const res = await fetch(SMM_API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      key: SMM_API_KEY,
-      ...body,
-    } as Record<string, string>).toString(),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-  if (!res.ok) {
-    throw new Error(`Provider HTTP ${res.status}: ${res.statusText}`);
+  try {
+    const res = await fetch(SMM_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        key: SMM_API_KEY,
+        ...body,
+      } as Record<string, string>).toString(),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new Error(`Provider HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = (await res.json()) as T & { error?: string };
+
+    if (data.error) {
+      throw new Error(`Provider API error: ${data.error}`);
+    }
+
+    return data as T;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Provider API timeout after 30 seconds");
+    }
+    throw error;
   }
-
-  const data = (await res.json()) as T & { error?: string };
-
-  if (data.error) {
-    throw new Error(`Provider API error: ${data.error}`);
-  }
-
-  return data as T;
 }
 
 export async function fetchProviderServices(): Promise<ProviderService[]> {
