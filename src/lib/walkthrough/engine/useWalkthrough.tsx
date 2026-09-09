@@ -86,6 +86,19 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
     emitWalkthroughEvent({ type: "walkthrough_started", journeyId });
   }, []);
 
+  // Auto-start orientation journey on first visit
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hasSeenWalkthrough = localStorage.getItem("janjez-walkthrough-seen");
+    if (!hasSeenWalkthrough) {
+      const timer = setTimeout(() => {
+        start("orientation");
+        localStorage.setItem("janjez-walkthrough-seen", "true");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [start]);
+
   const stop = useCallback(() => {
     if (state.journeyId) {
       clearWalkthroughState(state.journeyId);

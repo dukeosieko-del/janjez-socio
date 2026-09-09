@@ -153,7 +153,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<{ sl
         />
 
         <main className="flex-1">
-          <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <article data-walkthrough="walkthrough-blog-article" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-sm text-kenya-white/50 mb-6">
               <Link href="/" className="hover:text-kenya-green transition-colors">Home</Link>

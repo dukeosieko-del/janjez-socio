@@ -65,7 +65,7 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-kenya-green/20 rounded-xl flex items-center justify-center">
                     <span className="text-xl">💰</span>
                   </div>
-                  <div>
+                  <div data-walkthrough="walkthrough-wallet-balance">
                     <p className="text-kenya-white/70 text-sm">Wallet Balance</p>
                     <p className="text-2xl font-bold text-kenya-green">
                       KES {Number(walletBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -86,12 +86,12 @@ export default function DashboardPage() {
                   <div className="w-10 h-10 bg-kenya-white/10 rounded-xl flex items-center justify-center">
                     <span className="text-xl">📦</span>
                   </div>
-                  <div>
+                  <div data-walkthrough="walkthrough-orders-link">
                     <p className="text-kenya-white/70 text-sm">Orders</p>
                     <p className="text-2xl font-bold text-kenya-white">—</p>
                   </div>
                 </div>
-                <Link href="/orders/all" className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/10">
+                <Link href="/orders/all" data-walkthrough="walkthrough-orders-link" className="inline-flex items-center gap-2 bg-kenya-white/10 text-kenya-white font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-kenya-white/20 transition-colors border border-kenya-white/10">
                   View Orders
                 </Link>
               </div>

@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getPostBySlug, getCommentsForPost, getPostRatingStats, getUserRating } from "@/lib/blog/queries";
-import { blogPosts, getTagsForPost as staticGetTags } from "@/lib/blog/data";
+import { getPostBySlug as staticGetPostBySlug, getTagsForPost as staticGetTags } from "@/lib/blog/data";
 import { getUserFromRequest } from "@/lib/server/auth-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { BlogComment, BlogTag } from "@/lib/blog/types";
@@ -15,19 +15,30 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const post = await getPostBySlug(slug);
 
+    let finalPost: typeof post;
     if (!post) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      // Fallback to static data if database query returns null
+      const staticPost = staticGetPostBySlug(slug);
+      if (!staticPost) {
+        return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      }
+      finalPost = staticPost;
+    } else {
+      finalPost = post;
+      // Merge cover_image_url from static if missing
+      const staticPost = staticGetPostBySlug(slug);
+      if (staticPost && !finalPost.cover_image_url) {
+        finalPost.cover_image_url = staticPost.cover_image_url;
+      }
     }
 
-    const staticPost = blogPosts.find((p) => p.slug === slug);
-    if (staticPost && !post.cover_image_url) {
-      post.cover_image_url = staticPost.cover_image_url;
-    }
+    // At this point finalPost is guaranteed to be non-null
+    const postData = finalPost!;
 
     // Get comments
     let comments: BlogComment[] = [];
     try {
-      comments = await getCommentsForPost(post.id);
+      comments = await getCommentsForPost(postData.id);
     } catch (commentError) {
       console.error("Failed to fetch comments:", commentError);
     }
@@ -35,7 +46,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Get rating stats
     let ratingStats: { average: number | null; count: number } = { average: null, count: 0 };
     try {
-      ratingStats = await getPostRatingStats(post.id);
+      ratingStats = await getPostRatingStats(postData.id);
     } catch (ratingError) {
       console.error("Failed to fetch rating stats:", ratingError);
     }
@@ -45,7 +56,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let userRating: number | null = null;
     if (user) {
       try {
-        userRating = await getUserRating(post.id, user.id);
+        userRating = await getUserRating(postData.id, user.id);
       } catch {
         // ignore
       }
@@ -54,18 +65,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // Get tags
     let tags: BlogTag[] = [];
     try {
-      tags = post.tags || await staticGetTags(slug);
+      tags = postData.tags || (typeof staticGetTags === "function" ? await staticGetTags(slug) : []);
     } catch {
       // fallback to static
     }
 
     // Fallback if empty
-    const tagsResult = tags.length > 0 ? tags : (post.tags || []);
+    const tagsResult = tags.length > 0 ? tags : (postData.tags || []);
 
     return NextResponse.json({
       ok: true,
       post: {
-        ...post,
+        ...postData,
         tags: tagsResult,
         average_rating: ratingStats.average,
         rating_count: ratingStats.count,
@@ -77,7 +88,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     console.error("Blog post API error:", error);
 
     // Fallback to static data
-    const staticPost = blogPosts.find((p) => p.slug === slug);
+    const staticPost = staticGetPostBySlug(slug);
     if (!staticPost) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
