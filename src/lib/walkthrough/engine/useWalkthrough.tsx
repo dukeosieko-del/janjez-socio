@@ -36,16 +36,10 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
     completedSteps: [],
   });
 
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < MOBILE_BREAKPOINT : false
-  );
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "./AuthContext";
 import { useNotifications } from "@/lib/supabase/realtime";
@@ -32,16 +32,17 @@ export default function NotificationCenter({
       limit: 50,
     });
 
+  // Use deterministic date grouping based on ISO date string (UTC)
   const grouped = useMemo(() => {
     const today: Notification[] = [];
     const earlier: Notification[] = [];
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayKey = new Date().toISOString().split("T")[0]; // UTC date
     for (const n of notifications) {
       if (!n.created_at) continue;
       const d = new Date(n.created_at);
       if (isNaN(d.getTime())) continue;
-      if (d >= startOfToday) today.push(n);
+      const dateKey = d.toISOString().split("T")[0];
+      if (dateKey === todayKey) today.push(n);
       else earlier.push(n);
     }
     return { today, earlier };
@@ -155,6 +156,19 @@ function NotificationRow({
   const isRead = !!notif.read_at;
   const severity = SEVERITY_BADGES[notif.severity] ?? SEVERITY_BADGES.info;
   const linkHref = notif.link || "#";
+  const [timeString, setTimeString] = useState("");
+
+  useEffect(() => {
+    if (notif.created_at) {
+      setTimeString(new Date(notif.created_at).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      }));
+    }
+  }, [notif.created_at]);
+
   const inner = (
     <div className="flex items-start gap-3 p-4">
       <div
@@ -178,12 +192,7 @@ function NotificationRow({
               {severity.label}
             </span>
             <span className="text-xs text-kenya-white/40">
-              {new Date(notif.created_at).toLocaleString("en-US", {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
+              {timeString || new Date(notif.created_at).toISOString().split("T")[0]}
             </span>
           </div>
         </div>

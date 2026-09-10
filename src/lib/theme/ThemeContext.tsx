@@ -15,14 +15,29 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => getInitialTheme());
+  const [theme, setThemeState] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === "light") {
+      setThemeState("light");
+    } else if (stored === "dark") {
+      setThemeState("dark");
+    } else {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      setThemeState(prefersDark ? "dark" : "light");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     document.documentElement.setAttribute("data-theme", theme);
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.classList.toggle("light", theme === "light");
     document.documentElement.style.colorScheme = theme;
-  }, [theme]);
+  }, [theme, mounted]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);

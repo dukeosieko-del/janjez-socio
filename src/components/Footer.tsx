@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useState, useEffect } from "react";
 import { FOOTER_LINKS } from "@/lib/data";
 import { EMAIL_DEPARTMENTS, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_WHATSAPP } from "@/lib/email/config";
 
@@ -8,6 +11,12 @@ function isInternal(href: string) {
 }
 
 export default function Footer() {
+  const [year, setYear] = useState(0);
+
+  useEffect(() => {
+    setYear(new Date().getFullYear());
+  }, []);
+
   const whatsappIcon = (
     <Image src="/whatsapp-icon.png" alt="WhatsApp" width={20} height={20} className="w-5 h-5 object-contain" />
   );
@@ -155,7 +164,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-16 pt-8 border-t border-kenya-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-kenya-white/30 text-sm">
-            &copy; {new Date().getFullYear()} janjez.social. All rights reserved.
+            &copy; {year} janjez.social. All rights reserved.
           </p>
           <div className="flex items-center gap-2">
             <span className="text-xs text-kenya-white/30">Proudly Kenyan 🇰🇪</span>
