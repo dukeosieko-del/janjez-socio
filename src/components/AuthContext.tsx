@@ -25,7 +25,6 @@ interface AuthContextType {
   supabaseError: string | null;
   openAuth: (tab?: "login" | "register") => void;
   closeAuth: () => void;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   customSignUp: (email: string, password: string, full_name?: string, phone?: string, username?: string) => Promise<{ error: Error | null; message?: string }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithOAuth: (provider?: string) => Promise<{ error: Error | null }>;
@@ -300,15 +299,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthModal({ open: false, tab: "login" });
   };
 
-  const signUp = async (email: string, password: string) => {
-    if (!supabase) return { error: new Error("Authentication service is temporarily unavailable.") };
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    return { error };
-  };
-
   const signIn = async (email: string, password: string) => {
     if (!supabase) return { error: new Error("Authentication service is temporarily unavailable.") };
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -386,7 +376,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, signUp, customSignUp, signIn, signInWithOAuth, signOut, refreshProfile, clearAllLocalCaches, supabaseError, isAdmin }}>
+    <AuthContext.Provider value={{ user, session, loading, profile, walletBalance, authModal, openAuth, closeAuth, customSignUp, signIn, signInWithOAuth, signOut, refreshProfile, clearAllLocalCaches, supabaseError, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
