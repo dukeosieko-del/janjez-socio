@@ -16,9 +16,9 @@ export const PLATFORM_AVATARS: Record<string, string> = {
   x: "/icons/services/x-icon.webp",
   twitter: "/icons/services/x-icon.webp",
   "x-twitter": "/icons/services/x-icon.webp",
-  "google-maps-reviews": "/icons/services/google-reviews-icon.png",
-  "google-maps": "/icons/services/google-reviews-icon.png",
-  "google-reviews": "/icons/services/google-reviews-icon.png",
+  "google-maps-reviews": "/icons/services/google-maps-reviews.svg",
+  "google-maps": "/icons/services/google-maps-reviews.svg",
+  "google-reviews": "/icons/services/google-maps-reviews.svg",
   snapchat: "/icons/services/snapchat.svg",
   linkedin: "/icons/services/linkedin.svg",
 };
