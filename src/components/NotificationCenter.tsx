@@ -33,20 +33,27 @@ export default function NotificationCenter({
     });
 
   // Use deterministic date grouping based on ISO date string (UTC)
+  // Today reference is computed on client to avoid hydration mismatch
+  const [todayReference, setTodayReference] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTodayReference(new Date().toISOString().split("T")[0]);
+  }, []);
+
   const grouped = useMemo(() => {
+    if (!todayReference) return { today: [] as Notification[], earlier: [] as Notification[] };
     const today: Notification[] = [];
     const earlier: Notification[] = [];
-    const todayKey = new Date().toISOString().split("T")[0]; // UTC date
     for (const n of notifications) {
       if (!n.created_at) continue;
       const d = new Date(n.created_at);
       if (isNaN(d.getTime())) continue;
       const dateKey = d.toISOString().split("T")[0];
-      if (dateKey === todayKey) today.push(n);
+      if (dateKey === todayReference) today.push(n);
       else earlier.push(n);
     }
     return { today, earlier };
-  }, [notifications]);
+  }, [notifications, todayReference]);
 
   return (
     <div data-walkthrough="walkthrough-notif-center" className="max-w-3xl mx-auto p-6">

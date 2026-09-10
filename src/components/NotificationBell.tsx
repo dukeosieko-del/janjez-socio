@@ -5,6 +5,66 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
 import { useNotifications } from "@/lib/supabase/realtime";
+import type { Notification } from "@/lib/notifications";
+
+function NotificationItem({
+  notif,
+  onClick,
+  severityDot,
+}: {
+  notif: Notification;
+  onClick: () => void;
+  severityDot: (severity: string | undefined, read: boolean) => string;
+}) {
+  const [timeString, setTimeString] = useState("");
+
+  useEffect(() => {
+    if (notif.created_at) {
+      setTimeString(new Date(notif.created_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }));
+    }
+  }, [notif.created_at]);
+
+  return (
+    <Link
+      href={notif.link || "/orders/all"}
+      onClick={onClick}
+      className="block p-4 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${severityDot(
+            notif.severity,
+            !!notif.read_at
+          )}`}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <h3
+              className={`font-semibold text-sm ${
+                notif.read_at
+                  ? "text-kenya-white/50"
+                  : "text-kenya-white"
+              }`}
+            >
+              {notif.title}
+            </h3>
+            <span className="text-xs text-kenya-white/40 flex-shrink-0">
+              {timeString || new Date(notif.created_at).toISOString().split("T")[0]}
+            </span>
+          </div>
+          {notif.body && (
+            <p className="text-sm text-kenya-white/60 mt-1 line-clamp-2">
+              {notif.body}
+            </p>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function NotificationBell() {
   const { user, session, isAdmin } = useAuth();
@@ -116,66 +176,22 @@ export default function NotificationBell() {
                   No notifications yet.
                 </div>
               )}
-              {notifications.map((notif) => {
-                const [timeString, setTimeString] = useState("");
-                useEffect(() => {
-                  if (notif.created_at) {
-                    setTimeString(new Date(notif.created_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                    }));
-                  }
-                }, [notif.created_at]);
-
-                return (
-                  <Link
-                    key={notif.id}
-                    href={notif.link || "/orders/all"}
-                    onClick={(e) => {
-                      close();
-                      if (!notif.read_at) {
-                        void markRead(notif.id);
-                      }
-                      if (notif.link) {
-                        // let navigation happen
-                      } else {
-                        e.preventDefault();
-                      }
-                    }}
-                    className="block p-4 hover:bg-kenya-white/5 transition-colors border-b border-kenya-white/5 last:border-0"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${severityDot(
-                          notif.severity,
-                          !!notif.read_at
-                        )}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h3
-                            className={`font-semibold text-sm ${
-                              notif.read_at
-                                ? "text-kenya-white/50"
-                                : "text-kenya-white"
-                            }`}
-                          >
-                            {notif.title}
-                          </h3>
-                          <span className="text-xs text-kenya-white/40 flex-shrink-0">
-                            {timeString || new Date(notif.created_at).toISOString().split("T")[0]}
-                          </span>
-                        </div>
-                        {notif.body && (
-                          <p className="text-sm text-kenya-white/60 mt-1 line-clamp-2">
-                            {notif.body}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+              {notifications.map((notif) => (
+                <NotificationItem
+                  key={notif.id}
+                  notif={notif}
+                  onClick={() => {
+                    close();
+                    if (!notif.read_at) {
+                      void markRead(notif.id);
+                    }
+                    if (!notif.link) {
+                      // prevent navigation if no link
+                    }
+                  }}
+                  severityDot={severityDot}
+                />
+              ))}
             </div>
 
             <div className="p-4 border-t border-kenya-white/10 flex gap-2">
