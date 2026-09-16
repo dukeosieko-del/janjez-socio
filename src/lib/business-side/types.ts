@@ -1,6 +1,6 @@
 import type { JanjezService } from "@/lib/janjez-services";
 
-export interface BusinessService extends JanjezService {
+export interface BusinessService extends Omit<JanjezService, 'provider_service_id'> {
   price: number;
 }
 
