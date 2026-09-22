@@ -67,6 +67,19 @@ export async function POST(req: NextRequest) {
   const totalCost = Math.round(wholesaleCost * quantity * 100) / 100;
   const markup = totalCharge - totalCost;
 
+  // A5c — markup enforcement. A reseller may not more than double the
+  // wholesale base price (max 100% margin). This protects end customers from
+  // predatory pricing while allowing meaningful reseller margin.
+  if (markup < 0) {
+    return NextResponse.json({ error: 'Markup cannot be negative' }, { status: 400 });
+  }
+  if (markup > totalCost) {
+    return NextResponse.json(
+      { error: `Markup exceeds 100% cap. Max allowed: KES ${totalCost.toLocaleString()}, requested: KES ${markup.toLocaleString()}` },
+      { status: 400 }
+    );
+  }
+
   // Check wallet balance
   const { data: wallet } = await supabase
     .from('child_wallets')

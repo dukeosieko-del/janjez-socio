@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 
+// A5c — maximum markup is 100% (reseller may not more than double the
+// wholesale base price). This is enforced server-side in
+// app/api/child/orders/route.ts; the UI clamps to the same bound so users
+// cannot even select an out-of-range value.
+const MAX_MARKUP_PERCENT = 100;
+
 interface PriceEditorProps {
   basePrice: number;
   markupPercent: number;
@@ -13,8 +19,14 @@ export default function PriceEditor({
   markupPercent,
   onPriceChange,
 }: PriceEditorProps) {
-  const [localMarkup, setLocalMarkup] = useState(markupPercent);
+  const clampedInitial = Math.max(0, Math.min(markupPercent, MAX_MARKUP_PERCENT));
+  const [localMarkup, setLocalMarkup] = useState(clampedInitial);
   const calculated = Math.round(basePrice * (1 + localMarkup / 100));
+
+  function handleChange(value: number) {
+    const clamped = Math.max(0, Math.min(value, MAX_MARKUP_PERCENT));
+    setLocalMarkup(clamped);
+  }
 
   return (
     <div className="space-y-3">
@@ -27,12 +39,17 @@ export default function PriceEditor({
         <input
           type="range"
           min={0}
-          max={200}
+          max={MAX_MARKUP_PERCENT}
+          step={5}
           value={localMarkup}
-          onChange={(e) => setLocalMarkup(Number(e.target.value))}
+          onChange={(e) => handleChange(Number(e.target.value))}
           className="flex-1"
         />
         <span className="text-sm font-mono w-16 text-right">{localMarkup}%</span>
+      </div>
+      <div className="flex items-center justify-between text-xs text-gray-400 px-1">
+        <span>0%</span>
+        <span>Max {MAX_MARKUP_PERCENT}%</span>
       </div>
       <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
         <span className="text-sm font-medium">Child price:</span>
