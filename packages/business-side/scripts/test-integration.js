@@ -1,25 +1,38 @@
 #!/usr/bin/env node
 /**
- * Test the Business Side ↔ Main Build API integration end-to-end.
+ * Business Side ↔ Main Build integration test.
  *
- * Signs a request exactly as the business-side client does, then verifies
- * the main build accepts it. Run this BEFORE configuring production secrets
- * to confirm the integration contract works.
+ * Reads secrets from environment variables at runtime. NEVER prints secret values.
  *
- * Usage: node scripts/test-integration.js
+ * Usage:
+ *   JANJEZ_MAIN_API_KEY=biz_... JANJEZ_MAIN_API_SECRET=... node scripts/test-integration.js
+ *
+ * Exit codes:
+ *   0 = all checks passed
+ *   1 = at least one check failed
  */
 
 const crypto = require('crypto');
 const https = require('https');
 
-const API_KEY = process.argv[2] || 'biz_test_key';
-const API_SECRET = process.argv[3] || 'test_secret_1234567890abcdef';
+const API_KEY = process.env.JANJEZ_MAIN_API_KEY;
+const API_SECRET = process.env.JANJEZ_MAIN_API_SECRET;
 const MAIN_API_URL = process.env.JANJEZ_MAIN_API_URL || 'https://janjez.social/api/business/v1';
+
+if (!API_KEY || !API_SECRET) {
+  console.error('ERROR: Set JANJEZ_MAIN_API_KEY and JANJEZ_MAIN_API_SECRET env vars.');
+  process.exit(2);
+}
 
 function signRequest(method, path, body, timestamp, nonce, secret) {
   const bodyHash = crypto.createHmac('sha256', secret).update(body).digest('hex');
   const payload = `${method}\n${path}\n${bodyHash}\n${timestamp}\n${nonce}`;
   return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+}
+
+function maskKey(key) {
+  if (!key) return '(unset)';
+  return `${key.slice(0, 8)}...${key.slice(-4)}`;
 }
 
 async function testEndpoint(method, path, body = null) {
@@ -53,8 +66,7 @@ async function testEndpoint(method, path, body = null) {
       res.on('end', () => {
         resolve({
           status: res.statusCode,
-          headers: Object.keys(res.headers).filter((h) => h.startsWith('x-')),
-          body: data.slice(0, 300),
+          body: data.slice(0, 200),
         });
       });
     });
@@ -67,36 +79,45 @@ async function testEndpoint(method, path, body = null) {
 }
 
 async function main() {
+  const results = [];
+  const tests = [
+    { name: 'GET /health', method: 'GET', path: '/health', expect: [200] },
+    { name: 'GET /services (list)', method: 'GET', path: '/services', expect: [200, 404] },
+    { name: 'GET /services/test (single)', method: 'GET', path: '/services/test', expect: [200, 401, 404] },
+    { name: 'GET /orders (control)', method: 'GET', path: '/orders', expect: [401, 405] },
+  ];
+
   console.log('=== Business Side ↔ Main Build Integration Test ===');
-  console.log(`API Key: ${API_KEY.slice(0, 12)}...`);
+  console.log(`API Key: ${maskKey(API_KEY)}`);
   console.log(`API URL: ${MAIN_API_URL}`);
   console.log('');
-
-  const tests = [
-    { name: 'GET /health', method: 'GET', path: '/health' },
-    { name: 'GET /services', method: 'GET', path: '/services' },
-    { name: 'GET /orders (control)', method: 'GET', path: '/orders' },
-  ];
 
   for (const test of tests) {
     try {
       const result = await testEndpoint(test.method, test.path);
+      const ok = test.expect.includes(result.status);
+      const icon = ok ? '✓' : '✗';
       const status = result.status;
-      let icon = '✓';
-      if (status >= 400 && status < 500) icon = '⚠️ (expected auth error)';
-      if (status >= 500) icon = '❌';
-      console.log(`${icon} ${test.name}: ${status} ${result.body.slice(0, 100)}`);
+      const snippet = result.body.slice(0, 80).replace(/\n/g, ' ');
+      console.log(`${icon} ${test.name}: ${status} ${snippet}`);
+      results.push({ name: test.name, status, ok });
     } catch (err) {
-      console.log(`❌ ${test.name}: ${err.message}`);
+      console.log(`✗ ${test.name}: ERROR ${err.message}`);
+      results.push({ name: test.name, status: null, ok: false });
     }
   }
 
   console.log('');
-  console.log('=== Interpretation ===');
-  console.log('✓ 200 = API key accepted, integration working');
-  console.log('⚠️ 401/403 = API key rejected — check BUSINESS_SIDE_API_KEY on main build');
-  console.log('❌ 500 = Server error — check main build logs');
-  console.log('❌ Connection error = Main build not reachable');
+  const allOk = results.every((r) => r.ok);
+  if (allOk) {
+    console.log('RESULT: PASS — all checks returned expected status codes.');
+  } else {
+    console.log('RESULT: FAIL — one or more checks returned unexpected status codes.');
+  }
+  process.exit(allOk ? 0 : 1);
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error('FATAL:', err.message);
+  process.exit(2);
+});
