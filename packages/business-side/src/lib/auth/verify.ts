@@ -6,6 +6,7 @@ export interface JanjezUser {
   email: string;
   full_name: string;
   phone: string;
+  signup_source: 'main' | 'business-side' | 'reseller' | 'affiliate' | 'child-panel';
 }
 
 export interface VerifyResult {
