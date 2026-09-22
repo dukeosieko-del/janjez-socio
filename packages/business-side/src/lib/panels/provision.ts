@@ -34,6 +34,8 @@ export async function provisionDemoPanel(partnerId: string): Promise<DemoPanel> 
     .insert({
       partner_id: partnerId,
       subdomain,
+      name: `Demo Panel ${randomUUID().slice(0, 8)}`,
+      signup_source: 'child-panel',
       custom_domain: null,
       custom_domain_verified: false,
       branding: {},
@@ -41,7 +43,7 @@ export async function provisionDemoPanel(partnerId: string): Promise<DemoPanel> 
       payment_gateways: [],
       status: 'demo',
     })
-    .select('id, partner_id, subdomain, status')
+    .select('id, partner_id, subdomain, name, signup_source, status')
     .single();
 
   if (panelError || !panel) {
