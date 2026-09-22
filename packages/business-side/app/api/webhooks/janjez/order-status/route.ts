@@ -120,6 +120,15 @@ export async function POST(req: NextRequest) {
     clawbackCommission(order_id).catch(() => {});
   }
 
+  // Reseller commission lifecycle — parallel to affiliate. Fire-and-forget.
+  if (newStatus === 'completed' || newStatus === 'partial') {
+    const { recordResellerCommission } = await import('@/lib/reseller/commission');
+    recordResellerCommission(order_id).catch(() => {});
+  } else if (newStatus === 'refunded' || newStatus === 'failed') {
+    const { clawbackResellerCommission } = await import('@/lib/reseller/commission');
+    clawbackResellerCommission(order_id).catch(() => {});
+  }
+
   // Mark event as processed
   await supabase.from('webhook_events').update({
     processed: true,

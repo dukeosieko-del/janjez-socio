@@ -1,12 +1,21 @@
 import { getSupabaseAdmin } from '@/lib/supabase/server';
-import { Partner, PartnerStatus } from '@/types/partner';
 
 export interface ValidateResult {
   valid: boolean;
-  partner: Partner | string;
+  partner: Record<string, unknown> | string;
+  blockers?: string[];
 }
 
-export async function validateActivationReadiness(partnerId: string): Promise<ValidateResult> {
+/**
+ * Validate that a partner is ready to activate.
+ *
+ * Reseller branch (A5d): resellers must complete additional onboarding steps
+ * before activation — wholesale agreement acceptance and panel branding. These
+ * are checked in addition to the baseline 'pending' status check.
+ */
+export async function validateActivationReadiness(
+  partnerId: string
+): Promise<ValidateResult> {
   const supabase = getSupabaseAdmin();
   const { data: partner, error } = await supabase
     .from('partners')
@@ -18,9 +27,25 @@ export async function validateActivationReadiness(partnerId: string): Promise<Va
     return { valid: false, partner: 'Partner not found' };
   }
 
-  if (partner.status !== PartnerStatus.Pending) {
+  if (partner.status !== 'pending') {
     return { valid: false, partner: `Partner status is ${partner.status}, expected 'pending'` };
   }
 
-  return { valid: true, partner };
+  const blockers: string[] = [];
+
+  // Reseller-specific onboarding requirements
+  if (partner.signup_source === 'reseller') {
+    if (!partner.reseller_agreement_accepted) {
+      blockers.push('Wholesale agreement not accepted');
+    }
+    if (!partner.branding_completed) {
+      blockers.push('Panel branding not completed');
+    }
+  }
+
+  if (blockers.length > 0) {
+    return { valid: false, partner: `Onboarding incomplete: ${blockers.join('; ')}`, blockers };
+  }
+
+  return { valid: true, partner: partner as Record<string, unknown> };
 }

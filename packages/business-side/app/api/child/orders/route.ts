@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { getChildSession } from '@/lib/child-users/session';
 import { callJanjez } from '@/lib/janjez-api/client';
+import { getWholesaleTiers, applyWholesaleTier } from '@/lib/reseller/wholesale';
 
 const orderSchema = z.object({
   panel_id: z.string().uuid(),
@@ -55,9 +56,15 @@ export async function POST(req: NextRequest) {
     .single();
   if (!service) return NextResponse.json({ error: 'Service not found' }, { status: 404 });
 
+  // Wholesale pricing: resellers pay the wholesale cost, not retail.
+  // The wholesale discount applies to the Janjez cost side, so the reseller's
+  // margin = child_price - wholesale_cost (wider than child_price - retail_cost).
+  const wholesaleTiers = await getWholesaleTiers();
+  const wholesaleCost = applyWholesaleTier(Number(service.cost), quantity, wholesaleTiers);
+
   // Server-side price authority
   const totalCharge = Math.round(service.child_price * quantity * 100) / 100;
-  const totalCost = Math.round(service.cost * quantity * 100) / 100;
+  const totalCost = Math.round(wholesaleCost * quantity * 100) / 100;
   const markup = totalCharge - totalCost;
 
   // Check wallet balance

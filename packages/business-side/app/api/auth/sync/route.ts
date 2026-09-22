@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from '@/lib/supabase/server';
 import { createSession } from '@/lib/auth/session';
 import { env } from '@/lib/config/env';
 
+const VALID_SIGNUP_SOURCES = ['main', 'business-side', 'reseller', 'affiliate', 'child-panel'] as const;
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const { janjez_user_id, email, full_name, phone, signup_source } = body;
@@ -10,6 +12,13 @@ export async function POST(request: NextRequest) {
   if (!janjez_user_id || !email) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+
+  // Validate signup_source against the known union. Never trust the caller's
+  // claim unconditionally — fall back to the safe default.
+  const normalizedSource =
+    signup_source && (VALID_SIGNUP_SOURCES as readonly string[]).includes(signup_source)
+      ? signup_source
+      : 'business-side';
 
   const supabase = getSupabaseAdmin();
 
@@ -33,7 +42,7 @@ export async function POST(request: NextRequest) {
         phone: phone ?? '',
         status: 'pending',
         onboarding_state: 'pending',
-        signup_source: signup_source ?? 'business-side',
+        signup_source: normalizedSource,
       })
       .select('id, janjez_user_id, janjez_email, display_name, phone, status, onboarding_state, signup_source')
       .single();

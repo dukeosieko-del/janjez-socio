@@ -13,6 +13,11 @@ interface Partner {
   activation_amount: number;
   activation_paid_at: string | null;
   wallet_balance: number;
+  total_commission?: number;
+  pending_commission?: number;
+  reseller_agreement_accepted?: boolean;
+  branding_completed?: boolean;
+  signup_source?: string;
 }
 
 interface Panel {
@@ -165,7 +170,13 @@ export default function ResellerPage() {
     (sum, p) => sum + p.orders.filter((o) => o.status === 'in_progress').length,
     0,
   );
-  const totalCommission = panels.reduce((sum, p) => sum + p.orders.reduce((s, o) => s + (o.markup ?? 0), 0), 0);
+  // Persisted aggregates (A5e) replace the real-time computation so the
+  // dashboard shows reconciliation-grade totals instead of a live scan.
+  const totalCommission = partner?.total_commission ?? panels.reduce(
+    (sum, p) => sum + p.orders.reduce((s, o) => s + (o.markup ?? 0), 0),
+    0,
+  );
+  const pendingCommission = partner?.pending_commission ?? 0;
 
   return (
     <div>
@@ -350,7 +361,14 @@ export default function ResellerPage() {
         <div className="p-6 bg-white rounded-lg shadow">
           <p className="text-sm text-gray-500">Commission from Panels</p>
           <p className="text-3xl font-bold text-gray-900 mt-1">{formatCurrency(totalCommission)}</p>
-          <p className="mt-2 text-sm text-gray-500">Total earned across all panels</p>
+          <p className="mt-2 text-sm text-gray-500">
+            {pendingCommission > 0 ? (
+              <>
+                <span className="text-yellow-600">{formatCurrency(pendingCommission)} pending</span> ·{' '}
+              </>
+            ) : null}
+            Total earned across all panels
+          </p>
         </div>
         <div className="p-6 bg-white rounded-lg shadow">
           <p className="text-sm text-gray-500">Panels</p>

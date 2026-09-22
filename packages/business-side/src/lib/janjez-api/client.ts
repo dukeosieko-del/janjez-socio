@@ -77,4 +77,21 @@ export const janjezApi = {
   createOrder: (payload: Record<string, unknown>, idempotencyKey: string) =>
     callJanjez({ method: 'POST', path: '/orders', body: payload, idempotencyKey }),
   getOrder: (id: string) => callJanjez({ method: 'GET', path: `/orders/${id}` }),
+  // A5f — documented in docs/11-JANJEZ-API-EXTENSIONS.md but not yet
+  // implemented on the Janjez main build (no /users or /categories route
+  // exists under /api/business/v1/). These helpers are wired and ready; the
+  // main build must add the routes for them to resolve.
+  getUsers: (params?: { page?: number; page_size?: number; search?: string }) =>
+    callJanjez({
+      method: 'GET',
+      path: '/users',
+      body: params as Record<string, unknown> | undefined,
+    }),
+  getUser: (id: string) => callJanjez({ method: 'GET', path: `/users/${id}` }),
+  getCategories: (params?: { parent?: string; active?: boolean }) =>
+    callJanjez({
+      method: 'GET',
+      path: '/categories',
+      body: params as Record<string, unknown> | undefined,
+    }),
 };
