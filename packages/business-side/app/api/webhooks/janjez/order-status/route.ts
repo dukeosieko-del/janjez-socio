@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/server';
 import { verifyHmacSignature } from '@/lib/hmac/verify';
+import { triggerAffiliateConversion } from '@/lib/affiliate/conversion';
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending_payment: ['pending_submission', 'cancelled', 'failed'],
@@ -103,6 +104,20 @@ export async function POST(req: NextRequest) {
       error: updateError.message,
     }).eq('id', event.id);
     return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  // Affiliate commission lifecycle — fire-and-forget so a slow attribution
+  // lookup never delays webhook ack. Clawback on refund/failure.
+  if (newStatus === 'completed' || newStatus === 'partial') {
+    triggerAffiliateConversion({
+      order_id,
+      customer_ip: body.customer_ip,
+      customer_user_agent: body.customer_user_agent,
+      ref_code: body.ref_code,
+    }).catch(() => {});
+  } else if (newStatus === 'refunded' || newStatus === 'failed') {
+    const { clawbackCommission } = await import('@/lib/affiliate/clawback');
+    clawbackCommission(order_id).catch(() => {});
   }
 
   // Mark event as processed

@@ -75,5 +75,15 @@
       "source": "/ig-setup",
       "destination": "/instagram-setup-guide"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/affiliate-release",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/order-sync",
+      "schedule": "*/30 * * * *"
+    }
   ]
 }
