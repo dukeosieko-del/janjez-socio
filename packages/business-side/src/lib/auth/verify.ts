@@ -56,6 +56,7 @@ export async function verifyJanjezSession(code: string): Promise<VerifyResult> {
         email: json.data.email,
         full_name: json.data.full_name,
         phone: json.data.phone ?? '',
+        signup_source: json.data.signup_source ?? 'business-side',
       },
     };
   } catch {

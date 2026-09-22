@@ -41,12 +41,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const { janjez_user_id, email, full_name, phone } = verifyResult.user;
+    const { janjez_user_id, email, full_name, phone, signup_source } = verifyResult.user;
 
     const syncRes = await fetch(`${env.NEXT_PUBLIC_SITE_URL}/api/auth/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ janjez_user_id, email, full_name, phone }),
+      body: JSON.stringify({ janjez_user_id, email, full_name, phone, signup_source }),
       signal: AbortSignal.timeout(15000),
     });
 

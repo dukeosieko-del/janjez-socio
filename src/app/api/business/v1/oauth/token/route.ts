@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       user_id: payload.sub,
       email: payload.email,
       return_to: payload.return_to ?? '/dashboard',
+      signup_source: (payload.signup_source as string) ?? 'main',
     });
   } catch {
     return businessError('INVALID_CODE', 'Code is invalid or expired.', 400);

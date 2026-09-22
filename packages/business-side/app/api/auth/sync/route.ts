@@ -5,7 +5,7 @@ import { env } from '@/lib/config/env';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { janjez_user_id, email, full_name, phone } = body;
+  const { janjez_user_id, email, full_name, phone, signup_source } = body;
 
   if (!janjez_user_id || !email) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   const { data: existingPartner, error: fetchError } = await supabase
     .from('partners')
-    .select('id, janjez_user_id, janjez_email, display_name, phone, status, onboarding_state')
+    .select('id, janjez_user_id, janjez_email, display_name, phone, status, onboarding_state, signup_source')
     .eq('janjez_user_id', janjez_user_id)
     .single();
 
@@ -33,8 +33,9 @@ export async function POST(request: NextRequest) {
         phone: phone ?? '',
         status: 'pending',
         onboarding_state: 'pending',
+        signup_source: signup_source ?? 'business-side',
       })
-      .select('id, janjez_user_id, janjez_email, display_name, phone, status, onboarding_state')
+      .select('id, janjez_user_id, janjez_email, display_name, phone, status, onboarding_state, signup_source')
       .single();
 
     if (createError || !newPartner) {

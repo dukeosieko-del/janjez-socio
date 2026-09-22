@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
     email: user.email,
     client_id: clientId,
     return_to: returnTo,
+    signup_source: (user.user_metadata?.signup_source as string) ?? 'main',
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
