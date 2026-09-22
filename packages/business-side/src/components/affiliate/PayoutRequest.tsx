@@ -8,11 +8,13 @@ export function PayoutRequest() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setBalanceError(null);
     setSuccess(false);
 
     try {
@@ -24,7 +26,14 @@ export function PayoutRequest() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Payout failed');
+        const msg = data.error || 'Payout failed';
+        // Surface balance errors distinctly so the user can top up instead
+        // of retrying blindly.
+        if (msg.toLowerCase().includes('insufficient balance')) {
+          setBalanceError(msg);
+        } else {
+          setError(msg);
+        }
       } else {
         setSuccess(true);
         setAmount('');
@@ -50,7 +59,10 @@ export function PayoutRequest() {
             min={500}
             step={100}
             value={amount}
-            onChange={e => setAmount(e.target.value)}
+            onChange={e => {
+              setAmount(e.target.value);
+              setBalanceError(null);
+            }}
             required
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="500"
@@ -71,6 +83,11 @@ export function PayoutRequest() {
         </div>
       </div>
       {error && <p className="text-red-600 text-sm">{error}</p>}
+      {balanceError && (
+        <p className="text-amber-600 text-sm bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          {balanceError}
+        </p>
+      )}
       {success && <p className="text-green-600 text-sm">Payout requested successfully!</p>}
       <button
         type="submit"
