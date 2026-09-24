@@ -1,0 +1,14 @@
+-- Rollback: 20260919000003_child_wallet_credit_tenant.sql
+-- Reverses: CREATE OR REPLACE FUNCTION child_wallet_credit / child_wallet_debit
+-- Author: Kilo Extension | Date: 2026-09-24
+--
+-- NOTE: No safe rollback for a function body fix. The original behaviour was
+-- broken (omitted NOT NULL tenant_id on child_wallets and
+-- child_wallet_transactions), so reverting would re-introduce both faults.
+-- To restore the original, re-apply
+-- 20260918000006_webhook_and_wallet.sql verbatim:
+--
+--   psql -f 20260918000006_webhook_and_wallet.sql
+--
+-- This file is intentionally empty of DDL; the fix is idempotent and safe
+-- to leave in place.
