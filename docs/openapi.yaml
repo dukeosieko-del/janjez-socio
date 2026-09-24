@@ -1,0 +1,998 @@
+openapi: 3.0.3
+info:
+  title: Janjez Business API
+  version: '1.0'
+  description: 'REST API for the Janjez Business Side integration.
+
+
+    All endpoints under /api/business/v1/* require authentication via a
+
+    per-user API key JWT: `Authorization: Bearer <token>`.
+
+
+    Keys are issued through the dashboard at /dashboard/api-keys (admin
+
+    session) or POST /api/business/v1/keys (admin:write scope).
+
+
+    Error envelope on failure:
+
+    { "error": "<CODE>", "message": "<detail>", "code": "<CODE>" }
+
+    '
+  contact:
+    name: Janjez Platform
+    url: https://janjez.social
+servers:
+- url: https://janjez.social/api/business/v1
+  description: Production
+- url: http://localhost:3000/api/business/v1
+  description: Local development
+security:
+- bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid:
+              value:
+                error: INVALID_API_KEY
+                message: Invalid or expired API key.
+                code: INVALID_API_KEY
+    Forbidden:
+      description: Valid key missing required scope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            scope:
+              value:
+                error: INSUFFICIENT_SCOPE
+                message: users:read scope required.
+                code: INSUFFICIENT_SCOPE
+    RateLimited:
+      description: Per-key rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds to wait before next request
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            value:
+              error: RATE_LIMITED
+              message: Rate limit exceeded for this API key.
+              code: RATE_LIMITED
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+        key_id:
+          type: string
+        name:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          type: integer
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    CreatedKey:
+      allOf:
+      - $ref: '#/components/schemas/ApiKey'
+      properties:
+        token:
+          type: string
+          description: Shown ONCE. Never stored.
+        secret:
+          type: string
+          description: Shown ONCE. Never stored.
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        selling_price_ksh:
+          type: number
+        min_quantity:
+          type: integer
+        max_quantity:
+          type: integer
+        is_active:
+          type: boolean
+        display_order:
+          type: integer
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        service_name:
+          type: string
+        link:
+          type: string
+        quantity:
+          type: integer
+        amount:
+          type: number
+        status:
+          type: string
+        payment_status:
+          type: string
+        fulfillment_status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    Wallet:
+      type: object
+      properties:
+        balance:
+          type: number
+        currency:
+          type: string
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+        service:
+          type: string
+        version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+paths:
+  /health:
+    get:
+      summary: Service health check
+      description: Returns the API health status. No auth required.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /oauth/token:
+    post:
+      summary: Exchange OAuth code for user info
+      description: Validates a JWT authorization code issued by the Janjez SSO.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              properties:
+                code:
+                  type: string
+                  description: JWT authorization code.
+      responses:
+        '200':
+          description: Token exchanged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      user_id:
+                        type: string
+                      email:
+                        type: string
+                      return_to:
+                        type: string
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+  /services:
+    get:
+      summary: List services
+      description: Paginated catalogue of active services with optional filters.
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      - name: category
+        in: query
+        schema:
+          type: string
+      - name: search
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Page of services
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /services/{id}:
+    get:
+      summary: Get service by ID
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Service found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Service'
+        '404':
+          description: Not found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /orders:
+    post:
+      summary: Place an order
+      description: Idempotent order placement. Requires Idempotency-Key header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '200':
+          description: Order placed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      order:
+                        $ref: '#/components/schemas/Order'
+                      fulfillment:
+                        type: object
+                      replayed:
+                        type: boolean
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /orders/{id}:
+    get:
+      summary: Get order by ID
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Order'
+        '404':
+          description: Not found
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /orders/{id}/cancel:
+    post:
+      summary: Cancel an order
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Cancelled
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /orders/{id}/refill:
+    post:
+      summary: Request a refill
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Refill requested
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /wallet/balance:
+    get:
+      summary: Get wallet balance
+      responses:
+        '200':
+          description: Balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Wallet'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /wallet/topup:
+    post:
+      summary: Top up wallet via M-Pesa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - amount
+              - phoneNumber
+              properties:
+                amount:
+                  type: number
+                phoneNumber:
+                  type: string
+      responses:
+        '200':
+          description: Top-up initiated
+        '400':
+          $ref: '#/components/responses/Unauthorized'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /webhooks/register:
+    post:
+      summary: Register a webhook (stub)
+      description: Webhook registration is scheduled for a future release.
+      responses:
+        '501':
+          description: Not implemented
+  /users:
+    get:
+      summary: List users
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      responses:
+        '200':
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        janjez_user_id:
+                          type: string
+                        janjez_email:
+                          type: string
+                        display_name:
+                          type: string
+                        phone:
+                          type: string
+                        wallet_balance:
+                          type: number
+                        role:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /analytics:
+    get:
+      summary: Usage analytics
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: period
+        in: query
+        schema:
+          type: string
+          enum:
+          - day
+          - week
+          - month
+      responses:
+        '200':
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        type: object
+                      total_orders:
+                        type: integer
+                      open_orders:
+                        type: integer
+                      completed_orders:
+                        type: integer
+                      wallet_balance:
+                        type: number
+                      total_commission:
+                        type: number
+                      pending_commission:
+                        type: number
+                      generated_at:
+                        type: string
+                        format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /affiliates:
+    get:
+      summary: List affiliates
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      responses:
+        '200':
+          description: Affiliate list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        janjez_user_id:
+                          type: string
+                        affiliate_code:
+                          type: string
+                        total_earned:
+                          type: number
+                        total_pending:
+                          type: number
+                        total_paid:
+                          type: number
+                        status:
+                          type: string
+                        display_name:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /commissions:
+    get:
+      summary: Commission ledger
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      responses:
+        '200':
+          description: Commission list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        affiliate_id:
+                          type: string
+                        order_id:
+                          type: string
+                        amount:
+                          type: number
+                        status:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /payouts:
+    get:
+      summary: List payouts
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      responses:
+        '200':
+          description: Payout list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        affiliate_id:
+                          type: string
+                        amount:
+                          type: number
+                        status:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /withdrawals:
+    get:
+      summary: Withdrawal history
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      responses:
+        '200':
+          description: Withdrawal list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        partner_id:
+                          type: string
+                        amount:
+                          type: number
+                        status:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /products:
+    get:
+      summary: Product catalogue
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      responses:
+        '200':
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /categories:
+    get:
+      summary: Service categories
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      categories:
+                        type: object
+                      flat:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Service'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /catalogue:
+    get:
+      summary: Full catalogue
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: page_size
+        in: query
+        schema:
+          type: integer
+          default: 50
+          maximum: 200
+      responses:
+        '200':
+          description: Catalogue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /webhooks:
+    get:
+      summary: List registered webhooks
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Webhook list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        webhook_url:
+                          type: string
+                        is_active:
+                          type: boolean
+                        last_triggered_at:
+                          type: string
+                          format: date-time
+                          nullable: true
+                        created_at:
+                          type: string
+                          format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /keys:
+    get:
+      summary: List API keys
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Key list (secrets masked)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Issue new API key
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                rate_limit:
+                  type: integer
+                expires_in_days:
+                  type: integer
+                  default: 365
+      responses:
+        '201':
+          description: Key created (secret shown once)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/CreatedKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /keys/{id}:
+    get:
+      summary: Key detail
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Key detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found
+    delete:
+      summary: Revoke key
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found
