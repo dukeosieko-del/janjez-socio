@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import SearchBar from "@/components/services/SearchBar";
 import PlatformDropdown from "@/components/services/PlatformDropdown";
@@ -121,7 +122,7 @@ function ServiceModal({
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-12 flex items-center justify-center">
-              <img src={catalog.icon} alt={catalog.name} className="w-10 h-10 object-contain" />
+              <Image src={catalog.icon} alt={catalog.name} width={40} height={40} className="w-10 h-10 object-contain" />
             </div>
             <div>
               <h2 className="text-kenya-white font-bold text-xl">{catalog.name}</h2>

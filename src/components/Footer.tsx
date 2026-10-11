@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FOOTER_LINKS } from "@/lib/data";
-import { EMAIL_DEPARTMENTS, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_WHATSAPP } from "@/lib/email/config";
+import { EMAIL_DEPARTMENTS, SUPPORT_PHONE, SUPPORT_WHATSAPP } from "@/lib/email/config";
 
 function isInternal(href: string) {
   return href.startsWith("/");

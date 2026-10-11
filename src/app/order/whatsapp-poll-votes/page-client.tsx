@@ -16,7 +16,7 @@ import MpesaModal from "@/components/MpesaModal";
 const WHATSAPP_POLL_VOTES_CATEGORY = "whatsapp-poll-votes";
 
 export default function WhatsAppPollVotesClient() {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -110,7 +110,7 @@ export default function WhatsAppPollVotesClient() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth, targetOption]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth, targetOption]);
 
   const isValid =
     selectedService &&

@@ -7,7 +7,6 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
-import Image from "next/image";
 import { EMAIL_DEPARTMENTS, SUPPORT_ADDRESS, SUPPORT_PHONE, SUPPORT_WHATSAPP } from "@/lib/email/config";
 
 export default function ContactUsPage() {

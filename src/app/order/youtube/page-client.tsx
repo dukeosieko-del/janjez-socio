@@ -15,7 +15,7 @@ import MpesaModal from "@/components/MpesaModal";
 const YOUTUBE_CATEGORY = "youtube";
 
 export default function YouTubeOrderClient() {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -109,7 +109,7 @@ export default function YouTubeOrderClient() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth]);
 
   const isValid =
     selectedService &&

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "@/components/AuthContext";
 
@@ -91,7 +91,7 @@ export function OverviewTab() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) {
     return <div className="text-kenya-white/60 text-sm">Loading overview...</div>;
@@ -149,7 +149,7 @@ export function UsersTab() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="text-kenya-white/60 text-sm">Loading users...</div>;
 
@@ -188,7 +188,7 @@ export function OrdersTab() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="text-kenya-white/60 text-sm">Loading orders...</div>;
 
@@ -226,7 +226,7 @@ export function LogsTab() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="text-kenya-white/60 text-sm">Loading logs...</div>;
 
@@ -264,7 +264,7 @@ export function LedgerTab() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [session]);
 
   if (loading) return <div className="text-kenya-white/60 text-sm">Loading ledger...</div>;
 

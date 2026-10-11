@@ -20,7 +20,7 @@ interface FulfillmentClientProps {
 }
 
 export default function FulfillmentClient({ serviceId }: FulfillmentClientProps) {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const service = useMemo(() => getServiceById(serviceId), [serviceId]);
 
   const [link, setLink] = useState("");
@@ -108,7 +108,7 @@ export default function FulfillmentClient({ serviceId }: FulfillmentClientProps)
     } finally {
       setPlacing(false);
     }
-  }, [service, link, quantityNum, quantityError, total, walletBalance, user, openAuth]);
+  }, [service, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth]);
 
   const isValid =
     service &&

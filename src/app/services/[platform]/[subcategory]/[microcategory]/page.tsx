@@ -6,7 +6,6 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findCatalogItemBySlug, findSubcategoryBySlug, findMicrocategoryBySlug } from "@/lib/service-routes";
-import type { DeliverableLike } from "@/lib/service-routes";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 
 interface DeliverablePageProps {

@@ -6,7 +6,6 @@ import Footer from "@/components/Footer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findCatalogItemBySlug, findSubcategoryBySlug, slugify } from "@/lib/service-routes";
-import type { ServiceCatalogItem, Subcategory } from "@/lib/service-catalog";
 import FulfillmentForm from "@/components/fulfillment/FulfillmentForm";
 
 interface SubcategoryPageProps {

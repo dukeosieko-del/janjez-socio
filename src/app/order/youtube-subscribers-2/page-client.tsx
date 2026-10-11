@@ -16,7 +16,7 @@ import MpesaModal from "@/components/MpesaModal";
 const YOUTUBE_SUBS_CATEGORY = "youtube-subscribers-2";
 
 export default function YouTubeSubscribersClient() {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -108,7 +108,7 @@ export default function YouTubeSubscribersClient() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth]);
 
   const isValid =
     selectedService &&

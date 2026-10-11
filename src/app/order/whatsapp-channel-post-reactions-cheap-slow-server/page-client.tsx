@@ -17,7 +17,7 @@ const WHATSAPP_CHANNEL_POST_REACTIONS_CHEAP_SLOW_SERVER = "whatsapp-channel-post
 const HAPPY_HOUR_DISCOUNT = 0.95;
 
 export default function WhatsAppChannelPostReactionsCheapSlowServerClient() {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -108,7 +108,7 @@ export default function WhatsAppChannelPostReactionsCheapSlowServerClient() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth]);
 
   const isValid =
     selectedService &&

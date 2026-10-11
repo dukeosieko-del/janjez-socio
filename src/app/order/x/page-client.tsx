@@ -19,7 +19,7 @@ const HAPPY_HOUR_DISCOUNT = 0.95;
 const X_URL_PATTERN = /^https?:\/\/(www\.)?(x\.com|twitter\.com)\/.+/;
 
 export default function XTwitterPageClient() {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -116,7 +116,7 @@ export default function XTwitterPageClient() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth, linkError]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth, linkError]);
 
   const isValid =
     selectedService &&

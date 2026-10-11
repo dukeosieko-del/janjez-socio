@@ -101,7 +101,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
       setOrderError("Unexpected error while placing order.");
       setPlacing(false);
     }
-  }, [link, quantityNum, quantityError, total, walletBalance, platformId, deliverable.name]);
+  }, [link, quantity, quantityNum, quantityError, total, walletBalance, platformId, deliverable.name, user, onRequireAuth]);
 
   const isValid = link.trim().length > 0 && quantityNum >= qtyMin && quantityNum <= qtyMax;
 
@@ -109,7 +109,7 @@ export default function FulfillmentForm({ platformId, platformName, platformIcon
     <div className="bg-kenya-white/5 border border-kenya-white/10 rounded-2xl p-6">
       <div className="flex items-center gap-4 mb-6">
         <div className="w-12 h-12 flex items-center justify-center">
-          <img src={platformIcon} alt={platformName} className="w-10 h-10 object-contain" />
+          <Image src={platformIcon} alt={platformName} width={40} height={40} className="w-10 h-10 object-contain" />
         </div>
         <div>
           <p className="text-kenya-white/50 text-xs uppercase tracking-wider">{platformName}</p>

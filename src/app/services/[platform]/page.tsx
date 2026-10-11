@@ -7,8 +7,7 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useMemo } from "react";
-import { SERVICE_CATALOG, type ServiceCatalogItem } from "@/lib/service-catalog";
-import { getPlatformSlug, getSubcategorySlug, findCatalogItemBySlug } from "@/lib/service-routes";
+import { getSubcategorySlug, findCatalogItemBySlug } from "@/lib/service-routes";
 
 interface PlatformPageProps {
   params: { platform: string };

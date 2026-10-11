@@ -16,7 +16,7 @@ import MpesaModal from "@/components/MpesaModal";
 const WHATSAPP_CHANNEL_FOLLOWERS_CATEGORY = "whatsapp-channel-followers";
 
 export default function WhatsAppChannelFollowersClient() {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -108,7 +108,7 @@ export default function WhatsAppChannelFollowersClient() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth]);
 
   const isValid =
     selectedService &&

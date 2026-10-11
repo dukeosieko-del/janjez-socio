@@ -16,7 +16,7 @@ import MpesaModal from "@/components/MpesaModal";
 const AI_COMMENTS_CATEGORY = "youtube-ai-generated-comment-boost-ranking-amp-interaction";
 
 export default function YouTubeAICommentsClient() {
-  const { user, session, openAuth, walletBalance } = useAuth();
+  const { user, openAuth, walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -110,7 +110,7 @@ export default function YouTubeAICommentsClient() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, user, openAuth]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, user, openAuth]);
 
   const isValid =
     selectedService &&

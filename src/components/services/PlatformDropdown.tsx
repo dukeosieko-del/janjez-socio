@@ -1,7 +1,6 @@
 "use client";
 
 import { SERVICES, SERVICES_CATEGORIES } from "@/lib/services-data";
-import ServiceIcon from "@/components/shared/ServiceIcon";
 
 interface PlatformDropdownProps {
   value: string;
@@ -9,9 +8,6 @@ interface PlatformDropdownProps {
 }
 
 export default function PlatformDropdown({ value, onChange }: PlatformDropdownProps) {
-  const category = SERVICES_CATEGORIES.find((c) => c.value === value);
-  const label = category ? `${category.label} ▼` : "Choose Platform ▼";
-
   return (
     <div className="relative">
       <select

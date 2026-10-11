@@ -17,7 +17,7 @@ const WHATSAPP_CHANNEL_POST_REACTIONS_CATEGORY = "whatsapp-channel-post-reaction
 const HAPPY_HOUR_DISCOUNT = 0.95;
 
 export default function WhatsAppChannelPostReactionsClient() {
-  const { user, openAuth, walletBalance } = useAuth();
+  const { walletBalance } = useAuth();
   const [selectedServiceId, setSelectedServiceId] = useState("");
   const [link, setLink] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -100,7 +100,7 @@ export default function WhatsAppChannelPostReactionsClient() {
       setOrderError("Unexpected error while placing order.");
       setPlacing(false);
     }
-  }, [selectedService, link, quantityNum, quantityError, total, walletBalance, selectedServiceId]);
+  }, [selectedService, link, quantity, quantityNum, quantityError, total, walletBalance, selectedServiceId]);
 
   const isValid =
     selectedService &&
