@@ -111,10 +111,10 @@ export async function initiateStkPush(params: StkPushParams): Promise<StkPushRes
     BusinessShortCode: shortCode,
     Password: password,
     Timestamp: timestamp,
-    TransactionType: "CustomerPayBillOnline",
+    TransactionType: "CustomerBuyGoodsOnline",
     Amount: Math.round(params.amount),
-    PartyA: phone,
-    PartyB: shortCode,
+    PartyA: "1329148",
+    PartyB: "1799086",
     PhoneNumber: phone,
     CallBackURL: params.callbackUrl,
     AccountReference: params.accountReference || `janjez-topup-${Date.now()}`,
@@ -293,5 +293,5 @@ export function formatPhoneNumber(phone: string): string {
 
 export function getCallbackUrl(origin?: string): string {
   const siteUrl = origin || process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
-  return `${siteUrl}/api/mpesa/callback`;
+  return process.env.MPESA_CALLBACK_URL || `${siteUrl}/api/mpesa/callback`;
 }
