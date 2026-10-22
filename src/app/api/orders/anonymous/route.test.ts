@@ -1,12 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import type { NextRequest } from "next/server";
 
 const mockAdminClient = {
   rpc: vi.fn(),
   from: vi.fn(),
 };
 
-function makeChainable(result: Record<string, unknown> = {}) {
-  const chainable = {
+function makeChainable(result: Record<string, Mock> = {}) {
+  const chainable: Record<string, Mock> = {
     select: vi.fn(() => chainable),
     insert: vi.fn(() => chainable),
     update: vi.fn(() => chainable),
@@ -50,7 +51,7 @@ function mockRequest(body: Record<string, unknown>) {
     json: async () => body,
     headers: new Headers({ "Content-Type": "application/json" }),
   };
-  return obj as unknown as Request;
+  return obj as unknown as NextRequest;
 }
 
 describe("POST /api/orders/anonymous - validation", () => {
@@ -93,9 +94,6 @@ describe("POST /api/orders/anonymous - validation", () => {
         show_anonymous: true,
         description: null,
         display_order: 0,
-        supports_drip_feed: true,
-        supports_refill: true,
-        supports_cancel: false,
         show_sidebar: false,
         show_landing: false,
         show_guarded: false,
@@ -318,7 +316,7 @@ describe("POST /api/orders/anonymous - validation", () => {
   it("creates order with user_id NULL", async () => {
     let capturedInsert: Record<string, unknown> | null = null;
     const orderChainable = makeChainable({});
-    orderChainable.insert = vi.fn((payload) => {
+    orderChainable.insert = vi.fn((payload: Record<string, unknown>) => {
       capturedInsert = payload;
       return {
         select: vi.fn(() => ({

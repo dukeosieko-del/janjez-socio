@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 
 const THEME_STORAGE_KEY = "janjez-theme";
 
 type Theme = "dark" | "light";
 
 const mockToggleTheme = vi.fn();
-let mockTheme: { theme: Theme; toggleTheme: typeof mockToggleTheme; setTheme: vi.Mock };
+let mockTheme: { theme: Theme; toggleTheme: typeof mockToggleTheme; setTheme: Mock };
 
 vi.mock("@/lib/theme/ThemeContext", () => ({
   useTheme: () => mockTheme,
@@ -16,6 +16,8 @@ vi.mock("@/lib/theme/ThemeContext", () => ({
 }));
 
 describe("ThemeToggle behavior", () => {
+  const currentTheme = (): Theme => mockTheme.theme;
+
   beforeEach(() => {
     mockToggleTheme.mockClear();
     mockTheme = {
@@ -60,24 +62,24 @@ describe("ThemeToggle behavior", () => {
   });
 
   it("aria-label is 'Switch to light mode' when dark", () => {
-    const ariaLabel = mockTheme.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    const ariaLabel = currentTheme() === "dark" ? "Switch to light mode" : "Switch to dark mode";
     expect(ariaLabel).toBe("Switch to light mode");
   });
 
   it("aria-label is 'Switch to dark mode' when light", () => {
     mockTheme.theme = "light";
-    const ariaLabel = mockTheme.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    const ariaLabel = currentTheme() === "dark" ? "Switch to light mode" : "Switch to dark mode";
     expect(ariaLabel).toBe("Switch to dark mode");
   });
 
   it("title is 'Switch to light mode' when dark", () => {
-    const title = mockTheme.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    const title = currentTheme() === "dark" ? "Switch to light mode" : "Switch to dark mode";
     expect(title).toBe("Switch to light mode");
   });
 
   it("title is 'Switch to dark mode' when light", () => {
     mockTheme.theme = "light";
-    const title = mockTheme.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+    const title = currentTheme() === "dark" ? "Switch to light mode" : "Switch to dark mode";
     expect(title).toBe("Switch to dark mode");
   });
 });

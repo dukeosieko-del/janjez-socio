@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
@@ -25,19 +25,7 @@ export default function AdminBlogCategoriesPage() {
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#00A859");
 
-  useEffect(() => {
-    if (!loading && (!user || profile?.role !== "admin")) {
-      router.replace("/dashboard");
-    }
-  }, [user, profile, loading, router]);
-
-  useEffect(() => {
-    if (!user || profile?.role !== "admin") return;
-    fetchCategories();
-  }, [user, profile]);
-
-  const fetchCategories = async () => {
-    setLoadingCategories(true);
+  const loadCategories = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/blog/categories");
       const data = await res.json();
@@ -47,7 +35,25 @@ export default function AdminBlogCategoriesPage() {
     } finally {
       setLoadingCategories(false);
     }
-  };
+  }, []);
+
+  const fetchCategories = useCallback(async () => {
+    setLoadingCategories(true);
+    await loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    if (!loading && (!user || profile?.role !== "admin")) {
+      router.replace("/dashboard");
+    }
+  }, [user, profile, loading, router]);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time fetch; state is set after the await, not synchronously
+    loadCategories();
+  }, [user, profile, loadCategories]);
+
 
   const handleSave = async () => {
     if (!name.trim()) return;

@@ -37,6 +37,7 @@ export default function NotificationCenter({
   const [todayReference, setTodayReference] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- today reference is resolved client-side to avoid a hydration mismatch
     setTodayReference(new Date().toISOString().split("T")[0]);
   }, []);
 
@@ -167,6 +168,7 @@ function NotificationRow({
 
   useEffect(() => {
     if (notif.created_at) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- locale-formatted timestamp must be rendered client-side to avoid a hydration mismatch
       setTimeString(new Date(notif.created_at).toLocaleString("en-US", {
         month: "short",
         day: "numeric",

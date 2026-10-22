@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { creditWallet } from "@/lib/wallet";
 
 const MPESA_ENV = process.env.MPESA_ENV || "sandbox";
 const BASE_URL =
@@ -194,7 +195,7 @@ export interface StkCallbackMetadata {
 export async function completeStkPayment(
   checkoutRequestId: string,
   metadata: StkCallbackMetadata
-): Promise<{ newBalance: number; amount: number }> {
+): Promise<{ newBalance: number; amount: number; orderId?: string; alreadyCompleted?: boolean }> {
   const supabase = createAdminClient();
   if (!supabase) {
     throw new Error("Server misconfigured");
@@ -202,16 +203,46 @@ export async function completeStkPayment(
 
   const { data: pendingTx, error: findError } = await supabase
     .from("wallet_transactions")
-    .select("user_id, amount, related_order_id")
+    .select("id, user_id, amount, related_order_id, status")
     .eq("reference", checkoutRequestId)
-    .eq("status", "pending")
-    .single();
+    .maybeSingle();
 
   if (findError || !pendingTx) {
-    throw new Error("No pending transaction found for this CheckoutRequestID");
+    throw new Error("No transaction found for this CheckoutRequestID");
   }
 
-  const amount = metadata.amount || Number(pendingTx.amount) || 0;
+  const pendingAmount = Number(pendingTx.amount) || 0;
+  const confirmedAmount = Number(metadata.amount) || 0;
+
+  if (confirmedAmount > 0 && pendingAmount > 0 && Math.abs(confirmedAmount - pendingAmount) > 0.01) {
+    console.error(
+      `[mpesa] Amount mismatch for ${checkoutRequestId}: requested ${pendingAmount}, confirmed ${confirmedAmount}. Using the requested amount.`
+    );
+  }
+
+  // The pending amount is the amount we asked Safaricom to charge and the
+  // amount the order was priced at — it is the only safe value to credit.
+  const amount = pendingAmount > 0 ? pendingAmount : confirmedAmount;
+
+  // Idempotency: Safaricom retries callbacks, so a transaction that is already
+  // completed must not be credited twice.
+  if (pendingTx.status === "completed") {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("wallet_balance")
+      .eq("id", pendingTx.user_id ?? "")
+      .maybeSingle();
+    return {
+      newBalance: Number(profile?.wallet_balance) || 0,
+      amount,
+      orderId: pendingTx.related_order_id || undefined,
+      alreadyCompleted: true,
+    };
+  }
+
+  if (pendingTx.status !== "pending") {
+    throw new Error(`Transaction is already ${pendingTx.status}`);
+  }
 
   const { error: updateError } = await supabase
     .from("wallet_transactions")
@@ -228,49 +259,78 @@ export async function completeStkPayment(
     throw new Error(updateError.message);
   }
 
-  let newBalance = 0;
+  // ---------------------------------------------------------------------
+  // Order payment: the money paid for an order, so it must NOT be credited
+  // to the wallet. Mark the order paid and fulfil it.
+  // ---------------------------------------------------------------------
+  if (pendingTx.related_order_id) {
+    const { error: orderUpdateError } = await supabase
+      .from("orders")
+      .update({
+        payment_status: "paid",
+        status: "processing",
+        fulfillment_status: "pending",
+      })
+      .eq("id", pendingTx.related_order_id)
+      .in("payment_status", ["pending_mpesa", "pending"]);
 
-  // For anonymous orders (user_id is NULL), credit wallet is skipped.
-  // Instead, mark the related order as paid and trigger fulfillment.
-  if (pendingTx.user_id === null || pendingTx.user_id === undefined) {
-    if (pendingTx.related_order_id) {
-      const { error: orderUpdateError } = await supabase
-        .from("orders")
-        .update({
-          payment_status: "paid",
-          status: "processing",
-          fulfillment_status: "pending",
-        })
-        .eq("id", pendingTx.related_order_id)
-        .eq("payment_status", "pending_mpesa");
-
-      if (orderUpdateError) {
-        console.error("Failed to update anonymous order payment status:", orderUpdateError.message);
-      }
-
-      // Trigger async fulfillment for anonymous order
-      try {
-        const { fulfillOrder } = await import("@/lib/smm/fulfillment");
-        await fulfillOrder(pendingTx.related_order_id);
-      } catch (fulfillError) {
-        console.error("Anonymous order fulfillment failed:", fulfillError);
-      }
+    if (orderUpdateError) {
+      console.error("Failed to update order payment status:", orderUpdateError.message);
+    } else {
+      console.log(
+        `[mpesa] Order ${pendingTx.related_order_id} paid via M-Pesa (KES ${amount}). Fulfilling.`
+      );
     }
+
+    // Trigger async fulfillment for the order
+    try {
+      const { fulfillOrder } = await import("@/lib/smm/fulfillment");
+      await fulfillOrder(pendingTx.related_order_id);
+    } catch (fulfillError) {
+      console.error("Order fulfillment failed after M-Pesa payment:", fulfillError);
+    }
+
+    if (pendingTx.user_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("wallet_balance")
+        .eq("id", pendingTx.user_id)
+        .maybeSingle();
+
+      await supabase.from("notifications").insert({
+        user_id: pendingTx.user_id,
+        type: "topup",
+        title: "Payment Received",
+        message: `KES ${amount.toLocaleString()} received via M-Pesa for order ${pendingTx.related_order_id}. Your order is now being processed.`,
+        link: "/orders/all",
+      });
+
+      return {
+        newBalance: Number(profile?.wallet_balance) || 0,
+        amount,
+        orderId: pendingTx.related_order_id,
+      };
+    }
+
+    return { newBalance: 0, amount, orderId: pendingTx.related_order_id };
+  }
+
+  // ---------------------------------------------------------------------
+  // Wallet top-up: credit the balance.
+  // ---------------------------------------------------------------------
+  if (!pendingTx.user_id) {
+    console.error(
+      `[mpesa] Transaction ${checkoutRequestId} has no user and no related order — nothing to credit.`
+    );
     return { newBalance: 0, amount };
   }
 
-  const { data: creditData, error: creditError } = await supabase.rpc("credit_wallet", {
-    p_user_id: pendingTx.user_id,
-    p_amount: amount,
-  });
-
-  const creditResult = creditData as { new_balance: number } | null;
-
-  if (creditError || !creditResult) {
-    throw new Error(creditError?.message || "Failed to credit wallet");
+  const credit = await creditWallet(supabase as any, pendingTx.user_id, amount);
+  if (credit.error) {
+    throw new Error(credit.error);
   }
 
-  newBalance = Number(creditResult.new_balance) || 0;
+  const newBalance = credit.newBalance;
 
   const { error: notifError } = await supabase.from("notifications").insert({
     user_id: pendingTx.user_id,

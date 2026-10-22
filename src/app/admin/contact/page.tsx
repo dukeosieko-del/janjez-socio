@@ -80,7 +80,6 @@ export default function AdminContactPage() {
   };
 
   const fetchMessages = async () => {
-    setError(null);
     const params = new URLSearchParams({ page: String(page), limit: "25" });
     if (statusFilter) params.set("status", statusFilter);
     if (departmentFilter) params.set("department", departmentFilter);
@@ -94,6 +93,7 @@ export default function AdminContactPage() {
     }
     const data: AdminContactResponse = await res.json();
     if (data.ok) {
+      setError(null);
       setMessages(data.messages);
       setTotal(data.total);
       setTotalPages(data.totalPages);
@@ -103,6 +103,7 @@ export default function AdminContactPage() {
 
   useEffect(() => {
     if (user && profile?.role === "admin") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- paginated/filtered fetch driven by state; state is set after the await
       fetchMessages();
     }
   }, [user, profile, page, statusFilter, departmentFilter]);

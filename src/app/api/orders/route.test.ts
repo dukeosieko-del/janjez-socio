@@ -1,12 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
+import type { NextRequest } from "next/server";
 
 const mockAdminClient = {
   rpc: vi.fn(),
   from: vi.fn(),
 };
 
-function makeChainable(result: Record<string, unknown> = {}) {
-  const chainable = {
+function makeChainable(result: Record<string, Mock> = {}) {
+  const chainable: Record<string, Mock> = {
     select: vi.fn(() => chainable),
     insert: vi.fn(() => chainable),
     update: vi.fn(() => chainable),
@@ -73,7 +74,7 @@ function mockRequest(body: Record<string, unknown>, auth = "Bearer test-token") 
     json: async () => body,
     headers: new Headers(headers),
   };
-  const req = obj as unknown as Request;
+  const req = obj as unknown as NextRequest;
   return req;
 }
 
@@ -213,7 +214,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       if (table === "orders") {
         const ordersCh = makeChainable({});
         ordersCh.select = vi.fn(() => ordersCh);
-        ordersCh.insert = vi.fn((payload) => {
+        ordersCh.insert = vi.fn((payload: Record<string, unknown>) => {
           capturedInsert = payload;
           return {
             select: vi.fn(() => ({
@@ -261,7 +262,7 @@ describe("POST /api/orders - drip-feed validation", () => {
       if (table === "orders") {
         const ordersCh = makeChainable({});
         ordersCh.select = vi.fn(() => ordersCh);
-        ordersCh.insert = vi.fn((payload) => {
+        ordersCh.insert = vi.fn((payload: Record<string, unknown>) => {
           capturedInsert = payload;
           return {
             select: vi.fn(() => ({
@@ -372,7 +373,7 @@ describe("POST /api/orders - Janjez service pricing", () => {
       if (table === "orders") {
         const ordersCh = makeChainable({});
         ordersCh.select = vi.fn(() => ordersCh);
-        ordersCh.insert = vi.fn((payload) => {
+        ordersCh.insert = vi.fn((payload: Record<string, unknown>) => {
           return {
             select: vi.fn(() => ({
               single: vi.fn().mockResolvedValue({ data: { id: "order-1", ...payload }, error: null }),

@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useAuth } from "./AuthContext";
-import { calculateMpesaAmount, SERVICE_CHARGE_KES } from "@/lib/pricing";
+import { calculateMpesaAmount } from "@/lib/pricing";
 import { fetchWithTimeout } from "@/lib/client/fetchWithTimeout";
 
 interface MpesaModalProps {
@@ -13,16 +14,19 @@ interface MpesaModalProps {
   requiredAmount?: number;
   serviceName?: string;
   quantity?: number;
+  /** When set the payment settles this order instead of topping up the wallet. */
+  orderId?: string;
   onSuccess?: () => void;
 }
 
 const POLL_INTERVAL = 5000;
 const POLL_TIMEOUT = 120000;
 
-export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceName, quantity, onSuccess }: MpesaModalProps) {
+export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceName, quantity, orderId, onSuccess }: MpesaModalProps) {
+  const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [amount, setAmount] = useState("");
-  const [step, setStep] = useState<"input" | "processing" | "success">("input");
+  const [step, setStep] = useState<"input" | "processing" | "success" | "settling">("input");
   const [txId, setTxId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checkoutRequestId, setCheckoutRequestId] = useState<string | null>(null);
@@ -41,6 +45,16 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
     setError(null);
     setCheckoutRequestId(null);
     onClose();
+  };
+
+  const goToSalutation = () => {
+    const params = new URLSearchParams();
+    if (chargedAmount !== null) params.set("amount", String(chargedAmount));
+    if (checkoutRequestId) params.set("ref", checkoutRequestId);
+    params.set("type", orderId ? "order" : "topup");
+    if (orderId) params.set("order", orderId);
+    resetAndClose();
+    router.push(`/deposit/success?${params.toString()}`);
   };
 
   useEffect(() => {
@@ -70,7 +84,7 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
       const initiateRes = await fetchWithTimeout("/api/mpesa/stk-push", {
         method: "POST",
         headers,
-        body: JSON.stringify({ phoneNumber, amount: mpesaAmount }),
+        body: JSON.stringify({ phoneNumber, amount: mpesaAmount, orderId: orderId || undefined }),
       });
 
       const initiateData = await initiateRes.json();
@@ -102,8 +116,25 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
 
           if (statusData.paid) {
             setTxId(checkoutId.slice(0, 10));
-            setStep("success");
-            if (token) await refreshProfile();
+
+            // "paid" only means Safaricom took the money. The wallet is only
+            // credited when the callback (or the reconciliation) settled the
+            // transaction — never announce success before that happened.
+            if (statusData.credited) {
+              setStep("success");
+              if (token) await refreshProfile();
+              return;
+            }
+
+            // Money received but not credited yet: keep polling, the callback
+            // may still be in flight.
+            if (Date.now() - startTime >= POLL_TIMEOUT) {
+              setStep("settling");
+              if (token) await refreshProfile();
+              return;
+            }
+
+            setTimeout(poll, POLL_INTERVAL);
             return;
           }
 
@@ -126,6 +157,15 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
       setStep("input");
     }
   };
+
+  useEffect(() => {
+    if (step !== "success" && step !== "settling") return;
+    const timer = setTimeout(() => {
+      goToSalutation();
+    }, 2500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -282,7 +322,8 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
             </div>
             <h3 className="text-xl font-bold text-kenya-white mb-2">Payment Successful!</h3>
             <p className="text-kenya-white/60 text-sm mb-2">
-              KES {chargedAmount !== null ? chargedAmount.toLocaleString() : "0"} has been added to your wallet.
+              KES {chargedAmount !== null ? chargedAmount.toLocaleString() : "0"}{" "}
+              {orderId ? "received for your order." : "has been added to your wallet."}
             </p>
             <p className="text-kenya-green text-sm font-medium mb-6">
               Transaction ID: {txId}
@@ -290,11 +331,34 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, serviceNam
             <button
               onClick={() => {
                 onSuccess?.();
-                resetAndClose();
+                goToSalutation();
               }}
               className="bg-kenya-green text-kenya-black font-bold py-3 px-8 rounded-xl hover:bg-kenya-green/90 transition-colors"
             >
-              Start Ordering
+              {orderId ? "Track your order" : "Start Ordering"}
+            </button>
+          </div>
+        )}
+
+        {step === "settling" && (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-6"></div>
+            <h3 className="text-xl font-bold text-kenya-white mb-2">Payment Received</h3>
+            <p className="text-kenya-white/60 text-sm mb-2">
+              KES {chargedAmount !== null ? chargedAmount.toLocaleString() : "0"} was taken by M-Pesa. We are
+              confirming it with your account — this usually takes a few seconds.
+            </p>
+            <p className="text-kenya-green text-sm font-medium mb-6">
+              Transaction ID: {txId}
+            </p>
+            <button
+              onClick={() => {
+                onSuccess?.();
+                goToSalutation();
+              }}
+              className="bg-kenya-green text-kenya-black font-bold py-3 px-8 rounded-xl hover:bg-kenya-green/90 transition-colors"
+            >
+              Continue
             </button>
           </div>
         )}

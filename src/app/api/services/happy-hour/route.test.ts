@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 const mockAdminClient = {
   from: vi.fn(() => ({
     select: vi.fn(() => ({
-      eq: vi.fn(function () {
+      eq: vi.fn(function (this: unknown) {
         return this;
       }),
       order: vi.fn(() => ({
@@ -45,10 +45,10 @@ describe("happy hour API", () => {
     ];
 
     const chainable = {
-      select: vi.fn(function () {
+      select: vi.fn(function (this: unknown) {
         return this;
       }),
-      eq: vi.fn(function () {
+      eq: vi.fn(function (this: unknown) {
         return this;
       }),
       order: vi.fn(() => Promise.resolve({ data: services, error: null })),

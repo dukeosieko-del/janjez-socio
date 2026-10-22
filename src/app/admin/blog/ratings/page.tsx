@@ -1,29 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
 
+interface RatingUser {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
+
+interface RatingPost {
+  id: string;
+  title: string | null;
+}
+
+interface Rating {
+  id: string;
+  rating: number;
+  created_at: string;
+  user: RatingUser | null;
+  post: RatingPost | null;
+}
+
 export default function AdminBlogRatingsPage() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
-  const [ratings, setRatings] = useState<any[]>([]);
+  const [ratings, setRatings] = useState<Rating[]>([]);
   const [loadingRatings, setLoadingRatings] = useState(true);
 
-  useEffect(() => {
-    if (!loading && (!user || profile?.role !== "admin")) {
-      router.replace("/dashboard");
-    }
-  }, [user, profile, loading, router]);
-
-  useEffect(() => {
-    if (!user || profile?.role !== "admin") return;
-    fetchRatings();
-  }, [user, profile]);
-
-  const fetchRatings = async () => {
-    setLoadingRatings(true);
+  const loadRatings = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/blog/ratings");
       const data = await res.json();
@@ -33,7 +40,25 @@ export default function AdminBlogRatingsPage() {
     } finally {
       setLoadingRatings(false);
     }
-  };
+  }, []);
+
+  const fetchRatings = useCallback(async () => {
+    setLoadingRatings(true);
+    await loadRatings();
+  }, [loadRatings]);
+
+  useEffect(() => {
+    if (!loading && (!user || profile?.role !== "admin")) {
+      router.replace("/dashboard");
+    }
+  }, [user, profile, loading, router]);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time fetch; state is set after the await, not synchronously
+    loadRatings();
+  }, [user, profile, loadRatings]);
+
 
   if (loading || !user || profile?.role !== "admin") {
     return (

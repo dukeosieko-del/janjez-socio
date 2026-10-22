@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 import { POST, GET } from "@/app/api/blog/posts/route";
 import { GET as GetPost } from "@/app/api/blog/posts/[slug]/route";
 import { GET as GetCategories } from "@/app/api/blog/categories/route";
@@ -113,7 +114,7 @@ describe("Blog API", () => {
 
   describe("GET /api/blog/posts", () => {
     it("returns posts from static fallback when DB fails", async () => {
-      const request = new Request("http://localhost:3000/api/blog/posts");
+      const request = new NextRequest("http://localhost:3000/api/blog/posts");
       const res = await GET(request);
       const data = await res.json();
       expect(res.status).toBe(200);
@@ -145,7 +146,7 @@ describe("Blog API", () => {
 
   describe("GET /api/blog/posts/[slug]", () => {
     it("returns post by slug from static fallback", async () => {
-      const request = new Request("http://localhost:3000/api/blog/posts/test-post");
+      const request = new NextRequest("http://localhost:3000/api/blog/posts/test-post");
       const res = await GetPost(request, { params: Promise.resolve({ slug: "test-post" }) });
       const data = await res.json();
       expect(res.status).toBe(200);
@@ -156,7 +157,7 @@ describe("Blog API", () => {
 
   describe("POST /api/blog/posts", () => {
     it("creates a new draft post", async () => {
-      const request = new Request("http://localhost:3000/api/blog/posts", {
+      const request = new NextRequest("http://localhost:3000/api/blog/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: "New Post", content: "<p>Content</p>", status: "draft" }),

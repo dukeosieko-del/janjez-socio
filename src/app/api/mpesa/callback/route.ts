@@ -27,7 +27,9 @@ function extractMetadata(body: MpesaCallbackBody): StkCallbackMetadata {
   return {
     amount: get("Amount") ? Number(get("Amount")) : undefined,
     phone: get("PhoneNumber"),
-    receipt: get("MpesaReceiptNumber"),
+    // Safaricom sends "ReceiptNumber"; "MpesaReceiptNumber" is kept for
+    // backwards compatibility with older Daraja payloads.
+    receipt: get("ReceiptNumber") || get("MpesaReceiptNumber"),
   };
 }
 
@@ -47,8 +49,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing CheckoutRequestID" }, { status: 400 });
   }
 
-  const responseCode = body?.ResponseCode || body?.ResponseCode?.toString();
+  const responseCode = body?.ResponseCode || (body as Record<string, unknown>)?.ResponseCode?.toString();
   const resultCode = body?.ResultCode?.toString() || (responseCode === "0" ? "0" : "999");
+  const resultType = (body as Record<string, unknown>)?.ResultType?.toString();
 
   if (resultCode !== "0") {
     const { error } = await supabase
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
       .eq("status", "pending");
 
     if (error) console.error("Failed to update pending tx:", error.message);
-    return NextResponse.json({ ok: true, resultCode });
+    return NextResponse.json({ ok: true, resultCode, credited: false });
   }
 
   const metadata = extractMetadata(body);
@@ -106,17 +109,20 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("Failed to complete STK payment:", error);
+    // The money is already in Safaricom's hands: keep the transaction PENDING
+    // (do not mark it failed) so the reconciliation job can retry the credit
+    // instead of losing the deposit. A 500 also makes Safaricom redeliver.
     await supabase
       .from("wallet_transactions")
       .update({
-        status: "failed",
-        notes: `Wallet credit failed: ${error instanceof Error ? error.message : String(error)}`,
+        notes: `Wallet credit pending retry: ${error instanceof Error ? error.message : String(error)}`,
       })
-      .eq("reference", checkoutRequestID);
+      .eq("reference", checkoutRequestID)
+      .eq("status", "pending");
     return NextResponse.json({ error: "Payment received but wallet credit failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, resultCode });
+  return NextResponse.json({ ok: true, resultCode, resultType, credited: true });
 }
 
 export async function GET() {

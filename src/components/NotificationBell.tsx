@@ -20,6 +20,7 @@ function NotificationItem({
 
   useEffect(() => {
     if (notif.created_at) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- locale-formatted date must be rendered client-side to avoid a hydration mismatch
       setTimeString(new Date(notif.created_at).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",

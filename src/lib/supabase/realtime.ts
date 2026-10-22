@@ -28,11 +28,9 @@ export function useNotifications(
   const audience = options.audience ?? "user";
   const limit = options.limit ?? 20;
 
-  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
-  if (supabaseRef.current === null && typeof window !== "undefined") {
-    supabaseRef.current = createClient();
-  }
-  const supabase = supabaseRef.current;
+  const [supabase] = useState<ReturnType<typeof createClient> | null>(() =>
+    typeof window === "undefined" ? null : createClient()
+  );
 
   const refresh = useCallback(async () => {
     if (!userId || !accessToken) return;

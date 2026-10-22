@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
@@ -19,19 +19,7 @@ export default function AdminBlogAuthorsPage() {
   const [authors, setAuthors] = useState<Author[]>([]);
   const [loadingAuthors, setLoadingAuthors] = useState(true);
 
-  useEffect(() => {
-    if (!loading && (!user || profile?.role !== "admin")) {
-      router.replace("/dashboard");
-    }
-  }, [user, profile, loading, router]);
-
-  useEffect(() => {
-    if (!user || profile?.role !== "admin") return;
-    fetchAuthors();
-  }, [user, profile]);
-
-  const fetchAuthors = async () => {
-    setLoadingAuthors(true);
+  const loadAuthors = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/blog/authors");
       const data = await res.json();
@@ -41,7 +29,25 @@ export default function AdminBlogAuthorsPage() {
     } finally {
       setLoadingAuthors(false);
     }
-  };
+  }, []);
+
+  const fetchAuthors = useCallback(async () => {
+    setLoadingAuthors(true);
+    await loadAuthors();
+  }, [loadAuthors]);
+
+  useEffect(() => {
+    if (!loading && (!user || profile?.role !== "admin")) {
+      router.replace("/dashboard");
+    }
+  }, [user, profile, loading, router]);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time fetch; state is set after the await, not synchronously
+    loadAuthors();
+  }, [user, profile, loadAuthors]);
+
 
   if (loading || !user || profile?.role !== "admin") {
     return (

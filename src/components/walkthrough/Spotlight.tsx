@@ -9,30 +9,35 @@ interface SpotlightProps {
 }
 
 export default function Spotlight({ target, isVisible }: SpotlightProps) {
-  const [metrics, setMetrics] = useState<{
-    top: number;
-    left: number;
-    width: number;
-    height: number;
+  const [measured, setMeasured] = useState<{
+    target: string;
+    metrics: {
+      top: number;
+      left: number;
+      width: number;
+      height: number;
+    };
   } | null>(null);
 
   useEffect(() => {
     if (!target || !isVisible) {
-      setMetrics(null);
       return;
     }
 
     const update = () => {
       const m = resolveTarget(target);
       if (m) {
-        setMetrics({
-          top: m.top,
-          left: m.left,
-          width: m.width,
-          height: m.height,
+        setMeasured({
+          target,
+          metrics: {
+            top: m.top,
+            left: m.left,
+            width: m.width,
+            height: m.height,
+          },
         });
       } else {
-        setMetrics(null);
+        setMeasured(null);
       }
     };
 
@@ -44,6 +49,8 @@ export default function Spotlight({ target, isVisible }: SpotlightProps) {
       window.removeEventListener("resize", update);
     };
   }, [target, isVisible]);
+
+  const metrics = measured && measured.target === target ? measured.metrics : null;
 
   if (!isVisible || !metrics) return null;
 

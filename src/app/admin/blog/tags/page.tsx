@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
@@ -18,19 +18,7 @@ export default function AdminBlogTagsPage() {
   const [loadingTags, setLoadingTags] = useState(true);
   const [name, setName] = useState("");
 
-  useEffect(() => {
-    if (!loading && (!user || profile?.role !== "admin")) {
-      router.replace("/dashboard");
-    }
-  }, [user, profile, loading, router]);
-
-  useEffect(() => {
-    if (!user || profile?.role !== "admin") return;
-    fetchTags();
-  }, [user, profile]);
-
-  const fetchTags = async () => {
-    setLoadingTags(true);
+  const loadTags = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/blog/tags");
       const data = await res.json();
@@ -40,7 +28,25 @@ export default function AdminBlogTagsPage() {
     } finally {
       setLoadingTags(false);
     }
-  };
+  }, []);
+
+  const fetchTags = useCallback(async () => {
+    setLoadingTags(true);
+    await loadTags();
+  }, [loadTags]);
+
+  useEffect(() => {
+    if (!loading && (!user || profile?.role !== "admin")) {
+      router.replace("/dashboard");
+    }
+  }, [user, profile, loading, router]);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time fetch; state is set after the await, not synchronously
+    loadTags();
+  }, [user, profile, loadTags]);
+
 
   const handleAdd = async () => {
     if (!name.trim()) return;

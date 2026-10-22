@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
@@ -21,19 +21,7 @@ export default function AdminBlogReportsPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
 
-  useEffect(() => {
-    if (!loading && (!user || profile?.role !== "admin")) {
-      router.replace("/dashboard");
-    }
-  }, [user, profile, loading, router]);
-
-  useEffect(() => {
-    if (!user || profile?.role !== "admin") return;
-    fetchReports();
-  }, [user, profile]);
-
-  const fetchReports = async () => {
-    setLoadingReports(true);
+  const loadReports = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/blog/reports?type=comments");
       const data = await res.json();
@@ -43,7 +31,25 @@ export default function AdminBlogReportsPage() {
     } finally {
       setLoadingReports(false);
     }
-  };
+  }, []);
+
+  const fetchReports = useCallback(async () => {
+    setLoadingReports(true);
+    await loadReports();
+  }, [loadReports]);
+
+  useEffect(() => {
+    if (!loading && (!user || profile?.role !== "admin")) {
+      router.replace("/dashboard");
+    }
+  }, [user, profile, loading, router]);
+
+  useEffect(() => {
+    if (!user || profile?.role !== "admin") return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time fetch; state is set after the await, not synchronously
+    loadReports();
+  }, [user, profile, loadReports]);
+
 
   const moderateComment = async (id: string, status: "approved" | "rejected" | "removed") => {
     await fetch(`/api/admin/blog/comments/${id}`, {

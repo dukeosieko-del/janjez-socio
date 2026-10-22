@@ -14,6 +14,7 @@ export default function Footer() {
   const [year, setYear] = useState(0);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- year must be resolved client-side to avoid a server/client hydration mismatch
     setYear(new Date().getFullYear());
   }, []);
 

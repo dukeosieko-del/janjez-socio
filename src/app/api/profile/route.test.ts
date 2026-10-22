@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { NextRequest } from "next/server";
 
 const uploadMock = vi.fn();
@@ -14,8 +14,8 @@ const mockAdminClient = {
   },
 };
 
-function makeChainable(result: Record<string, unknown> = {}) {
-  const chainable = {
+function makeChainable(result: Record<string, Mock> = {}) {
+  const chainable: Record<string, Mock> = {
     select: vi.fn(() => chainable),
     insert: vi.fn(() => chainable),
     update: vi.fn(() => chainable),

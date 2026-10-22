@@ -25,45 +25,40 @@ export default function StepPopover({
   isMobile,
   activeAction,
 }: StepPopoverProps) {
-  const [targetMetrics, setTargetMetrics] = useState<{
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-    centerX: number;
-    centerY: number;
+  const [measured, setMeasured] = useState<{
+    target: string;
+    metrics: {
+      top: number;
+      left: number;
+      width: number;
+      height: number;
+      centerX: number;
+      centerY: number;
+    };
   } | null>(null);
 
   useEffect(() => {
     if (!step.target || !isVisible) {
-      setTargetMetrics(null);
       return;
     }
-    const m = resolveTarget(step.target);
-    if (m) {
-      setTargetMetrics({
-        top: m.top,
-        left: m.left,
-        width: m.width,
-        height: m.height,
-        centerX: m.centerX,
-        centerY: m.centerY,
-      });
-    }
-
     const update = () => {
       const updated = resolveTarget(step.target!);
       if (updated) {
-        setTargetMetrics({
-          top: updated.top,
-          left: updated.left,
-          width: updated.width,
-          height: updated.height,
-          centerX: updated.centerX,
-          centerY: updated.centerY,
+        setMeasured({
+          target: step.target!,
+          metrics: {
+            top: updated.top,
+            left: updated.left,
+            width: updated.width,
+            height: updated.height,
+            centerX: updated.centerX,
+            centerY: updated.centerY,
+          },
         });
       }
     };
+
+    update();
 
     window.addEventListener("scroll", update, true);
     window.addEventListener("resize", update);
@@ -72,6 +67,9 @@ export default function StepPopover({
       window.removeEventListener("resize", update);
     };
   }, [step.target, isVisible]);
+
+  const targetMetrics =
+    measured && measured.target === step.target ? measured.metrics : null;
 
   const position = useMemo(() => {
     if (!targetMetrics || !isVisible) return null;

@@ -65,10 +65,12 @@ export async function GET(request: NextRequest) {
 
     let txQuery = supabase
       .from("wallet_transactions")
-      .select("id, user_id, type, amount, currency, status, payment_method, mpesa_phone, reference, created_at");
+      .select("id, user_id, type, amount, currency, status, payment_method, mpesa_phone, reference, notes, created_at");
 
     if (type) {
-      txQuery = txQuery.eq("type", type);
+      txQuery = txQuery.eq("status", type);
+    } else {
+      // By default show completed/pending/failed explicitly — do not hide failures.
     }
 
     const { data: transactions } = await txQuery.order("created_at", { ascending: false }).limit(limit);
@@ -89,12 +91,13 @@ export async function GET(request: NextRequest) {
         ledger.push({
           id: tx.id,
           type: tx.type,
-          category: tx.payment_method || "wallet",
+          category: tx.status === "failed" ? "failed" : tx.payment_method || "wallet",
+          status: tx.status,
           amount: tx.amount,
           currency: tx.currency,
           user_email: profileMap.get(tx.user_id)?.email || "—",
           user_name: profileMap.get(tx.user_id)?.full_name || "—",
-          description: tx.reference || `${tx.type} transaction`,
+          description: tx.status === "failed" ? `${tx.notes || "M-Pesa payment failed"} (ref: ${tx.reference || "—"})` : tx.reference || `${tx.type} transaction`,
           created_at: tx.created_at,
         });
       });

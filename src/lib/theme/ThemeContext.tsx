@@ -19,6 +19,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- mounted flag gates reading the persisted theme, which only exists client-side
     setMounted(true);
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === "light") {

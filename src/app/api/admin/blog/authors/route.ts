@@ -2,6 +2,13 @@ import { NextResponse, NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/server/auth-helpers";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+interface AuthorProfile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  role: string;
+}
+
 export async function GET(request: NextRequest) {
   const admin = await requireAdmin(request);
   if (admin instanceof Response) return admin;
@@ -21,7 +28,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch authors" }, { status: 500 });
     }
 
-    const authors = (data || []).map((author: any) => ({
+    const authors = (data || []).map((author: AuthorProfile) => ({
       ...author,
       post_count: 0,
     }));

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("@/lib/supabase/middleware", () => ({
   createClient: vi.fn(),
@@ -34,7 +34,7 @@ describe("middleware route protection", () => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    process.env.NODE_ENV = "test";
+    vi.stubEnv("NODE_ENV", "test");
 
     await vi.doMock("@/lib/supabase/middleware", () => ({
       createClient: vi.fn(() => Promise.resolve(mockSupabaseClient((globalThis as Record<string, unknown>).__mockUser as { id: string; role?: string } | null))),
@@ -43,62 +43,72 @@ describe("middleware route protection", () => {
     middleware = await import("@/middleware");
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   function makeRequest(pathname: string): Request {
     return new Request(`http://localhost${pathname}`) as unknown as Request;
   }
 
+  type MockNextResponse = { _type?: string; url?: string };
+
+  async function runMiddleware(pathname: string): Promise<MockNextResponse> {
+    return (await middleware.middleware(makeRequest(pathname))) as unknown as MockNextResponse;
+  }
+
   it("allows anonymous access to /services", async () => {
     (globalThis as Record<string, unknown>).__mockUser = null;
-    const res: { _type?: string } = await middleware.middleware(makeRequest("/services"));
+    const res = await runMiddleware("/services");
     expect(res?._type).toBe("next");
   });
 
   it("allows anonymous access to /services/youtube", async () => {
     (globalThis as Record<string, unknown>).__mockUser = null;
-    const res: { _type?: string } = await middleware.middleware(makeRequest("/services/youtube"));
+    const res = await runMiddleware("/services/youtube");
     expect(res?._type).toBe("next");
   });
 
   it("redirects anonymous user to /auth/sign-in for /dashboard", async () => {
     (globalThis as Record<string, unknown>).__mockUser = null;
-    const res: { _type?: string; url?: string } = await middleware.middleware(makeRequest("/dashboard"));
+    const res = await runMiddleware("/dashboard");
     expect(res?._type).toBe("redirect");
     expect(String(res?.url)).toContain("/auth/sign-in");
   });
 
   it("redirects anonymous user to /auth/sign-in for /wallet", async () => {
     (globalThis as Record<string, unknown>).__mockUser = null;
-    const res: { _type?: string; url?: string } = await middleware.middleware(makeRequest("/wallet"));
+    const res = await runMiddleware("/wallet");
     expect(res?._type).toBe("redirect");
   });
 
   it("redirects anonymous user to /auth/sign-in for /orders", async () => {
     (globalThis as Record<string, unknown>).__mockUser = null;
-    const res: { _type?: string; url?: string } = await middleware.middleware(makeRequest("/orders"));
+    const res = await runMiddleware("/orders");
     expect(res?._type).toBe("redirect");
   });
 
   it("allows anonymous access to /orders/track (public tracking)", async () => {
     (globalThis as Record<string, unknown>).__mockUser = null;
-    const res: { _type?: string } = await middleware.middleware(makeRequest("/orders/track?ref=abc"));
+    const res = await runMiddleware("/orders/track?ref=abc");
     expect(res?._type).toBe("next");
   });
 
   it("allows authenticated normal user to access /dashboard", async () => {
     (globalThis as Record<string, unknown>).__mockUser = { id: "user-123", role: "user" };
-    const res: { _type?: string } = await middleware.middleware(makeRequest("/dashboard"));
+    const res = await runMiddleware("/dashboard");
     expect(res?._type).toBe("next");
   });
 
   it("allows authenticated normal user to reach /admin (client handles non-admin redirect)", async () => {
     (globalThis as Record<string, unknown>).__mockUser = { id: "user-123", role: "user" };
-    const res: { _type?: string } = await middleware.middleware(makeRequest("/admin"));
+    const res = await runMiddleware("/admin");
     expect(res?._type).toBe("next");
   });
 
   it("allows authenticated admin to access /admin", async () => {
     (globalThis as Record<string, unknown>).__mockUser = { id: "admin-123", role: "admin" };
-    const res: { _type?: string } = await middleware.middleware(makeRequest("/admin"));
+    const res = await runMiddleware("/admin");
     expect(res?._type).toBe("next");
   });
 });

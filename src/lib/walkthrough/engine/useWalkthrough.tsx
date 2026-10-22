@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import type { JourneyDefinition, WalkthroughStep, WalkthroughState, WalkthroughContextType } from "../types";
@@ -12,6 +21,19 @@ import { resolveTarget } from "./target-resolver";
 const MOBILE_BREAKPOINT = 768;
 
 const WalkthroughContext = createContext<WalkthroughContextType | undefined>(undefined);
+
+function subscribeToViewport(callback: () => void) {
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+
+function getIsMobileSnapshot() {
+  return window.innerWidth < MOBILE_BREAKPOINT;
+}
+
+function getIsMobileServerSnapshot() {
+  return false;
+}
 
 export function useWalkthrough() {
   const ctx = useContext(WalkthroughContext);
@@ -36,22 +58,11 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
     completedSteps: [],
   });
 
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && activeJourney) {
-        close();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeJourney]);
+  const isMobile = useSyncExternalStore(
+    subscribeToViewport,
+    getIsMobileSnapshot,
+    getIsMobileServerSnapshot
+  );
 
   const start = useCallback((journeyId: string) => {
     const journey = getJourney(journeyId);
@@ -111,92 +122,6 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
     setActiveJourney(null);
   }, [state.journeyId]);
 
-  const updateStep = useCallback(
-    (newIndex: number) => {
-      if (!activeJourney) return;
-
-      const steps = activeJourney.steps;
-      if (newIndex < 0 || newIndex >= steps.length) return;
-
-      const newStep = steps[newIndex];
-      if (!newStep) return;
-
-      if (newStep.condition && !newStep.condition()) {
-        const nextValid = findNextValidIndex(steps, newIndex + 1);
-        if (nextValid !== null) {
-          updateStep(nextValid);
-        } else {
-          complete();
-        }
-        return;
-      }
-
-      setState((prev) => {
-        const newState: WalkthroughState = {
-          ...prev,
-          stepIndex: newIndex,
-          lastInteraction: new Date().toISOString(),
-        };
-        if (state.journeyId) {
-          saveWalkthroughState(state.journeyId, newState);
-        }
-        return newState;
-      });
-
-      emitWalkthroughEvent({
-        type: "walkthrough_step_viewed",
-        journeyId: activeJourney.id,
-        stepId: newStep.id,
-        stepIndex: newIndex,
-      });
-    },
-    [activeJourney, state.journeyId]
-  );
-
-  const next = useCallback(() => {
-    if (!activeJourney) return;
-    const steps = activeJourney.steps;
-    const currentIndex = state.stepIndex;
-    const nextIndex = findNextValidIndex(steps, currentIndex + 1);
-
-    if (nextIndex === null) {
-      complete();
-    } else {
-      emitWalkthroughEvent({
-        type: "walkthrough_step_completed",
-        journeyId: activeJourney.id,
-        stepId: steps[currentIndex]?.id,
-        stepIndex: currentIndex,
-      });
-      updateStep(nextIndex);
-    }
-  }, [activeJourney, state.stepIndex, updateStep]);
-
-  const back = useCallback(() => {
-    if (!activeJourney) return;
-    const steps = activeJourney.steps;
-    const currentIndex = state.stepIndex;
-    const prevIndex = findPrevValidIndex(steps, currentIndex - 1);
-
-    if (prevIndex !== null) {
-      emitWalkthroughEvent({
-        type: "walkthrough_step_skipped",
-        journeyId: activeJourney.id,
-        stepId: steps[currentIndex]?.id,
-        stepIndex: currentIndex,
-      });
-      updateStep(prevIndex);
-    }
-  }, [activeJourney, state.stepIndex, updateStep]);
-
-  const skip = useCallback(() => {
-    if (!activeJourney || !state.journeyId) return;
-    setState((prev) => ({ ...prev, skipped: true, started: false }));
-    saveWalkthroughState(state.journeyId, { skipped: true, started: false });
-    emitWalkthroughEvent({ type: "walkthrough_step_skipped", journeyId: activeJourney.id });
-    setActiveJourney(null);
-  }, [activeJourney, state.journeyId]);
-
   const close = useCallback(() => {
     if (!state.journeyId) return;
     setState((prev) => ({ ...prev, dismissed: true, started: false }));
@@ -220,6 +145,106 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
       lastInteraction: new Date().toISOString(),
     });
     emitWalkthroughEvent({ type: "walkthrough_completed", journeyId: activeJourney.id });
+    setActiveJourney(null);
+  }, [activeJourney, state.journeyId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && activeJourney) {
+        close();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeJourney, close]);
+
+  const updateStep = useCallback(
+    (newIndex: number) => {
+      if (!activeJourney) return;
+
+      const steps = activeJourney.steps;
+      if (newIndex < 0 || newIndex >= steps.length) return;
+
+      const newStep = steps[newIndex];
+      if (!newStep) return;
+
+      const targetIndex =
+        newStep.condition && !newStep.condition()
+          ? findNextValidIndex(steps, newIndex + 1)
+          : newIndex;
+
+      if (targetIndex === null) {
+        complete();
+        return;
+      }
+
+      const resolvedStep = steps[targetIndex];
+      if (!resolvedStep) return;
+
+      setState((prev) => {
+        const newState: WalkthroughState = {
+          ...prev,
+          stepIndex: targetIndex,
+          lastInteraction: new Date().toISOString(),
+        };
+        if (state.journeyId) {
+          saveWalkthroughState(state.journeyId, newState);
+        }
+        return newState;
+      });
+
+      emitWalkthroughEvent({
+        type: "walkthrough_step_viewed",
+        journeyId: activeJourney.id,
+        stepId: resolvedStep.id,
+        stepIndex: targetIndex,
+      });
+    },
+    [activeJourney, state.journeyId, complete]
+  );
+
+  const next = useCallback(() => {
+    if (!activeJourney) return;
+    const steps = activeJourney.steps;
+    const currentIndex = state.stepIndex;
+    const nextIndex = findNextValidIndex(steps, currentIndex + 1);
+
+    if (nextIndex === null) {
+      complete();
+    } else {
+      emitWalkthroughEvent({
+        type: "walkthrough_step_completed",
+        journeyId: activeJourney.id,
+        stepId: steps[currentIndex]?.id,
+        stepIndex: currentIndex,
+      });
+      updateStep(nextIndex);
+    }
+  }, [activeJourney, state.stepIndex, updateStep, complete]);
+
+  const back = useCallback(() => {
+    if (!activeJourney) return;
+    const steps = activeJourney.steps;
+    const currentIndex = state.stepIndex;
+    const prevIndex = findPrevValidIndex(steps, currentIndex - 1);
+
+    if (prevIndex !== null) {
+      emitWalkthroughEvent({
+        type: "walkthrough_step_skipped",
+        journeyId: activeJourney.id,
+        stepId: steps[currentIndex]?.id,
+        stepIndex: currentIndex,
+      });
+      updateStep(prevIndex);
+    }
+  }, [activeJourney, state.stepIndex, updateStep]);
+
+  const skip = useCallback(() => {
+    if (!activeJourney || !state.journeyId) return;
+    setState((prev) => ({ ...prev, skipped: true, started: false }));
+    saveWalkthroughState(state.journeyId, { skipped: true, started: false });
+    emitWalkthroughEvent({ type: "walkthrough_step_skipped", journeyId: activeJourney.id });
     setActiveJourney(null);
   }, [activeJourney, state.journeyId]);
 
@@ -248,14 +273,16 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
   }, [activeJourney, state]);
 
   const recordInteraction = useCallback(() => {
-    if (!state.journeyId) return;
-    const newState: WalkthroughState = {
-      ...state,
-      lastInteraction: new Date().toISOString(),
-    };
-    setState(newState);
-    saveWalkthroughState(state.journeyId, newState);
-  }, [state]);
+    setState((prev) => {
+      if (!prev.journeyId) return prev;
+      const newState: WalkthroughState = {
+        ...prev,
+        lastInteraction: new Date().toISOString(),
+      };
+      saveWalkthroughState(prev.journeyId, newState);
+      return newState;
+    });
+  }, []);
 
   const isActive = !!activeJourney && state.started;
   const currentStep = activeJourney?.steps[state.stepIndex] ?? null;
@@ -263,6 +290,7 @@ export function WalkthroughProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (activeJourney && isActive && currentStep) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- records the interaction timestamp for the active step; the callback is referentially stable so this cannot loop
       recordInteraction();
     }
   }, [pathname, currentStep, isActive, activeJourney, recordInteraction]);

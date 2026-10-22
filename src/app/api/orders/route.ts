@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 import { validateLink, validateNumber, sanitizeString } from "@/lib/server/validation";
 import { SERVICE_CATALOG } from "@/lib/service-catalog";
 import { calculateOrderCost } from "@/lib/pricing";
+import { debitWallet, creditWallet } from "@/lib/wallet";
 import { sendEmail } from "@/lib/email/mailer";
 import { getOrderReceivedEmail, getOrderFailedEmail, getLowWalletBalanceEmail } from "@/lib/email/templates";
 import { SITE_URL } from "@/lib/email/config";
@@ -145,8 +146,9 @@ export async function POST(request: NextRequest) {
         quantity_source,
         runs,
         interval,
-        janjez_service_id,
-     } = body as {
+       janjez_service_id,
+       payment_method,
+    } = body as {
        order_id?: string;
        category?: string;
        subcategory?: string;
@@ -161,6 +163,7 @@ export async function POST(request: NextRequest) {
        runs?: number | null;
        interval?: number | null;
        janjez_service_id?: string | null;
+       payment_method?: "wallet" | "mpesa";
      };
 
     const errors: string[] = [];
@@ -240,33 +243,36 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const { data: debitData, error: debitError } = await supabase.rpc("debit_wallet", {
-      p_user_id: user.id,
-      p_amount: expectedAmount,
-    });
+    // Payment method: "wallet" (default) pays straight from the dashboard
+    // balance, "mpesa" creates the order first and lets the M-Pesa callback
+    // settle it (so the money follows the procedure the user initiated).
+    const paymentMethod = payment_method === "mpesa" ? "mpesa" : "wallet";
+    let newBalance = 0;
 
-    const debitResult = debitData as { success: boolean; new_balance: number } | null;
+    if (paymentMethod === "wallet") {
+      const debit = await debitWallet(supabase as any, user.id, expectedAmount);
 
-    if (debitError || !debitResult || debitResult.success === false) {
-      const currentBalance = await supabase
-        .from("profiles")
-        .select("wallet_balance")
-        .eq("id", user.id)
-        .single();
-      const balance = Number(currentBalance.data?.wallet_balance) || 0;
-      await supabase.from("notifications").insert({
-        user_id: user.id,
-        type: "order_failed",
-        title: "Order Failed - Insufficient Wallet Balance",
-        message: `Your order could not be placed: insufficient wallet balance (KES ${balance.toFixed(2)}). Top up via M-Pesa first.`,
-        link: "/pay",
-      });
-      return NextResponse.json({
-        error: "Insufficient wallet balance. Please top up your wallet before placing an order.",
-      }, { status: 402 });
+      if (!debit.success) {
+        const currentBalance = await supabase
+          .from("profiles")
+          .select("wallet_balance")
+          .eq("id", user.id)
+          .single();
+        const balance = Number(currentBalance.data?.wallet_balance) || 0;
+        await supabase.from("notifications").insert({
+          user_id: user.id,
+          type: "order_failed",
+          title: "Order Failed - Insufficient Wallet Balance",
+          message: `Your order could not be placed: insufficient wallet balance (KES ${balance.toFixed(2)}). Top up via M-Pesa first.`,
+          link: "/pay",
+        });
+        return NextResponse.json({
+          error: "Insufficient wallet balance. Please top up your wallet before placing an order.",
+        }, { status: 402 });
+      }
+
+      newBalance = debit.newBalance;
     }
-
-    const newBalance = Number(debitResult.new_balance) || 0;
     fireAndForgetEmail(
       maybeSendLowBalanceEmail(supabase, user.id, user.email, null, newBalance).then(
         () => ({ ok: true })
@@ -294,7 +300,7 @@ export async function POST(request: NextRequest) {
         catalog_category_id,
         janjez_service_id: janjez_service_id || null,
         status: "pending",
-        payment_status: "paid",
+        payment_status: paymentMethod === "mpesa" ? "pending_mpesa" : "paid",
         fulfillment_status: "pending",
         runs: runs ?? null,
         interval: interval ?? null,
@@ -304,6 +310,20 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // M-Pesa orders are settled by the M-Pesa callback: the order is already
+    // created and linked (related_order_id) so the money follows the exact
+    // procedure the customer started. Do not fulfil it here.
+    if (paymentMethod === "mpesa") {
+      return NextResponse.json({
+        ok: true,
+        order: data,
+        mpesa: {
+          amount: expectedAmount,
+          order_id: data?.order_id || data?.id,
+        },
+      });
     }
 
     if (data?.id) {
@@ -338,10 +358,10 @@ export async function POST(request: NextRequest) {
         });
 
         try {
-          await supabase.rpc("credit_wallet", {
-            p_user_id: user.id,
-            p_amount: expectedAmount,
-          });
+          const refund = await creditWallet(supabase as any, user.id, expectedAmount);
+          if (refund.error) {
+            console.error("Wallet refund failed for order", data.id, refund.error);
+          }
         } catch (refundError) {
           console.error("Wallet refund failed for order", data.id, refundError);
         }
