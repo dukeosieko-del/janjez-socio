@@ -1,148 +1,172 @@
-import crypto from 'crypto';
-import { env } from '@/lib/config/env';
 import { mpesaConfig } from './config';
 
-interface MpesaResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  CheckoutRequestID?: string;
+interface AuthTokenResponse {
+  access_token: string;
+  expires_in: string;
 }
 
-function generateTimestamp(): string {
-  return new Date().toISOString().replace(/[:.-]/g, '').slice(0, 14);
-}
+let cachedToken: { token: string; expiry: number } | null = null;
 
-function buildPassword(): string {
-  const timestamp = generateTimestamp();
-  const raw = `${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`;
-  return Buffer.from(raw).toString('base64');
-}
-
-function signRequest(body: unknown, secret: string): string {
-  const payload = JSON.stringify(body);
-  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
-}
-
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timeoutId);
+async function getAccessToken(): Promise<string> {
+  if (cachedToken && cachedToken.expiry > Date.now()) {
+    return cachedToken.token;
   }
-}
 
-export async function getAccessToken(): Promise<MpesaResponse<{ access_token: string; expires_in: number }>> {
-  try {
-    const auth = Buffer.from(`${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`).toString('base64');
+  const auth = Buffer.from(`${mpesaConfig.consumerKey}:${mpesaConfig.consumerSecret}`).toString('base64');
+  
+  const response = await fetch(`${mpesaConfig.baseUrl}/oauth/v1/generate?grant_type=client_credentials`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${auth}`,
+    },
+  });
 
-    const res = await fetchWithTimeout(
-      `${mpesaConfig.baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
-      }
-    );
-
-    if (!res.ok) {
-      return { success: false, error: `Token request failed: ${res.status}` };
-    }
-
-    const data = (await res.json()) as { access_token: string; expires_in: number };
-    return { success: true, data };
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  if (!response.ok) {
+    throw new Error(`M-Pesa auth failed: ${response.status}`);
   }
+
+  const data: AuthTokenResponse = await response.json();
+  cachedToken = {
+    token: data.access_token,
+    expiry: Date.now() + (parseInt(data.expires_in) - 60) * 1000,
+  };
+  
+  return cachedToken.token;
 }
 
-export async function callMpesa<T>(
-  endpoint: string,
-  body: Record<string, unknown>,
-  useHmac = true
-): Promise<MpesaResponse<T>> {
-  try {
-    const tokenResult = await getAccessToken();
-    if (!tokenResult.success || !tokenResult.data) {
-      return { success: false, error: tokenResult.error || 'Failed to get access token' };
-    }
+function generatePassword(): string {
+  const timestamp = getTimestamp();
+  const password = Buffer.from(`${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`).toString('base64');
+  return { password, timestamp } as any;
+}
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${tokenResult.data.access_token}`,
+function getTimestamp(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${year}${month}${day}${hours}${minutes}${seconds}`;
+}
+
+export interface STKPushRequest {
+  phoneNumber: string;
+  amount: number;
+  accountReference: string;
+  transactionDesc: string;
+}
+
+export interface STKPushResponse {
+  MerchantRequestID: string;
+  CheckoutRequestID: string;
+  ResponseCode: string;
+  ResponseDescription: string;
+  CustomerMessage: string;
+}
+
+export async function initiateSTKPush(request: STKPushRequest): Promise<STKPushResponse> {
+  const token = await getAccessToken();
+  const timestamp = getTimestamp();
+  const password = Buffer.from(`${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`).toString('base64');
+
+  const response = await fetch(`${mpesaConfig.baseUrl}/mpesa/stkpush/v1/processrequest`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-    };
+    },
+    body: JSON.stringify({
+      BusinessShortCode: mpesaConfig.shortcode,
+      Password: password,
+      Timestamp: timestamp,
+      TransactionType: 'CustomerPayBillOnline',
+      Amount: request.amount,
+      PartyA: request.phoneNumber,
+      PartyB: mpesaConfig.shortcode,
+      PhoneNumber: request.phoneNumber,
+      CallBackURL: mpesaConfig.callbackUrl,
+      AccountReference: request.accountReference,
+      TransactionDesc: request.transactionDesc,
+    }),
+  });
 
-    if (useHmac) {
-      const signature = signRequest(body, mpesaConfig.consumerSecret);
-      headers['X-Signature'] = signature;
-    }
-
-    const res = await fetchWithTimeout(`${mpesaConfig.baseUrl}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      return { success: false, error: `API request failed: ${res.status}` };
-    }
-
-    const data = (await res.json()) as T;
-    return { success: true, data };
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`STK push failed: ${error}`);
   }
+
+  return response.json();
 }
 
-export async function initiateStkPush(
-  phone: string,
-  amount: number,
-  idempotencyKey: string
-): Promise<MpesaResponse<{ CheckoutRequestID: string }>> {
-  const timestamp = generateTimestamp();
-  const password = buildPassword();
+export interface B2CRequest {
+  phoneNumber: string;
+  amount: number;
+  remarks: string;
+  occasion?: string;
+}
 
-  const result = await callMpesa<{ CheckoutRequestID: string }>(
-    '/mpesa/stkpush/v1/processrequest',
-    {
+export interface B2CResponse {
+  ConversationID: string;
+  OriginatorConversationID: string;
+  ResponseCode: string;
+  ResponseDescription: string;
+}
+
+export async function initiateB2CPayment(request: B2CRequest): Promise<B2CResponse> {
+  const token = await getAccessToken();
+
+  const response = await fetch(`${mpesaConfig.baseUrl}/mpesa/b2c/v1/paymentrequest`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      InitiatorName: process.env.MPESA_INITIATOR_NAME || 'testapi',
+      SecurityCredential: process.env.MPESA_SECURITY_CREDENTIAL || '',
+      CommandID: 'BusinessPayment',
+      Amount: request.amount,
+      PartyA: mpesaConfig.shortcode,
+      PartyB: request.phoneNumber,
+      Remarks: request.remarks,
+      QueueTimeOutURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/partner/mpesa/b2c/timeout`,
+      ResultURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/partner/mpesa/b2c/result`,
+      Occasion: request.occasion || 'Payout',
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`B2C payment failed: ${error}`);
+  }
+
+  return response.json();
+}
+
+export async function querySTKPushStatus(checkoutRequestId: string) {
+  const token = await getAccessToken();
+  const timestamp = getTimestamp();
+  const password = Buffer.from(`${mpesaConfig.shortcode}${mpesaConfig.passkey}${timestamp}`).toString('base64');
+
+  const response = await fetch(`${mpesaConfig.baseUrl}/mpesa/stkpushquery/v1/query`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
       BusinessShortCode: mpesaConfig.shortcode,
       Password: password,
       Timestamp: timestamp,
-      TransactionType: 'CustomerBuyGoodsOnline',
-      Amount: amount,
-      PartyA: '1329148',
-      PartyB: '1799086',
-      PhoneNumber: phone,
-      ReturnURL: mpesaConfig.callbackUrl,
-      InvoiceNo: idempotencyKey,
-      OrgAccountReference: idempotencyKey,
-      TransactionDesc: 'Account activation',
-    },
-    true
-  );
+      CheckoutRequestID: checkoutRequestId,
+    }),
+  });
 
-  return result;
-}
+  if (!response.ok) {
+    throw new Error(`STK query failed: ${response.status}`);
+  }
 
-export async function queryStkStatus(
-  checkoutRequestID: string
-): Promise<MpesaResponse<{ CheckoutRequestID: string; ResultCode: number; ResultDesc: string }>> {
-  const timestamp = generateTimestamp();
-  const password = buildPassword();
-
-  const result = await callMpesa<{ CheckoutRequestID: string; ResultCode: number; ResultDesc: string }>(
-    '/mpesa/stkpush/v1/query',
-    {
-      BusinessShortCode: mpesaConfig.shortcode,
-      Password: password,
-      Timestamp: timestamp,
-      CheckoutRequestID: checkoutRequestID,
-    },
-    true
-  );
-
-  return result;
+  return response.json();
 }

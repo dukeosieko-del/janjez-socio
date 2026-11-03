@@ -1,42 +1,45 @@
-import 'server-only';
 import { z } from 'zod';
 
 const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-
-  JANJEZ_MAIN_API_URL: z.string().url(),
-  JANJEZ_MAIN_API_KEY: z.string().min(1),
-  JANJEZ_MAIN_API_SECRET: z.string().min(1),
-
-  MPESA_ENV: z.enum(['sandbox', 'production']),
+  SUPABASE_SECRET_KEY: z.string().optional(),
+  JANJEZ_MAIN_API_URL: z.string().url().optional(),
+  JANJEZ_MAIN_API_KEY: z.string().min(1).optional(),
+  JANJEZ_MAIN_API_SECRET: z.string().optional(),
+  MPESA_ENV: z.enum(['sandbox', 'production']).default('sandbox'),
   MPESA_CONSUMER_KEY: z.string().optional(),
   MPESA_CONSUMER_SECRET: z.string().optional(),
   MPESA_PASSKEY: z.string().optional(),
   MPESA_SHORTCODE: z.string().optional(),
-  MPESA_CALLBACK_URL: z.string().optional(),
-
-  NEXT_PUBLIC_SITE_URL: z.string().url(),
-
-  SENTRY_DSN: z.string().optional().refine((v) => !v || v === '<or leave empty>' || v.startsWith('https://') || v.startsWith('http://'), { message: 'Invalid Sentry DSN' }).transform((v) => (!v || v === '<or leave empty>' ? undefined : v)),
+  MPESA_CALLBACK_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
+  NEXT_PUBLIC_PARTNER_HUB_DOMAIN: z.string().default('localhost'),
+  SENTRY_DSN: z.string().optional(),
   BETTER_STACK_TOKEN: z.string().optional(),
-
-  PARTNER_ACTIVATION_FEE: z.string().default('1499'),
-  WITHDRAWAL_FEE_PERCENT: z.string().default('5'),
-  WITHDRAWAL_MIN_AMOUNT: z.string().default('500'),
-
+  PARTNER_ACTIVATION_FEE: z.coerce.number().default(1499),
+  WITHDRAWAL_FEE_PERCENT: z.coerce.number().default(5),
+  WITHDRAWAL_MIN_AMOUNT: z.coerce.number().default(500),
   SESSION_COOKIE_NAME: z.string().default('jez_bs_session'),
-  IDEMPOTENCY_TTL_SECONDS: z.string().default('86400'),
-
-  NEXT_PUBLIC_PARTNER_HUB_DOMAIN: z.string().default('partners.janjez.social'),
-
-  HMAC_SECRET: z.string().min(32),
+  IDEMPOTENCY_TTL_SECONDS: z.coerce.number().default(86400),
+  HMAC_SECRET: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(),
+  BREVO_SENDER_EMAIL: z.string().email().optional(),
+  BREVO_SMTP_HOST: z.string().optional(),
+  BREVO_SMTP_PORT: z.string().optional(),
+  BREVO_SMTP_USER: z.string().optional(),
+  BREVO_SMTP_KEY: z.string().optional(),
+  BREVO_FROM_EMAIL: z.string().email().optional(),
+  BREVO_FROM_NAME: z.string().optional(),
 });
 
-const isProductionBuild = process.env.NEXT_PHASE === 'phase-production-build';
+const parsed = envSchema.safeParse(process.env);
 
-// Keep module imports build-safe; request-time code still validates the full runtime environment.
-export const env = (isProductionBuild
-  ? envSchema.partial().parse(process.env)
-  : envSchema.parse(process.env)) as z.infer<typeof envSchema>;
+if (!parsed.success) {
+  console.error('Invalid environment variables:', parsed.error.flatten().fieldErrors);
+  throw new Error('Invalid environment variables');
+}
+
+export const env = parsed.data;
