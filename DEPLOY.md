@@ -65,6 +65,7 @@ sudo certbot --nginx -d janjez.social -d www.janjez.social
 
 ## Environment Variables (Minimum for EC2)
 ```env
+NODE_ENV=production
 NEXT_PUBLIC_SITE_URL=https://janjez.social
 NEXT_PUBLIC_SUPABASE_URL=https://snkgkcdnmhqaejpqftxn.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_9O06_TeEL6LQSFkUhQkBCA_FW1JdW0t
@@ -75,6 +76,7 @@ MPESA_CONSUMER_KEY=
 MPESA_CONSUMER_SECRET=
 MPESA_PASSKEY=
 MPESA_SHORTCODE=
+MPESA_ENV=production
 ```
 
 ## Security Notes

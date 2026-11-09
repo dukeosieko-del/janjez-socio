@@ -56,31 +56,33 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      order_id,
-      category,
-      subcategory,
-      sku_id,
-      quantity,
-      link_submitted,
-      amount_paid,
-      catalog_category_id,
-       payment_reference,
-       refill_guarantee,
-       quantity_source,
-    } = body as {
-      order_id?: string;
-      category?: string;
-      subcategory?: string;
-      sku_id?: string | null;
-      quantity?: number;
-      link_submitted?: string;
-      amount_paid?: number;
-      catalog_category_id?: string;
-      payment_reference?: string;
-      refill_guarantee?: string | null;
-      quantity_source?: "preset" | "custom";
-    };
+const {
+       order_id,
+       category,
+       subcategory,
+       sku_id,
+       quantity,
+       link_submitted,
+       amount_paid,
+       catalog_category_id,
+        payment_reference,
+        refill_guarantee,
+        quantity_source,
+        comments,
+     } = body as {
+       order_id?: string;
+       category?: string;
+       subcategory?: string;
+       sku_id?: string | null;
+       quantity?: number;
+       link_submitted?: string;
+       amount_paid?: number;
+       catalog_category_id?: string;
+       payment_reference?: string;
+       refill_guarantee?: string | null;
+       quantity_source?: "preset" | "custom";
+       comments?: string;
+     };
 
     const errors: string[] = [];
 
@@ -174,6 +176,7 @@ export async function POST(request: NextRequest) {
         refill_guarantee: refill_guarantee ?? null,
         quantity_source,
         catalog_category_id,
+        comments: sanitizeString(body.comments, 1000),
         status: "pending",
         payment_status: "paid",
         fulfillment_status: "pending",
@@ -182,7 +185,37 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      // Rollback: debit succeeded but order insert failed — refund the wallet.
+      try {
+        await supabase.rpc("credit_wallet", { p_user_id: user.id, p_amount: expectedAmount });
+        await supabase.from("wallet_transactions").insert({
+          user_id: user.id,
+          type: "refund",
+          amount: expectedAmount,
+          status: "completed",
+          payment_method: "system",
+          reference: `rollback-${Date.now()}`,
+          notes: `Order insert failed — auto rollback for order payload: ${JSON.stringify({ category, subcategory, quantity })}`,
+        });
+      } catch (rollbackErr) {
+        console.error("Rollback failed for order debit:", rollbackErr);
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Record the spend in the wallet ledger.
+    try {
+      await supabase.from("wallet_transactions").insert({
+        user_id: user.id,
+        type: "spend",
+        amount: expectedAmount,
+        status: "completed",
+        payment_method: "wallet",
+        reference: data.id,
+        notes: `Order ${data.order_id || data.id.slice(0, 8)} — ${subcategory}`,
+      });
+    } catch (ledgerErr) {
+      console.error("Failed to create wallet transaction for order:", ledgerErr);
     }
 
     if (data?.id) {
@@ -190,13 +223,38 @@ export async function POST(request: NextRequest) {
         const fulfillmentResult = await fulfillOrder(data.id);
 
         if (fulfillmentResult.status === "failed" || fulfillmentResult.status === "error") {
+          await supabase
+            .from("orders")
+            .update({
+              fulfillment_status: "failed",
+              fulfillment_error: fulfillmentResult.error || "Unknown error",
+              status: "failed",
+              payment_status: "refunded",
+            })
+            .eq("id", data.id);
           await supabase.from("notifications").insert({
             user_id: user.id,
             type: "order_failed",
             title: "Order Fulfillment Failed",
-            message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be fulfilled: ${fulfillmentResult.error || "Unknown error"}. Our team has been notified.`,
+            message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be fulfilled: ${fulfillmentResult.error || "Unknown error"}. A refund has been issued to your wallet.`,
             link: "/orders/all",
           });
+
+          // Refund the wallet since fulfillment failed.
+          try {
+            await supabase.rpc("credit_wallet", { p_user_id: user.id, p_amount: expectedAmount });
+            await supabase.from("wallet_transactions").insert({
+              user_id: user.id,
+              type: "refund",
+              amount: expectedAmount,
+              status: "completed",
+              payment_method: "system",
+              reference: `refund-${data.id}`,
+              notes: `Fulfillment failed for order ${data.order_id || data.id.slice(0, 8)}: ${fulfillmentResult.error || "Unknown error"}`,
+            });
+          } catch (refundErr) {
+            console.error("Wallet refund failed for order", data.id, refundErr);
+          }
         } else {
           await supabase.from("notifications").insert({
             user_id: user.id,
@@ -214,15 +272,33 @@ export async function POST(request: NextRequest) {
           .update({
             fulfillment_status: "failed",
             fulfillment_error: errorMessage,
+            status: "failed",
+            payment_status: "refunded",
           })
           .eq("id", data.id);
         await supabase.from("notifications").insert({
           user_id: user.id,
           type: "order_failed",
           title: "Order Fulfillment Failed",
-          message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be processed: ${errorMessage}.`,
+          message: `Your order ${data.order_id || data.id.slice(0, 8)} could not be processed: ${errorMessage}. A refund has been issued to your wallet.`,
           link: "/orders/all",
         });
+
+        // Refund the wallet since fulfillment failed.
+        try {
+          await supabase.rpc("credit_wallet", { p_user_id: user.id, p_amount: expectedAmount });
+          await supabase.from("wallet_transactions").insert({
+            user_id: user.id,
+            type: "refund",
+            amount: expectedAmount,
+            status: "completed",
+            payment_method: "system",
+            reference: `refund-${data.id}`,
+            notes: `Fulfillment failed for order ${data.order_id || data.id.slice(0, 8)}: ${errorMessage}`,
+          });
+        } catch (refundErr) {
+          console.error("Wallet refund failed for order", data.id, refundErr);
+        }
       }
 
       try {

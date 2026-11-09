@@ -51,11 +51,11 @@ describe("mpesa client", () => {
       expect(client.getCallbackUrl()).toBe("https://janjez.test/api/mpesa/callback");
     });
 
-    it("falls back to janjez.social when env missing", async () => {
+    it("throws when NEXT_PUBLIC_SITE_URL is missing", async () => {
       delete process.env.NEXT_PUBLIC_SITE_URL;
       vi.resetModules();
       const mod = await import("@/lib/mpesa/client");
-      expect(mod.getCallbackUrl()).toBe("https://janjez.social/api/mpesa/callback");
+      expect(() => mod.getCallbackUrl()).toThrow("NEXT_PUBLIC_SITE_URL is required for M-Pesa callback URL");
     });
   });
 

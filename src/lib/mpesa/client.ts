@@ -1,14 +1,37 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const MPESA_ENV = process.env.MPESA_ENV || "sandbox";
-const BASE_URL =
-  MPESA_ENV === "production"
+function getMpesaEnv(): "production" | "sandbox" {
+  const env = process.env.MPESA_ENV;
+  if (env !== "production" && env !== "sandbox") {
+    throw new Error(
+      `Invalid or missing MPESA_ENV: "${env}". Must be "production" or "sandbox".`
+    );
+  }
+  return env;
+}
+
+function getBaseUrl(): string {
+  return getMpesaEnv() === "production"
     ? "https://api.safaricom.co.ke"
     : "https://sandbox.safaricom.co.ke";
+}
 
-const TOKEN_URL = `${BASE_URL}/oauth/v1/generate?grant_type=client_credentials`;
-const STK_PUSH_URL = `${BASE_URL}/mpesa/stkpush/v1/processrequest`;
-const STK_QUERY_URL = `${BASE_URL}/mpesa/stkpush/v1/query`;
+function getCallbackUrl(origin?: string): string {
+  const siteUrl = origin || process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) {
+    throw new Error("NEXT_PUBLIC_SITE_URL is required for M-Pesa callback URL");
+  }
+  return `${siteUrl}/api/mpesa/callback`;
+}
+
+function getEndpoints() {
+  const base = getBaseUrl();
+  return {
+    TOKEN_URL: `${base}/oauth/v1/generate?grant_type=client_credentials`,
+    STK_PUSH_URL: `${base}/mpesa/stkpush/v1/processrequest`,
+    STK_QUERY_URL: `${base}/mpesa/stkpush/v1/query`,
+  };
+}
 
 let tokenCache: { access_token: string; expires_in: number; fetched_at: number } | null = null;
 
@@ -78,6 +101,7 @@ export async function getAccessToken(): Promise<string> {
   }
 
   const basicAuth = Buffer.from(`${key}:${secret}`).toString("base64");
+  const { TOKEN_URL } = getEndpoints();
   const res = await fetch(TOKEN_URL, {
     method: "GET",
     headers: {
@@ -122,6 +146,7 @@ export async function initiateStkPush(params: StkPushParams): Promise<StkPushRes
     QueueTimeOutURL: params.callbackUrl,
   };
 
+  const { STK_PUSH_URL } = getEndpoints();
   const res = await fetch(STK_PUSH_URL, {
     method: "POST",
     headers: {
@@ -157,6 +182,7 @@ export async function queryStkStatus(checkoutRequestId: string): Promise<StkQuer
     CheckoutRequestID: checkoutRequestId,
   };
 
+  const { STK_QUERY_URL } = getEndpoints();
   const res = await fetch(STK_QUERY_URL, {
     method: "POST",
     headers: {
@@ -248,7 +274,4 @@ export function formatPhoneNumber(phone: string): string {
   return formatPhone(phone);
 }
 
-export function getCallbackUrl(): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://janjez.social";
-  return `${siteUrl}/api/mpesa/callback`;
-}
+export { getCallbackUrl };

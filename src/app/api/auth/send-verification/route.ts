@@ -8,11 +8,30 @@ import crypto from "crypto";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Block disposable / role-based email addresses to reduce spam account creation.
+const DISPOSABLE_DOMAINS = new Set([
+  "mailinator.com", "guerrillamail.com", "10minutemail.com", "tempmail.com",
+  "throwaway.email", "yopmail.com", "maildrop.com", "temp-mail.org",
+  "getairmail.com", "mintemail.com", "moja.org", "mytemp.email",
+]);
+const ROLE_PREFIXES = new Set([
+  "noreply", "no-reply", "admin", "support", "info", "sales", "help",
+  "contact", "service", "newsletter", "billing", "security",
+]);
+
+function isEmailSuspicious(email: string): boolean {
+  const [local, domain] = email.toLowerCase().split("@");
+  if (!local || !domain) return true;
+  if (DISPOSABLE_DOMAINS.has(domain)) return true;
+  if (ROLE_PREFIXES.has(local)) return true;
+  return false;
+}
+
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
-    const rl = rateLimit(request, 10);
+    const rl = rateLimit(request, 5);
     if (!rl.ok && rl.response) return rl.response;
 
     const body = await request.json();
@@ -29,6 +48,10 @@ export async function POST(request: NextRequest) {
 
     if (!EMAIL_RE.test(email)) {
       return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    }
+
+    if (isEmailSuspicious(email)) {
+      return NextResponse.json({ error: "Please use a personal email address" }, { status: 400 });
     }
 
     if (password.length < 6) {

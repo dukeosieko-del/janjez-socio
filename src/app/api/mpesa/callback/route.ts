@@ -5,7 +5,25 @@ import { rateLimit } from "@/lib/server/rate-limiter";
 
 export const runtime = "nodejs";
 
+interface CallbackMetadataItem {
+  Name: string;
+  Value?: string;
+}
+
+interface StkCallback {
+  CheckoutRequestID?: string;
+  MerchantRequestID?: string;
+  ResultCode?: string;
+  ResultDesc?: string;
+  CallbackMetadata?: {
+    Item: CallbackMetadataItem[] | CallbackMetadataItem;
+  };
+}
+
 interface MpesaCallbackBody {
+  Body?: {
+    stkCallback?: StkCallback;
+  };
   CheckoutRequestID?: string;
   ResponseCode?: string;
   ResultCode?: string;
@@ -16,11 +34,20 @@ interface MpesaCallbackBody {
   };
 }
 
-function extractMetadata(body: MpesaCallbackBody): StkCallbackMetadata {
-  const items = body?.CallbackMetadata?.Item || [];
-  if (!Array.isArray(items)) return {};
+function getStkCallback(body: MpesaCallbackBody): StkCallback | null {
+  if (body?.Body?.stkCallback) return body.Body.stkCallback;
+  if (body?.CheckoutRequestID || body?.ResultCode !== undefined || body?.CallbackMetadata) {
+    return body as unknown as StkCallback;
+  }
+  return null;
+}
+
+function extractMetadata(stk: StkCallback): StkCallbackMetadata {
+  const raw = stk?.CallbackMetadata?.Item;
+  if (!raw) return {};
+  const items = Array.isArray(raw) ? raw : [raw];
   const get = (name: string): string | undefined =>
-    items.find((i: { Name: string; Value?: string }) => i.Name === name)?.Value;
+    items.find((i) => i.Name === name)?.Value;
   return {
     amount: get("Amount") ? Number(get("Amount")) : undefined,
     phone: get("PhoneNumber"),
@@ -38,21 +65,21 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json() as MpesaCallbackBody;
-  const checkoutRequestID = body?.CheckoutRequestID;
+  const stk = getStkCallback(body);
+  const checkoutRequestID = stk?.CheckoutRequestID || body?.CheckoutRequestID;
 
   if (!checkoutRequestID) {
     return NextResponse.json({ error: "Missing CheckoutRequestID" }, { status: 400 });
   }
 
-  const responseCode = body?.ResponseCode || body?.ResponseCode?.toString();
-  const resultCode = body?.ResultCode?.toString() || (responseCode === "0" ? "0" : "999");
+  const resultCode = stk?.ResultCode?.toString() || body?.ResultCode?.toString() || (body?.ResponseCode === "0" ? "0" : "999");
 
   if (resultCode !== "0") {
     const { error } = await supabase
       .from("wallet_transactions")
       .update({
         status: "failed",
-        notes: body?.ResultDesc || body?.ResponseDescription || "M-Pesa payment failed",
+        notes: stk?.ResultDesc || body?.ResultDesc || body?.ResponseDescription || "M-Pesa payment failed",
       })
       .eq("reference", checkoutRequestID)
       .eq("status", "pending");
@@ -61,7 +88,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, resultCode });
   }
 
-  const metadata = extractMetadata(body);
+  const metadata = extractMetadata(stk || body);
 
   try {
     await completeStkPayment(checkoutRequestID, metadata);
