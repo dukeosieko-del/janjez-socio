@@ -86,10 +86,14 @@ export async function getAccessToken(): Promise<string> {
   });
 
   if (!res.ok) {
-    throw new Error(`M-Pesa token request failed: ${res.status} ${res.statusText}`);
+    const detail = await res.text();
+    throw new Error(`M-Pesa token request failed (${res.status}): ${detail || res.statusText}`);
   }
 
   const data = await res.json() as { access_token: string; expires_in: number };
+  if (!data.access_token) {
+    throw new Error("M-Pesa token response did not include an access token");
+  }
   tokenCache = { access_token: data.access_token, expires_in: data.expires_in, fetched_at: now };
   return data.access_token;
 }
@@ -131,11 +135,15 @@ export async function initiateStkPush(params: StkPushParams): Promise<StkPushRes
     body: JSON.stringify(body),
   });
 
+  const data = await res.json().catch(() => ({})) as StkPushResponse & { errorMessage?: string };
   if (!res.ok) {
-    throw new Error(`M-Pesa STK push failed: ${res.status} ${res.statusText}`);
+    throw new Error(`M-Pesa STK push failed (${res.status}): ${data.errorMessage || res.statusText}`);
+  }
+  if (data.ResponseCode !== "0" || !data.CheckoutRequestID) {
+    throw new Error(data.ResponseDescription || data.CustomerMessage || "M-Pesa did not accept the STK push request");
   }
 
-  return (await res.json()) as StkPushResponse;
+  return data;
 }
 
 export async function queryStkStatus(checkoutRequestId: string): Promise<StkQueryResponse> {
@@ -166,11 +174,15 @@ export async function queryStkStatus(checkoutRequestId: string): Promise<StkQuer
     body: JSON.stringify(body),
   });
 
+  const data = await res.json().catch(() => ({})) as StkQueryResponse & { errorMessage?: string };
   if (!res.ok) {
-    throw new Error(`M-Pesa status query failed: ${res.status} ${res.statusText}`);
+    throw new Error(`M-Pesa status query failed (${res.status}): ${data.errorMessage || res.statusText}`);
+  }
+  if (data.ResponseCode !== "0") {
+    throw new Error(data.ResponseDescription || data.ResultDesc || "M-Pesa could not query this STK request");
   }
 
-  return (await res.json()) as StkQueryResponse;
+  return data;
 }
 
 export interface StkCallbackMetadata {
