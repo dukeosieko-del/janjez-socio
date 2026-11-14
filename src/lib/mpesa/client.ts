@@ -8,7 +8,7 @@ const BASE_URL =
 
 const TOKEN_URL = `${BASE_URL}/oauth/v1/generate?grant_type=client_credentials`;
 const STK_PUSH_URL = `${BASE_URL}/mpesa/stkpush/v1/processrequest`;
-const STK_QUERY_URL = `${BASE_URL}/mpesa/stkpush/v1/query`;
+const STK_QUERY_URL = `${BASE_URL}/mpesa/stkpushquery/v1/query`;
 
 let tokenCache: { access_token: string; expires_in: number; fetched_at: number } | null = null;
 
