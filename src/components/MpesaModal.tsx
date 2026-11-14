@@ -88,6 +88,9 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
         );
 
         const statusData = await statusRes.json();
+        if (!statusRes.ok) {
+          throw new Error(statusData.error || "Could not check M-Pesa payment status. Please try again.");
+        }
 
         if (statusData.paid) {
           setTxId(checkoutId.slice(0, 10));
@@ -100,10 +103,20 @@ export default function MpesaModal({ isOpen, onClose, requiredAmount, onSuccess 
           throw new Error("Payment timed out. Please check your phone and try again.");
         }
 
-        setTimeout(poll, POLL_INTERVAL);
+        setTimeout(() => {
+          void poll().catch((pollError) => {
+            setError(pollError instanceof Error ? pollError.message : "Could not check M-Pesa payment status.");
+            setStep("input");
+          });
+        }, POLL_INTERVAL);
       };
 
-      setTimeout(poll, POLL_INTERVAL);
+      setTimeout(() => {
+        void poll().catch((pollError) => {
+          setError(pollError instanceof Error ? pollError.message : "Could not check M-Pesa payment status.");
+          setStep("input");
+        });
+      }, POLL_INTERVAL);
     } catch (err) {
       console.error("M-Pesa top-up error:", err);
       setError(err instanceof Error ? err.message : "Payment processing failed. Please try again.");
